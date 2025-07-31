@@ -1,0 +1,15 @@
+# .clang-format
+BasedOnStyle: llvm
+IndentWidth: 4
+UseTab: Never
+BreakBeforeBraces: Linux
+SortIncludes: false
+IndentCaseLabels: false
+AlwaysBreakTemplateDeclarations: true
+AllowShortFunctionsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+# Do not break lines at 80 characters
+ColumnLimit: 0
+# Prevents reformatting of existing comments
+ReflowComments: false

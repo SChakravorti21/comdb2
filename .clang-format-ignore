@@ -1,0 +1,8 @@
+archive/*
+bbinc/*
+bdb/*
+berkdb/*
+dlmalloc/*
+lua/*
+mem/*
+sqlite/*
