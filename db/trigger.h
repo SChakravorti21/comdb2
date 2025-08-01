@@ -35,7 +35,6 @@ struct comdb2_queue_consumer {
 };
 typedef struct comdb2_queue_consumer comdb2_queue_consumer_t;
 
-
 enum consumer_t {
     CONSUMER_TYPE_API = 0,
     CONSUMER_TYPE_FSTSND = 1,
@@ -79,12 +78,12 @@ void trigger_reg_to_cpu(trigger_reg_t *);
 
 #define trigger_hostname(t) ((t)->spname + (t)->spname_len + 1)
 
-#define trigger_reg_sz(sp_name)                                                \
+#define trigger_reg_sz(sp_name) \
     sizeof(trigger_reg_t) + strlen(sp_name) + 1 + strlen(gbl_myhostname) + 1
 
 #define Q_TAG "__q"
-#define Q4SP(var, spname)                                                      \
-    char var[sizeof(Q_TAG) + strlen(spname)];                                  \
+#define Q4SP(var, spname)                     \
+    char var[sizeof(Q_TAG) + strlen(spname)]; \
     sprintf(var, "%s%s", Q_TAG, spname);
 
 #define SP4Q(q) ((q) + (sizeof(Q_TAG) - 1))

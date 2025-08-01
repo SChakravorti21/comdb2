@@ -100,7 +100,8 @@ hash_t *hash_init_ptr(void)
 
 typedef void *hash_kfnd_t(hash_t *const h, const void *const restrict vkey);
 
-enum hash_scheme { HASH_BY_PRIMES, HASH_BY_POWER2 };
+enum hash_scheme { HASH_BY_PRIMES,
+                   HASH_BY_POWER2 };
 
 typedef struct hashent {
     struct hashent *next;
@@ -154,7 +155,6 @@ struct hash {
     enum hash_scheme scheme;
 };
 
-
 #define HASH(h, key) ((h)->hashfunc(key, (h)->keysz))
 #define CMP(h, a, b) ((h)->cmpfunc(a, b, (h)->keysz))
 #define BUCKET(hash, ntbl) ((hash) % (ntbl))
@@ -172,56 +172,56 @@ struct hash {
  */
 
 /* Must protect with mutex in threaded code */
-#define HASH_QUERY_LOOP(h, tbl, he, condition)                                 \
-    do {                                                                       \
-        hashent **phe = 0; /*(assignment to avoid uninitialized warning)*/     \
-        unsigned int nsteps = 0;                                               \
-                                                                               \
-        while (condition) {                                                    \
-            phe = &he->next;                                                   \
-            he = *phe;                                                         \
-            ++nsteps;                                                          \
-        }                                                                      \
-        if (h->maxsteps < nsteps)                                              \
-            h->maxsteps = nsteps;                                              \
-        h->nsteps += nsteps;                                                   \
-                                                                               \
-        if (he) {                                                              \
-            if (he != *tbl) {/* FLIP TO TOP OF LIST */                         \
-                *phe = he->next;                                               \
-                he->next = *tbl;                                               \
-                *tbl = he;                                                     \
-            }                                                                  \
-            h->nhits++;                                                        \
-            return he->obj;                                                    \
-        } else {                                                               \
-            h->nmisses++;                                                      \
-            return 0;                                                          \
-        }                                                                      \
-                                                                               \
+#define HASH_QUERY_LOOP(h, tbl, he, condition)                             \
+    do {                                                                   \
+        hashent **phe = 0; /*(assignment to avoid uninitialized warning)*/ \
+        unsigned int nsteps = 0;                                           \
+                                                                           \
+        while (condition) {                                                \
+            phe = &he->next;                                               \
+            he = *phe;                                                     \
+            ++nsteps;                                                      \
+        }                                                                  \
+        if (h->maxsteps < nsteps)                                          \
+            h->maxsteps = nsteps;                                          \
+        h->nsteps += nsteps;                                               \
+                                                                           \
+        if (he) {                                                          \
+            if (he != *tbl) { /* FLIP TO TOP OF LIST */                    \
+                *phe = he->next;                                           \
+                he->next = *tbl;                                           \
+                *tbl = he;                                                 \
+            }                                                              \
+            h->nhits++;                                                    \
+            return he->obj;                                                \
+        } else {                                                           \
+            h->nmisses++;                                                  \
+            return 0;                                                      \
+        }                                                                  \
+                                                                           \
     } while (0)
 
 /* thread-safe */
-#define HASH_QUERY_LOOP_READONLY(h, he, condition)                             \
-    do {                                                                       \
-        unsigned int nsteps = 0;                                               \
-                                                                               \
-        while (condition) {                                                    \
-            he = he->next;                                                     \
-            ++nsteps;                                                          \
-        }                                                                      \
-        if (h->maxsteps < nsteps)                                              \
-            h->maxsteps = nsteps;                                              \
-        h->nsteps += nsteps;                                                   \
-                                                                               \
-        if (he) {                                                              \
-            h->nhits++;                                                        \
-            return he->obj;                                                    \
-        } else {                                                               \
-            h->nmisses++;                                                      \
-            return 0;                                                          \
-        }                                                                      \
-                                                                               \
+#define HASH_QUERY_LOOP_READONLY(h, he, condition) \
+    do {                                           \
+        unsigned int nsteps = 0;                   \
+                                                   \
+        while (condition) {                        \
+            he = he->next;                         \
+            ++nsteps;                              \
+        }                                          \
+        if (h->maxsteps < nsteps)                  \
+            h->maxsteps = nsteps;                  \
+        h->nsteps += nsteps;                       \
+                                                   \
+        if (he) {                                  \
+            h->nhits++;                            \
+            return he->obj;                        \
+        } else {                                   \
+            h->nmisses++;                          \
+            return 0;                              \
+        }                                          \
+                                                   \
     } while (0)
 
 /* Must protect with mutex in threaded code */
@@ -685,26 +685,26 @@ rotates.
 
 #define rot(x, k) (((x) << (k)) | ((x) >> (32 - (k))))
 
-#define mix(a, b, c)                                                           \
-    {                                                                          \
-        a -= c;                                                                \
-        a ^= rot(c, 4);                                                        \
-        c += b;                                                                \
-        b -= a;                                                                \
-        b ^= rot(a, 6);                                                        \
-        a += c;                                                                \
-        c -= b;                                                                \
-        c ^= rot(b, 8);                                                        \
-        b += a;                                                                \
-        a -= c;                                                                \
-        a ^= rot(c, 16);                                                       \
-        c += b;                                                                \
-        b -= a;                                                                \
-        b ^= rot(a, 19);                                                       \
-        a += c;                                                                \
-        c -= b;                                                                \
-        c ^= rot(b, 4);                                                        \
-        b += a;                                                                \
+#define mix(a, b, c)     \
+    {                    \
+        a -= c;          \
+        a ^= rot(c, 4);  \
+        c += b;          \
+        b -= a;          \
+        b ^= rot(a, 6);  \
+        a += c;          \
+        c -= b;          \
+        c ^= rot(b, 8);  \
+        b += a;          \
+        a -= c;          \
+        a ^= rot(c, 16); \
+        c += b;          \
+        b -= a;          \
+        b ^= rot(a, 19); \
+        a += c;          \
+        c -= b;          \
+        c ^= rot(b, 4);  \
+        b += a;          \
     }
 
 /*
@@ -732,22 +732,22 @@ and these came close:
  11  8 15 26 3 22 24
 -------------------------------------------------------------------------------
 */
-#define final(a, b, c)                                                         \
-    {                                                                          \
-        c ^= b;                                                                \
-        c -= rot(b, 14);                                                       \
-        a ^= c;                                                                \
-        a -= rot(c, 11);                                                       \
-        b ^= a;                                                                \
-        b -= rot(a, 25);                                                       \
-        c ^= b;                                                                \
-        c -= rot(b, 16);                                                       \
-        a ^= c;                                                                \
-        a -= rot(c, 4);                                                        \
-        b ^= a;                                                                \
-        b -= rot(a, 14);                                                       \
-        c ^= b;                                                                \
-        c -= rot(b, 24);                                                       \
+#define final(a, b, c)   \
+    {                    \
+        c ^= b;          \
+        c -= rot(b, 14); \
+        a ^= c;          \
+        a -= rot(c, 11); \
+        b ^= a;          \
+        b -= rot(a, 25); \
+        c ^= b;          \
+        c -= rot(b, 16); \
+        a ^= c;          \
+        a -= rot(c, 4);  \
+        b ^= a;          \
+        b -= rot(a, 14); \
+        c ^= b;          \
+        c -= rot(b, 24); \
     }
 
 /*
@@ -1206,7 +1206,7 @@ int hash_initsize(hash_t *h, unsigned int sz)
         h->htab->ntbl = sz;
         if (h->scheme == HASH_BY_POWER2 && (sz & (sz - 1)))
             logmsg(LOGMSG_ERROR, "%s: bad size %u for power of 2 hash table\n",
-                    __func__, sz);
+                   __func__, sz);
         return 0;
     } else {
         h->htab = STARTER_HTAB;
@@ -1368,8 +1368,8 @@ static hashent *hash_inctbl_getablk_bulk(hash_t *const h)
  */
 static hashtable *hash_inctbl(hash_t *const h)
 {
-    static const unsigned int prime[] = {257,    1031,    4099,    16411,
-                                         32771,  65537,   131101,  262147,
+    static const unsigned int prime[] = {257, 1031, 4099, 16411,
+                                         32771, 65537, 131101, 262147,
                                          524309, 1048583, 4194319, 0};
 
     hashtable *restrict newhtab;
@@ -1493,10 +1493,10 @@ int hash_delk(hash_t *const h, const void *const key)
         if (*chead != he) {
             /* (he reused; (*phe) points to he to delete) */
             while (he->next)
-                he = he->next; /*find chain end*/
-            he->next = *chead; /*create loop*/
+                he = he->next;  /*find chain end*/
+            he->next = *chead;  /*create loop*/
             he = *chead = *phe; /*change head*/
-            *phe = NULL; /*break loop*/
+            *phe = NULL;        /*break loop*/
         }
 
         /* Simply swap off the chain head (assignment is atomic)
@@ -1596,7 +1596,10 @@ void hash_free_resized_tables(hash_t *const h)
     }
 }
 
-void hash_dump(hash_t *h, FILE *out) { hash_dump_stats(h, stdout, out); }
+void hash_dump(hash_t *h, FILE *out)
+{
+    hash_dump_stats(h, stdout, out);
+}
 
 void hash_dump_stats(hash_t *h, FILE *out, FILE *detail_out)
 {
@@ -1724,6 +1727,9 @@ void hash_info(hash_t *h, int *nhits, int *nmisses, int *nsteps, int *ntbl,
     hash_info2(h, nhits, nmisses, nsteps, ntbl, nents, nadds, ndels, 0);
 }
 
-int hash_get_num_entries(hash_t *h) { return h->nents; }
+int hash_get_num_entries(hash_t *h)
+{
+    return h->nents;
+}
 
 #endif /*COMDB2_BBCMAKE*/

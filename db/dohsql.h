@@ -65,8 +65,8 @@ const char *dohsql_get_sql(struct sqlclntstate *clnt, int index);
  */
 void dohsql_wait_for_master(sqlite3_stmt *stmt, struct sqlclntstate *clnt);
 
-#define GET_CLNT                                                               \
-    struct sql_thread *thd = pthread_getspecific(query_info_key);              \
+#define GET_CLNT                                                  \
+    struct sql_thread *thd = pthread_getspecific(query_info_key); \
     struct sqlclntstate *clnt = thd->clnt;
 
 /**
@@ -118,7 +118,7 @@ struct params_info *dohsql_params_append(struct params_info **pparams,
  * Clone bound parameters; deep-copy pointers
  *
  */
-int dohsql_clone_params(unsigned int nparams, struct param_data * params,
+int dohsql_clone_params(unsigned int nparams, struct param_data *params,
                         int *pnparams, struct param_data **pparams);
 
 /**

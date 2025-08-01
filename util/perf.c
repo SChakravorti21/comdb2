@@ -28,16 +28,19 @@ struct time_metric {
     char *name;
     struct averager *avg;
     pthread_mutex_t lk;
-    LINKC_T(struct time_metric) lnk;
+    LINKC_T(struct time_metric)
+    lnk;
 };
 
 pthread_once_t once = PTHREAD_ONCE_INIT;
 
-static void init_time_metrics(void) {
+static void init_time_metrics(void)
+{
     listc_init(&metrics, offsetof(struct time_metric, lnk));
 }
 
-struct time_metric* time_metric_new(char *name) {
+struct time_metric *time_metric_new(char *name)
+{
     struct time_metric *t;
     pthread_once(&once, init_time_metrics);
     t = calloc(1, sizeof(struct time_metric));
@@ -74,7 +77,8 @@ void time_metric_free(struct time_metric *t)
     free(t);
 }
 
-void time_metric_add(struct time_metric *t, int value) {
+void time_metric_add(struct time_metric *t, int value)
+{
     if (!gbl_timeseries_metrics)
         return;
 
@@ -85,28 +89,34 @@ void time_metric_add(struct time_metric *t, int value) {
     Pthread_mutex_unlock(&t->lk);
 }
 
-struct time_metric* time_metric_get(char *name) {
+struct time_metric *time_metric_get(char *name)
+{
     struct time_metric *t;
-    LISTC_FOR_EACH(&metrics, t, lnk) {
+    LISTC_FOR_EACH(&metrics, t, lnk)
+    {
         if (strcmp(t->name, name) == 0)
             return t;
     }
     return NULL;
 }
 
-struct time_metric* time_metric_first(void) {
+struct time_metric *time_metric_first(void)
+{
     return metrics.top;
 }
 
-struct time_metric* time_metric_next(struct time_metric *t) {
+struct time_metric *time_metric_next(struct time_metric *t)
+{
     return t->lnk.next;
 }
 
-char* time_metric_name(struct time_metric *t) {
+char *time_metric_name(struct time_metric *t)
+{
     return t->name;
 }
 
-void time_metric_purge_old(struct time_metric *t) {
+void time_metric_purge_old(struct time_metric *t)
+{
     time_t now = comdb2_time_epoch();
 
     Pthread_mutex_lock(&t->lk);
@@ -114,7 +124,8 @@ void time_metric_purge_old(struct time_metric *t) {
     Pthread_mutex_unlock(&t->lk);
 }
 
-int time_metric_get_points(struct time_metric *t, struct point **values, int *nvalues) {
+int time_metric_get_points(struct time_metric *t, struct point **values, int *nvalues)
+{
     int rc;
     Pthread_mutex_lock(&t->lk);
     rc = averager_get_points(t->avg, values, nvalues);
@@ -122,22 +133,27 @@ int time_metric_get_points(struct time_metric *t, struct point **values, int *nv
     return rc;
 }
 
-double time_metric_average(struct time_metric *t) {
+double time_metric_average(struct time_metric *t)
+{
     return averager_avg(t->avg);
 }
 
-double time_metric_delta_average(struct time_metric *t) {
+double time_metric_delta_average(struct time_metric *t)
+{
     return averager_delta_avg(t->avg);
 }
 
-int time_metric_max(struct time_metric *t) {
+int time_metric_max(struct time_metric *t)
+{
     return averager_max(t->avg);
 }
 
-int time_metric_depth(struct time_metric *t) {
+int time_metric_depth(struct time_metric *t)
+{
     return averager_depth(t->avg);
 }
 
-void time_metric_clear(struct time_metric *t) {
+void time_metric_clear(struct time_metric *t)
+{
     averager_clear(t->avg);
 }

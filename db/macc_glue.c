@@ -274,7 +274,7 @@ static dbtable *newdb_from_schema(struct dbenv *env, char *tblname, int dbnum)
                 }
             }
         } /* for (ii...) */
-    }     /* if (n_constraints > 0) */
+    } /* if (n_constraints > 0) */
     tbl->ixuse = calloc(tbl->nix, sizeof(unsigned long long));
     tbl->sqlixuse = calloc(tbl->nix, sizeof(unsigned long long));
     return tbl;
@@ -292,8 +292,8 @@ static int _clone_column(struct field *src, struct field *m, int offset)
     return offset + m->len;
 }
 
-static struct schema * _create_index_datacopy_schema(struct schema *sch, int ix,
-                                                     struct errstat *err)
+static struct schema *_create_index_datacopy_schema(struct schema *sch, int ix,
+                                                    struct errstat *err)
 {
     struct partial_datacopy *pd;
     struct schema *p = NULL;
@@ -303,7 +303,7 @@ static struct schema * _create_index_datacopy_schema(struct schema *sch, int ix,
     rc = dyns_get_idx_partial_datacopy(ix, &pd);
     if (rc || !pd) {
         errstat_set_rcstrf(err, rc = -1,
-                "cannot form partial datacopy for index %d.", ix);
+                           "cannot form partial datacopy for index %d.", ix);
         goto err;
     }
 
@@ -320,7 +320,7 @@ static struct schema * _create_index_datacopy_schema(struct schema *sch, int ix,
                          SCHEMA_PARTIALDATACOPY_ACTUAL);
     if (!p) {
         errstat_set_rcstrf(err, rc = -1,
-                "oom %s:%d index %d", __func__, __LINE__, ix);
+                           "oom %s:%d index %d", __func__, __LINE__, ix);
         goto err;
     }
 
@@ -362,7 +362,6 @@ static struct schema *_create_index_schema(const char *tag, int ix,
 {
     struct schema *s = NULL;
     char buf[MAXCOLNAME + 1];
-
 
     snprintf(buf, sizeof(buf), "%s_ix_%d", tag, ix);
 
@@ -417,60 +416,60 @@ static int _set_schema_index_column(struct schema *sch, struct field *m,
             return 1;
         }
         switch (m->type) {
-            case 0:
-                abort();
-            case SERVER_BLOB:
-            case SERVER_VUTF8:
-            case SERVER_BLOB2:
-                errstat_set_rcstrf(err, -1, "blob index is not supported.");
+        case 0:
+            abort();
+        case SERVER_BLOB:
+        case SERVER_VUTF8:
+        case SERVER_BLOB2:
+            errstat_set_rcstrf(err, -1, "blob index is not supported.");
+            return 1;
+        case SERVER_BCSTR:
+            if (m->len < 2) {
+                errstat_set_rcstrf(
+                    err, -1,
+                    "string must be at least 2 bytes in in length.");
                 return 1;
-            case SERVER_BCSTR:
-                if (m->len < 2) {
-                    errstat_set_rcstrf(
-                            err, -1,
-                            "string must be at least 2 bytes in in length.");
-                    return 1;
-                }
+            }
+            break;
+        case SERVER_DATETIME:
+            /* server CLIENT_DATETIME is a server_datetime_t */
+            m->len = sizeof(server_datetime_t);
+            break;
+        case SERVER_DATETIMEUS:
+            /* server CLIENT_DATETIMEUS is a server_datetimeus_t */
+            m->len = sizeof(server_datetimeus_t);
+            break;
+        case SERVER_INTVYM:
+            /* server CLIENT_INTVYM is a server_intv_ym_t */
+            m->len = sizeof(server_intv_ym_t);
+            break;
+        case SERVER_INTVDS:
+            /* server CLIENT_INTVDS is a server_intv_ds_t */
+            m->len = sizeof(server_intv_ds_t);
+            break;
+        case SERVER_INTVDSUS:
+            /* server CLIENT_INTVDSUS is a server_intv_dsus_t */
+            m->len = sizeof(server_intv_dsus_t);
+            break;
+        case SERVER_DECIMAL:
+            switch (m->len) {
+            case 14:
+                m->len = sizeof(server_decimal32_t);
                 break;
-            case SERVER_DATETIME:
-                /* server CLIENT_DATETIME is a server_datetime_t */
-                m->len = sizeof(server_datetime_t);
+            case 24:
+                m->len = sizeof(server_decimal64_t);
                 break;
-            case SERVER_DATETIMEUS:
-                /* server CLIENT_DATETIMEUS is a server_datetimeus_t */
-                m->len = sizeof(server_datetimeus_t);
-                break;
-            case SERVER_INTVYM:
-                /* server CLIENT_INTVYM is a server_intv_ym_t */
-                m->len = sizeof(server_intv_ym_t);
-                break;
-            case SERVER_INTVDS:
-                /* server CLIENT_INTVDS is a server_intv_ds_t */
-                m->len = sizeof(server_intv_ds_t);
-                break;
-            case SERVER_INTVDSUS:
-                /* server CLIENT_INTVDSUS is a server_intv_dsus_t */
-                m->len = sizeof(server_intv_dsus_t);
-                break;
-            case SERVER_DECIMAL:
-                switch (m->len) {
-                    case 14:
-                        m->len = sizeof(server_decimal32_t);
-                        break;
-                    case 24:
-                        m->len = sizeof(server_decimal64_t);
-                        break;
-                    case 43:
-                        m->len = sizeof(server_decimal128_t);
-                        break;
-                    default:
-                        abort();
-                }
+            case 43:
+                m->len = sizeof(server_decimal128_t);
                 break;
             default:
-                /* other types just add one for the flag byte */
-                m->len++;
-                break;
+                abort();
+            }
+            break;
+        default:
+            /* other types just add one for the flag byte */
+            m->len++;
+            break;
         }
         if (offset + m->len > MAXKEYLEN) {
             errstat_set_rcstrf(err, -1, "index %d is too large.", ix);
@@ -481,7 +480,7 @@ static int _set_schema_index_column(struct schema *sch, struct field *m,
         m->idx = find_field_idx_in_tag(sch, m->name);
         if (m->idx == -1) {
             errstat_set_rcstrf(err, -1, "field %s not found in %s",
-                    m->name, sch->tag);
+                               m->name, sch->tag);
             return -ix - 1; /* this is ignored for DEFAULT tag */
         }
         m->type = sch->member[m->idx].type;
@@ -501,12 +500,11 @@ static int _set_schema_index_column(struct schema *sch, struct field *m,
                    m->in_default_len);
         }
         memcpy(&m->convopts, &sch->member[m->idx].convopts,
-                sizeof(struct field_conv_opts));
+               sizeof(struct field_conv_opts));
     }
     m->offset = offset;
     return 0;
 }
-
 
 extern int gbl_new_indexes;
 
@@ -533,7 +531,7 @@ static int create_keys_schemas(dbtable *tbl, struct schema *sch, int alt,
     }
 
     for (ix = 0; ix < sch->nix; ix++) {
-next_index:
+    next_index:
         if (ix >= sch->nix)
             break;
         sch->ix[ix] = s = _create_index_schema(sch->tag, ix, err);
@@ -550,8 +548,8 @@ next_index:
                 goto err;
             }
             tbl->ix_datacopylen[ix] =
-                s->partial_datacopy->member[s->partial_datacopy->nmembers-1].offset +
-                s->partial_datacopy->member[s->partial_datacopy->nmembers-1].len;
+                s->partial_datacopy->member[s->partial_datacopy->nmembers - 1].offset +
+                s->partial_datacopy->member[s->partial_datacopy->nmembers - 1].len;
         } else
             tbl->ix_datacopylen[ix] = 0;
 
@@ -582,11 +580,11 @@ next_index:
             }
             if (!tbl->ix_expr) {
                 if (gbl_new_indexes &&
-                        strncasecmp(tblname, "sqlite_stat", 11) &&
-                        strcasecmp(tblname, "comdb2_oplog") &&
-                        strcasecmp(tblname, "comdb2_commit_log") &&
-                        (!gbl_replicate_local ||
-                         strcasecmp(s->member[piece].name, "comdb2_seqno"))) {
+                    strncasecmp(tblname, "sqlite_stat", 11) &&
+                    strcasecmp(tblname, "comdb2_oplog") &&
+                    strcasecmp(tblname, "comdb2_commit_log") &&
+                    (!gbl_replicate_local ||
+                     strcasecmp(s->member[piece].name, "comdb2_seqno"))) {
                     s->member[piece].isExpr = 1;
                     tbl->ix_partial = 1;
                 }
@@ -602,7 +600,7 @@ next_index:
             struct schema *s_alias;
             if (alt == 0) {
                 s_alias = clone_schema_index(s, altname, sch->nmembers);
-                if (!s_alias)  {
+                if (!s_alias) {
                     errstat_set_rcstrf(err, rc = -1, "Failed to clone tag %s",
                                        s_alias->tag);
                     return 1;
@@ -611,7 +609,7 @@ next_index:
                 char tmptagname[MAXTAGLEN + sizeof(".NEW.")];
                 snprintf(tmptagname, sizeof(tmptagname), ".NEW.%s", altname);
                 s_alias = clone_schema_index(s, tmptagname, sch->nmembers);
-                if (!s_alias)  {
+                if (!s_alias) {
                     errstat_set_rcstrf(err, rc = -1, "Failed to clone tag %s",
                                        s_alias->tag);
                     return 1;
@@ -775,7 +773,7 @@ out:
     return outrc;
 }
 
-static struct schema * _create_table_schema(char *tag, int alt)
+static struct schema *_create_table_schema(char *tag, int alt)
 {
     struct schema *sch = NULL;
     char *ondisk_tag;
@@ -807,11 +805,11 @@ static int _check_column_ull(struct field *fld, const char *tblname, int allow_u
 {
     extern int gbl_forbid_ulonglong;
     if (gbl_forbid_ulonglong &&
-            ((fld->type == SERVER_UINT && fld->len == (sizeof(unsigned long long) + 1)) ||
-            (fld->type == CLIENT_UINT && fld->len == sizeof(unsigned long long)))) {
+        ((fld->type == SERVER_UINT && fld->len == (sizeof(unsigned long long) + 1)) ||
+         (fld->type == CLIENT_UINT && fld->len == sizeof(unsigned long long)))) {
         logmsg(LOGMSG_ERROR,
-                "Error in table %s: u_longlong is unsupported\n",
-                tblname);
+               "Error in table %s: u_longlong is unsupported\n",
+               tblname);
         /* Skip returning error on presence of u_longlong if:
 
            - we haven't fully started, or
@@ -853,82 +851,82 @@ static int _set_column_blobs(struct field *fld, int nblobs)
  * return current offset
  */
 static int _set_column_ondisk_length(struct field *fld, int idx, char *tag,
-                                    int offset)
+                                     int offset)
 {
     char buf[MAXCOLNAME + 1] = {0}; /* scratch space buffer */
 
     /* cheat: change type to be ondisk type */
     switch (fld->type) {
-        case SERVER_BLOB:
-            /* TODO use the enums that are used in types.c */
-            /* blobs are stored as flag byte + 32 bit length */
-            fld->len = 5;
-            break;
-        case SERVER_VUTF8:
-        case SERVER_BLOB2:
-            /* TODO use the enums that are used in types.c */
-            /* vutf8s are stored as flag byte + 32 bit length, plus
+    case SERVER_BLOB:
+        /* TODO use the enums that are used in types.c */
+        /* blobs are stored as flag byte + 32 bit length */
+        fld->len = 5;
+        break;
+    case SERVER_VUTF8:
+    case SERVER_BLOB2:
+        /* TODO use the enums that are used in types.c */
+        /* vutf8s are stored as flag byte + 32 bit length, plus
              * optionally strings up to a certain length can be stored
              * in the record itself */
-            if (fld->len == -1)
-                fld->len = 5;
-            else
-                fld->len += 5;
-            break;
-        case SERVER_BCSTR: {
-            int clnt_type = 0;
-            int clnt_offset = 0;
-            int clnt_len = 0;
+        if (fld->len == -1)
+            fld->len = 5;
+        else
+            fld->len += 5;
+        break;
+    case SERVER_BCSTR: {
+        int clnt_type = 0;
+        int clnt_offset = 0;
+        int clnt_len = 0;
 
-            dyns_get_table_field_info(tag, idx, buf, sizeof(buf),
-                                      &clnt_type, &clnt_offset, NULL,
-                                      &clnt_len, NULL, 0);
+        dyns_get_table_field_info(tag, idx, buf, sizeof(buf),
+                                  &clnt_type, &clnt_offset, NULL,
+                                  &clnt_len, NULL, 0);
 
-            if (clnt_type == CLIENT_PSTR || clnt_type == CLIENT_PSTR2) {
-                fld->len++;
-            } else {
-                /* no change needed from client length */
-            }
-            } break;
-        case SERVER_DATETIME:
-            /* server CLIENT_DATETIME is a server_datetime_t */
-            fld->len = sizeof(server_datetime_t);
+        if (clnt_type == CLIENT_PSTR || clnt_type == CLIENT_PSTR2) {
+            fld->len++;
+        } else {
+            /* no change needed from client length */
+        }
+    } break;
+    case SERVER_DATETIME:
+        /* server CLIENT_DATETIME is a server_datetime_t */
+        fld->len = sizeof(server_datetime_t);
+        break;
+    case SERVER_DATETIMEUS:
+        /* server CLIENT_DATETIMEUS is a server_datetimeus_t */
+        fld->len = sizeof(server_datetimeus_t);
+        break;
+    case SERVER_INTVYM:
+        /* server CLIENT_INTVYM is a server_intv_ym_t */
+        fld->len = sizeof(server_intv_ym_t);
+        break;
+    case SERVER_INTVDS:
+        /* server CLIENT_INTVDS is a server_intv_ds_t */
+        fld->len = sizeof(server_intv_ds_t);
+        break;
+    case SERVER_INTVDSUS:
+        /* server CLIENT_INTVDSUS is a server_intv_dsus_t */
+        fld->len = sizeof(server_intv_dsus_t);
+        break;
+    case SERVER_DECIMAL:
+        switch (fld->len) {
+        case 14:
+            fld->len = sizeof(server_decimal32_t);
             break;
-        case SERVER_DATETIMEUS:
-            /* server CLIENT_DATETIMEUS is a server_datetimeus_t */
-            fld->len = sizeof(server_datetimeus_t);
+        case 24:
+            fld->len = sizeof(server_decimal64_t);
             break;
-        case SERVER_INTVYM:
-            /* server CLIENT_INTVYM is a server_intv_ym_t */
-            fld->len = sizeof(server_intv_ym_t);
-            break;
-        case SERVER_INTVDS:
-            /* server CLIENT_INTVDS is a server_intv_ds_t */
-            fld->len = sizeof(server_intv_ds_t);
-            break;
-        case SERVER_INTVDSUS:
-            /* server CLIENT_INTVDSUS is a server_intv_dsus_t */
-            fld->len = sizeof(server_intv_dsus_t);
-            break;
-        case SERVER_DECIMAL:
-            switch (fld->len) {
-            case 14:
-                fld->len = sizeof(server_decimal32_t);
-                break;
-            case 24:
-                fld->len = sizeof(server_decimal64_t);
-                break;
-            case 43:
-                fld->len = sizeof(server_decimal128_t);
-                break;
-            default:
-                abort();
-            }
+        case 43:
+            fld->len = sizeof(server_decimal128_t);
             break;
         default:
-            /* other types just add one for the flag byte */
-            fld->len++;
-            break;
+            abort();
+        }
+        break;
+    default:
+        /* other types just add one for the flag byte */
+        fld->len++;
+        break;
     }
     fld->offset = offset;
     offset += fld->len;
@@ -988,11 +986,11 @@ static struct field *_create_schema_column(struct field *fld, int idx,
     char buf[MAXCOLNAME + 1] = {0}; /* scratch space buffer */
 
     dyns_get_table_field_info(
-            tag, idx, buf, sizeof(buf),
-            (int *)&fld->type,
-            (int *)&fld->offset, NULL,
-            (int *)&fld->len, /* want fullsize, not size */
-            NULL, is_ondisk_schema);
+        tag, idx, buf, sizeof(buf),
+        (int *)&fld->type,
+        (int *)&fld->offset, NULL,
+        (int *)&fld->len, /* want fullsize, not size */
+        NULL, is_ondisk_schema);
 
     fld->idx = -1;
     fld->name = strdup(buf);
@@ -1005,7 +1003,7 @@ static struct field *_create_schema_column(struct field *fld, int idx,
     if (is_ondisk_schema) {
         *offset = _set_column_ondisk_length(fld, idx, tag, *offset);
 
-        if ( _set_column_options(fld, idx, tag, err))
+        if (_set_column_options(fld, idx, tag, err))
             return NULL;
     }
     return fld;
@@ -1019,7 +1017,7 @@ static struct field *_create_schema_column(struct field *fld, int idx,
    - save cmacc structures into db structs
    */
 static int add_cmacc_stmt(dbtable *tbl, int alt, int allow_ull,
-        int no_side_effects, struct errstat *err)
+                          int no_side_effects, struct errstat *err)
 {
     /* loaded from csc2 at this point */
     struct schema **schs;
@@ -1042,14 +1040,14 @@ static int add_cmacc_stmt(dbtable *tbl, int alt, int allow_ull,
      *  do not polute tag hash in case of error
      */
     /* a server schema per tag + one client schema for ondisk */
-    schs = calloc(ntags + 1, sizeof(struct schema*));
+    schs = calloc(ntags + 1, sizeof(struct schema *));
     if (!schs) {
         errstat_set_rcstrf(err, rc = -1, "out of memory %s:%d", __func__,
                            __LINE__);
         return -1;
     }
     /* a server and a client schema per index, for ondisk and default */
-    schs_indx = calloc(tbl->nix * 2 * 2, sizeof(struct schema*));
+    schs_indx = calloc(tbl->nix * 2 * 2, sizeof(struct schema *));
     if (!schs_indx) {
         free(schs);
         errstat_set_rcstrf(err, rc = -1, "out of memory %s:%d", __func__,
@@ -1080,12 +1078,11 @@ static int add_cmacc_stmt(dbtable *tbl, int alt, int allow_ull,
         else if (!strncasecmp(tag, ".DEFAULT", 7))
             sch_default = sch;
 
-
         /* create the columns for the schema (here, fields for tags ...) */
         for (field = 0; field < sch->nmembers; field++) {
             struct field *fld = _create_schema_column(&sch->member[field], field,
                                                       tag, sch == sch_ondisk, err, &offset);
-            if (!fld)  {
+            if (!fld) {
                 rc = -1;
                 goto err;
             }
@@ -1170,10 +1167,10 @@ static int add_cmacc_stmt(dbtable *tbl, int alt, int allow_ull,
             struct schema *idxsch = sch_ondisk->ix[i];
             if (!alt) {
                 snprintf(cname_buf, sizeof(cname_buf),
-                        ".ONDISK_CLIENT_IX_%d", i);
+                         ".ONDISK_CLIENT_IX_%d", i);
             } else {
                 snprintf(cname_buf, sizeof(cname_buf),
-                        ".NEW..ONDISK_CLIENT_IX_%d", i);
+                         ".NEW..ONDISK_CLIENT_IX_%d", i);
             }
 
             schs_indx[nschs_indx] =
@@ -1183,16 +1180,16 @@ static int add_cmacc_stmt(dbtable *tbl, int alt, int allow_ull,
                 goto err;
             }
             /* keys are also in ondisk format */
-            tbl->ix_keylen[i] = idxsch->member[idxsch->nmembers-1].offset +
-                idxsch->member[idxsch->nmembers-1].len;
+            tbl->ix_keylen[i] = idxsch->member[idxsch->nmembers - 1].offset +
+                                idxsch->member[idxsch->nmembers - 1].len;
         }
     }
 
     /* all is ok, now make all schemas public */
-    for(i=0; i < nschs; i++) {
+    for (i = 0; i < nschs; i++) {
         add_tag_schema(tbl->tablename, schs[i]);
     }
-    for(i=0; i < nschs_indx; i++) {
+    for (i = 0; i < nschs_indx; i++) {
         add_tag_schema(tbl->tablename, schs_indx[i]);
     }
 
@@ -1202,12 +1199,12 @@ static int add_cmacc_stmt(dbtable *tbl, int alt, int allow_ull,
 
 err:
     if (rc) {
-       for(i=0; i < nschs && schs[i]; i++) {
-           freeschema(schs[i], 1);
-       }
-       for(i=0; i < nschs_indx && schs_indx[i]; i++) {
-           freeschema(schs_indx[i], 1);
-       }
+        for (i = 0; i < nschs && schs[i]; i++) {
+            freeschema(schs[i], 1);
+        }
+        for (i = 0; i < nschs_indx && schs_indx[i]; i++) {
+            freeschema(schs_indx[i], 1);
+        }
     }
     free(schs);
     free(schs_indx);

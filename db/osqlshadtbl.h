@@ -70,7 +70,8 @@ struct shad_tbl {
     int nblobs;
     int updcols; /* 1 if we have update columns */
     int nops;    /* count how many rows are correctly processed */
-    LINKC_T(struct shad_tbl) linkv; /* have to link em */
+    LINKC_T(struct shad_tbl)
+    linkv; /* have to link em */
 };
 
 struct recgenidlst;

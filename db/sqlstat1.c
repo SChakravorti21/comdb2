@@ -97,7 +97,7 @@ void *get_field_from_sqlite_stat_rec(struct ireq *iq, const void *rec,
 
     if (outfsz > flen + 1) {
         logmsg(LOGMSG_ERROR, "%s: SERVER_to_CLIENT: unexpected outlen: %d > %d\n",
-                __func__, outfsz, flen + 1);
+               __func__, outfsz, flen + 1);
         free(rtn);
         return NULL;
     }
@@ -190,7 +190,7 @@ int stat1_ondisk_record(struct ireq *iq, char *tbl, char *ix, char *stat,
             }
         } else {
             logmsg(LOGMSG_ERROR, "%s: unknown field ('%s') in sqlite_stat1\n",
-                    __func__, f->name);
+                   __func__, f->name);
             free(rec);
             return -1;
         }

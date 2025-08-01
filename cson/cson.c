@@ -73,16 +73,16 @@ enum {
 
 #define SQLITE_STATIC cson__not_reached_alloc
 #define SQLITE_TRANSIENT cson__not_reached_alloc
-#define sqlite3_aggregate_context(a, ...) cson__not_reached_void_ptr((intptr_t) a, __VA_ARGS__)
-#define sqlite3_create_function(a, ...) (intptr_t)cson__not_reached_void_ptr((intptr_t) a, __VA_ARGS__)
-#define sqlite3_get_auxdata(a, ...) cson__not_reached_void_ptr((intptr_t) a, __VA_ARGS__)
-#define sqlite3_mprintf(a, ...) cson__not_reached_void_ptr((intptr_t) a, __VA_ARGS__)
+#define sqlite3_aggregate_context(a, ...) cson__not_reached_void_ptr((intptr_t)a, __VA_ARGS__)
+#define sqlite3_create_function(a, ...) (intptr_t) cson__not_reached_void_ptr((intptr_t)a, __VA_ARGS__)
+#define sqlite3_get_auxdata(a, ...) cson__not_reached_void_ptr((intptr_t)a, __VA_ARGS__)
+#define sqlite3_mprintf(a, ...) cson__not_reached_void_ptr((intptr_t)a, __VA_ARGS__)
 #define sqlite3_result_error(...) cson__not_reached_void()
 #define sqlite3_result_error_nomem(...) cson__not_reached_void()
 #define sqlite3_result_value(...) cson__not_reached_void()
 #define sqlite3_set_auxdata(...) cson__not_reached_void()
-#define sqlite3_user_data(a) cson__not_reached_void_ptr((intptr_t) a)
-#define sqlite3_vsnprintf(a, ...) cson__not_reached_void_ptr((intptr_t) a, __VA_ARGS__)
+#define sqlite3_user_data(a) cson__not_reached_void_ptr((intptr_t)a)
+#define sqlite3_vsnprintf(a, ...) cson__not_reached_void_ptr((intptr_t)a, __VA_ARGS__)
 
 static int cson__value_bytes(cson_value *);
 static int cson__value_subtype(cson_value *);
@@ -94,7 +94,7 @@ static void cson__result_int(cson_kvp *, int);
 static void cson__result_int64(cson_kvp *, int64_t);
 static void cson__result_null(cson_kvp *);
 static void cson__result_subtype(cson_kvp *, unsigned int);
-static void cson__result_text(cson_kvp *, const char *, int , void (*)(void *));
+static void cson__result_text(cson_kvp *, const char *, int, void (*)(void *));
 static void cson__result_text64(cson_kvp *, const char *, uint64_t, void (*)(void *), unsigned char);
 
 static void cson__not_reached_alloc(void *);
@@ -153,11 +153,13 @@ struct cson_value {
     } u;
 };
 typedef struct cson_key {
-    LIST_ENTRY(cson_key) entry;
+    LIST_ENTRY(cson_key)
+    entry;
     char buf[0];
 } cson_key;
 typedef struct cson_get {
-    LIST_ENTRY(cson_get) entry;
+    LIST_ENTRY(cson_get)
+    entry;
     cson_value *value;
 } cson_get;
 struct cson_kvp {
@@ -180,7 +182,8 @@ static void *cson__not_reached_void_ptr(intptr_t arg, ...)
 }
 static int cson__value_type(cson_value *val)
 {
-    if (val->sql_type == 0) abort();
+    if (val->sql_type == 0)
+        abort();
     return val->sql_type;
 }
 static int cson__value_subtype(cson_value *val)
@@ -216,7 +219,7 @@ static void cson__result_subtype(cson_kvp *kvp, unsigned int eSubtype)
 {
 }
 static void cson__result_text(cson_kvp *kvp, const char *z, int n,
-                                void (*xDel)(void *))
+                              void (*xDel)(void *))
 {
     if (!kvp->key) {
         kvp->key = (xDel == free) ? (char *)z : strndup(z, n);
@@ -231,8 +234,8 @@ static void cson__result_text(cson_kvp *kvp, const char *z, int n,
         free((void *)z);
 }
 static void cson__result_text64(cson_kvp *kvp, const char *z,
-                                  uint64_t n, void (*xDel)(void *),
-                                  unsigned char enc)
+                                uint64_t n, void (*xDel)(void *),
+                                unsigned char enc)
 {
     cson__result_text(kvp, z, n, xDel);
 }
@@ -254,7 +257,8 @@ static int cson__type(cson_value const *val)
 static void cson__free_get_list(struct get_list *get_list)
 {
     cson_get *get, *tmp_get;
-    LIST_FOREACH_SAFE(get, get_list, entry, tmp_get) {
+    LIST_FOREACH_SAFE(get, get_list, entry, tmp_get)
+    {
         LIST_REMOVE(get, entry);
         cson_value_free(get->value);
         free(get);
@@ -283,7 +287,8 @@ static void cson__reset(cson_value *val)
         cson_object *obj = cson_value_get_object(val);
         cson__free_get_list(&obj->get_list);
         cson_key *key, *tmp_key;
-        LIST_FOREACH_SAFE(key, &obj->key_list, entry, tmp_key) {
+        LIST_FOREACH_SAFE(key, &obj->key_list, entry, tmp_key)
+        {
             LIST_REMOVE(key, entry);
             free(key);
         }
@@ -321,11 +326,11 @@ static cson_value *cson__parse(cson_value *val, const char *json_in, int n)
     val->value_bytes = n;
     switch (cson__type(val)) {
     case JSON_ARRAY:
-       val->u.arr.value = val;
-       break;
+        val->u.arr.value = val;
+        break;
     case JSON_OBJECT:
-       val->u.obj.value = val;
-       break;
+        val->u.obj.value = val;
+        break;
     }
     return val;
 }
@@ -386,10 +391,12 @@ static void cson__output(cson_value *val)
 }
 static void cson__render(cson_value *val)
 {
-    if (!val->modified) return;
+    if (!val->modified)
+        return;
     cson__output(val);
     JsonString tmp = val->output;
-    if (tmp.bStatic) tmp.zBuf = tmp.zSpace;
+    if (tmp.bStatic)
+        tmp.zBuf = tmp.zSpace;
     jsonInit(&val->output, NULL);
     cson__parse(val, tmp.zBuf, tmp.nUsed);
     jsonReset(&tmp);
@@ -423,7 +430,6 @@ static int cson__set(cson_value *val, char *path, cson_value *v)
     cson__render(v);
     return 0;
 }
-
 
 /****************************************/
 /** Implementation of public interface **/
@@ -553,7 +559,8 @@ cson_value *cson_value_new_integer(cson_int_t v)
 }
 char cson_value_is_integer(cson_value const *v)
 {
-    if (v->sql_type == SQLITE_INTEGER) return 1;
+    if (v->sql_type == SQLITE_INTEGER)
+        return 1;
     return cson__type(v) == JSON_INT;
 }
 cson_int_t cson_value_get_integer(cson_value const *val)
@@ -595,8 +602,10 @@ cson_value *cson_value_new_double(cson_double_t v, int quote_strings)
 }
 char cson_value_is_double(cson_value const *v)
 {
-    if (cson_value_is_integer(v)) return 1;
-    if (v->sql_type == SQLITE_FLOAT) return 1;
+    if (cson_value_is_integer(v))
+        return 1;
+    if (v->sql_type == SQLITE_FLOAT)
+        return 1;
     return cson__type(v) == JSON_REAL;
 }
 cson_double_t cson_value_get_double(cson_value const *val)
@@ -680,7 +689,8 @@ cson_value *cson_value_null(void)
 }
 char cson_value_is_null(cson_value const *v)
 {
-    if (v->sql_type == SQLITE_NULL) return 1;
+    if (v->sql_type == SQLITE_NULL)
+        return 1;
     return cson__type(v) == JSON_NULL;
 }
 cson_value *cson_value_new_bool(char v)
@@ -777,7 +787,7 @@ cson_kvp *cson_object_iter_next(cson_object_iterator *iter)
         return NULL;
     }
     JsonParse *parse = &iter->obj->value->parse;
-    JsonNode *key  = &parse->aNode[iter->i];
+    JsonNode *key = &parse->aNode[iter->i];
     iter->i += jsonNodeSize(&parse->aNode[iter->i]);
     JsonNode *val = &parse->aNode[iter->i];
     iter->i += jsonNodeSize(&parse->aNode[iter->i]);

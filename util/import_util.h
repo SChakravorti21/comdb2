@@ -11,5 +11,5 @@ enum bulk_import_validation_rc {
 //      BULK_IMPORT_VALIDATION_OK if all inputs are valid
 //      BULK_IMPORT_VALIDATION_WARN if table names or database names have invalid characters
 //      BULK_IMPORT_VALIDATION_FATAL if machine names have invalid characters
-enum bulk_import_validation_rc validate_bulk_import_inputs(const char * const dest_tablename, const char * const bulk_import_src_mach,
-    const char * const bulk_import_src_dbname, const char * const bulk_import_src_tablename);
+enum bulk_import_validation_rc validate_bulk_import_inputs(const char *const dest_tablename, const char *const bulk_import_src_mach,
+                                                           const char *const bulk_import_src_dbname, const char *const bulk_import_src_tablename);

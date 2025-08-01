@@ -79,9 +79,11 @@ int clear_fingerprints(int *plans_count)
 }
 
 void calc_fingerprint(const char *zNormSql, size_t *pnNormSql,
-                      unsigned char fingerprint[FINGERPRINTSZ]) {
+                      unsigned char fingerprint[FINGERPRINTSZ])
+{
     memset(fingerprint, 0, FINGERPRINTSZ);
-    if (zNormSql == NULL) return; /* just return all zeros. */
+    if (zNormSql == NULL)
+        return; /* just return all zeros. */
 
     MD5Context ctx = {0};
 
@@ -95,12 +97,14 @@ void calc_fingerprint(const char *zNormSql, size_t *pnNormSql,
     MD5Final(fingerprint, &ctx);
 }
 
-static int have_type_overrides(struct sqlclntstate *clnt) {
+static int have_type_overrides(struct sqlclntstate *clnt)
+{
     return clnt->plugin.override_count(clnt) > 0;
 }
 
 static void do_name_checks(struct sqlclntstate *clnt, sqlite3_stmt *stmt,
-                           struct fingerprint_track *t) {
+                           struct fingerprint_track *t)
+{
     int cachedColCount = stmt_cached_column_count(stmt);
     int name_mismatches = 0;
     /* Temporary buffers to hold list of column names for logging */
@@ -123,16 +127,16 @@ static void do_name_checks(struct sqlclntstate *clnt, sqlite3_stmt *stmt,
     }
 
     if (name_mismatches) {
-        char fp[FINGERPRINTSZ*2+1]; /* 16 ==> 33 */
+        char fp[FINGERPRINTSZ * 2 + 1]; /* 16 ==> 33 */
         util_tohex(fp, (const char *)t->fingerprint, FINGERPRINTSZ);
 
         logmsg(LOGMSG_USER,
-                "COLUMN NAME MISMATCH DETECTED! Use 'AS' clause to keep "
-                "column names in the result set stable across Comdb2 versions. "
-                "fp:%s mismatched -- old: %s new: %s "
-                "(https://www.sqlite.org/c3ref/column_name.html)\n",
-                fp,
-                strbuf_buf(oldnames), strbuf_buf(newnames));
+               "COLUMN NAME MISMATCH DETECTED! Use 'AS' clause to keep "
+               "column names in the result set stable across Comdb2 versions. "
+               "fp:%s mismatched -- old: %s new: %s "
+               "(https://www.sqlite.org/c3ref/column_name.html)\n",
+               fp,
+               strbuf_buf(oldnames), strbuf_buf(newnames));
         t->nameMismatch = 1;
     }
 
@@ -141,7 +145,8 @@ static void do_name_checks(struct sqlclntstate *clnt, sqlite3_stmt *stmt,
 }
 
 static void do_type_checks(struct sqlclntstate *clnt, sqlite3_stmt *stmt,
-                           struct fingerprint_track *t) {
+                           struct fingerprint_track *t)
+{
     int cachedColCount = stmt_cached_column_count(stmt);
     int decltype_mismatches = 0;
 
@@ -158,8 +163,8 @@ static void do_type_checks(struct sqlclntstate *clnt, sqlite3_stmt *stmt,
            equivalent data types for the column.
         */
         if (gbl_warn_on_equiv_type_mismatch == 0 &&
-            ((strcmp(oldtype, "text") == 0 && strncmp(newtype, "char", 4) == 0) ||    // text vs char[N]
-             (strcmp(oldtype, "integer") == 0 && strcmp(newtype, "int") == 0))) {     // integer vs int
+            ((strcmp(oldtype, "text") == 0 && strncmp(newtype, "char", 4) == 0) || // text vs char[N]
+             (strcmp(oldtype, "integer") == 0 && strcmp(newtype, "int") == 0))) {  // integer vs int
             continue;
         }
 
@@ -174,15 +179,15 @@ static void do_type_checks(struct sqlclntstate *clnt, sqlite3_stmt *stmt,
     }
 
     if (decltype_mismatches) {
-        char fp[FINGERPRINTSZ*2+1]; /* 16 ==> 33 */
+        char fp[FINGERPRINTSZ * 2 + 1]; /* 16 ==> 33 */
         util_tohex(fp, (const char *)t->fingerprint, FINGERPRINTSZ);
 
         logmsg(LOGMSG_USER,
-                "TYPE MISMATCH DETECTED! Use the *typed API variant to "
-                "specify query output types and keep types stable across Comdb2 versions. "
-                "fp:%s mismatched -- old: %s new: %s\n",
-                fp,
-                strbuf_buf(oldtypes), strbuf_buf(newtypes));
+               "TYPE MISMATCH DETECTED! Use the *typed API variant to "
+               "specify query output types and keep types stable across Comdb2 versions. "
+               "fp:%s mismatched -- old: %s new: %s\n",
+               fp,
+               strbuf_buf(oldtypes), strbuf_buf(newtypes));
         t->typeMismatch = 1;
     }
 
@@ -228,7 +233,8 @@ void add_fingerprint(struct sqlclntstate *clnt, sqlite3_stmt *stmt, struct strin
     }
 
     Pthread_mutex_lock(&gbl_fingerprint_hash_mu);
-    if (gbl_fingerprint_hash == NULL) gbl_fingerprint_hash = hash_init(FINGERPRINTSZ);
+    if (gbl_fingerprint_hash == NULL)
+        gbl_fingerprint_hash = hash_init(FINGERPRINTSZ);
     struct fingerprint_track *t = hash_find(gbl_fingerprint_hash, fingerprint);
     if (t == NULL) {
         /* make sure we haven't generated an unreasonable number of these */
@@ -266,7 +272,7 @@ void add_fingerprint(struct sqlclntstate *clnt, sqlite3_stmt *stmt, struct strin
         }
         t->alert_once_truncated_col = 1;
 
-        char fp[FINGERPRINTSZ*2+1]; /* 16 ==> 33 */
+        char fp[FINGERPRINTSZ * 2 + 1]; /* 16 ==> 33 */
         util_tohex(fp, (char *)t->fingerprint, FINGERPRINTSZ);
         struct reqlogger *statlogger = NULL;
 
@@ -291,7 +297,7 @@ void add_fingerprint(struct sqlclntstate *clnt, sqlite3_stmt *stmt, struct strin
         if ((gbl_analyze_gen > t->curr_analyze_gen) && (t->check_next_queries == 0) && (t->count > CHECK_NEXT_QUERIES)) {
             if (t->count != 0) {
                 /* rows + end of result, number of rows can be zero too. */
-                t->pre_cost_avg_per_row = t->cost/(t->rows+t->count);
+                t->pre_cost_avg_per_row = t->cost / (t->rows + t->count);
             }
             t->curr_analyze_gen = gbl_analyze_gen;
             t->check_next_queries = CHECK_NEXT_QUERIES;
@@ -319,21 +325,21 @@ void add_fingerprint(struct sqlclntstate *clnt, sqlite3_stmt *stmt, struct strin
             t->check_next_queries--;
             /* rows + 1 (end of result), number of rows can be zero too. */
             nrows++;
-            int64_t avg_cost = cost/nrows;
-            if (avg_cost > (t->pre_cost_avg_per_row*1.2)) {
+            int64_t avg_cost = cost / nrows;
+            if (avg_cost > (t->pre_cost_avg_per_row * 1.2)) {
                 t->cost_increased++;
             }
-            if (t->check_next_queries == 0 && (t->cost_increased > CHECK_NEXT_QUERIES/2)) {
-                char fp[FINGERPRINTSZ*2+1]; /* 16 ==> 33 */
+            if (t->check_next_queries == 0 && (t->cost_increased > CHECK_NEXT_QUERIES / 2)) {
+                char fp[FINGERPRINTSZ * 2 + 1]; /* 16 ==> 33 */
                 util_tohex(fp, (char *)t->fingerprint, FINGERPRINTSZ);
-                ctrace("Cost %"PRId64" vs Previous Avg Cost %"PRId64" of Query %s with fingerprint %s increased after last Analyze. Backout?\n",
-                       t->cost/(t->rows+t->count) , t->pre_cost_avg_per_row, t->zNormSql, fp);
+                ctrace("Cost %" PRId64 " vs Previous Avg Cost %" PRId64 " of Query %s with fingerprint %s increased after last Analyze. Backout?\n",
+                       t->cost / (t->rows + t->count), t->pre_cost_avg_per_row, t->zNormSql, fp);
             }
         }
-        assert( memcmp(t->fingerprint,fingerprint,FINGERPRINTSZ)==0 );
-        assert( t->zNormSql!=zNormSql );
-        assert( t->nNormSql==nNormSql );
-        assert( strncmp(t->zNormSql,zNormSql,t->nNormSql)==0 );
+        assert(memcmp(t->fingerprint, fingerprint, FINGERPRINTSZ) == 0);
+        assert(t->zNormSql != zNormSql);
+        assert(t->nNormSql == nNormSql);
+        assert(strncmp(t->zNormSql, zNormSql, t->nNormSql) == 0);
     }
 
     if (clnt->adjusted_column_names && t->alert_once_truncated_col) {
@@ -356,8 +362,7 @@ void add_fingerprint(struct sqlclntstate *clnt, sqlite3_stmt *stmt, struct strin
 
     if (logger != NULL) {
         reqlog_set_fingerprint(
-            logger, (const char*)fingerprint, FINGERPRINTSZ
-        );
+            logger, (const char *)fingerprint, FINGERPRINTSZ);
     }
 done:
     if (fingerprint_out)

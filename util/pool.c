@@ -31,14 +31,14 @@
 #endif
 #include "logmsg.h"
 
-#define ALIGN(p, x) ( ((p) + (x) - 1) & ~((x) - 1) )
+#define ALIGN(p, x) (((p) + (x) - 1) & ~((x) - 1))
 
 struct pool {
     int entsz; /* entry size */
 
     struct freeblk {
         struct freeblk *next;
-    } * freeb; /* free list- renamed to freeb so it doesn't get pre-processed to
+    } *freeb; /* free list- renamed to freeb so it doesn't get pre-processed to
                   comdb2_free */
 
     int npool; /* number in pool */
@@ -51,7 +51,7 @@ struct pool {
 #ifndef BB_64BIT
         int zero[2]; /* keep on a 16 byte boundary */
 #endif
-    } * blocks;
+    } *blocks;
 
     int stepsz; /* number of blocks to allocate each time */
     poolmalloc_t *malloc_fn;
@@ -104,9 +104,15 @@ static void pool_stepup(pool_t *p)
     return;
 }
 
-void pool_setname(pool_t *p, char *name) { p->pool_name = name; }
+void pool_setname(pool_t *p, char *name)
+{
+    p->pool_name = name;
+}
 
-void pool_stats(pool_t *p, int onoff) { p->prstats = onoff; }
+void pool_stats(pool_t *p, int onoff)
+{
+    p->prstats = onoff;
+}
 
 static inline void pool_prstat(pool_t *p)
 {
@@ -124,7 +130,7 @@ static inline void pool_prstat(pool_t *p)
         }
         pool_info(p, &npool, &nused, &nblocks);
         logmsg(LOGMSG_USER, "%s: %d pools, %d used, %d blocks\n", name, npool,
-                nused, nblocks);
+               nused, nblocks);
         p->lastpr = now;
     }
 }
@@ -144,7 +150,7 @@ void pool_clear(pool_t *p)
     p->blocks = 0;
     if (p->nblocks != 0 || p->npool != 0) {
         logmsg(LOGMSG_ERROR, "emsg:pool_clear:%p:bad nblocks after clear %d\n", p,
-                p->npool);
+               p->npool);
     }
     p->nblocks = 0;
     p->npool = 0;
@@ -205,7 +211,7 @@ void pool_dump(pool_t *p, char *name)
     logmsg(LOGMSG_USER, "Entry size = %-10d    # ents in pool = %-10d\n", p->entsz,
            p->npool);
     logmsg(LOGMSG_USER, "    # used = %-10d            # free = %-10d\n", p->nused,
-            p->npool - p->nused);
+           p->npool - p->nused);
     logmsg(LOGMSG_USER, " Step size = %-10d          # blocks = %-10d\n", p->stepsz,
            p->nblocks);
 
@@ -370,11 +376,11 @@ void pool_dumpx(pool_t *p, char *name)
 
     logmsg(LOGMSG_USER, "DUMP POOL %s (%p)\n", name, p);
     logmsg(LOGMSG_USER, "Entry size = %-10d    # ents in pool = %-10d\n", p->entsz,
-            p->npool);
+           p->npool);
     logmsg(LOGMSG_USER, "    # used = %-10d            # free = %-10d\n", p->nused,
-            p->npool - p->nused);
+           p->npool - p->nused);
     logmsg(LOGMSG_USER, " Step size = %-10d          # blocks = %-10d\n", p->stepsz,
-            p->nblocks);
+           p->nblocks);
 
     for (fre = p->freeb, ii = 0; fre != 0 && ii <= p->npool + 1;
          ii++, fre = fre->next)

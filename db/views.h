@@ -30,9 +30,9 @@ enum view_partition_period {
     VIEW_PARTITION_MANUAL
 };
 
-#define IS_TIMEPARTITION(p)                                                    \
-    ((p) == VIEW_PARTITION_DAILY || (p) == VIEW_PARTITION_WEEKLY ||            \
-     (p) == VIEW_PARTITION_MONTHLY || (p) == VIEW_PARTITION_YEARLY ||          \
+#define IS_TIMEPARTITION(p)                                           \
+    ((p) == VIEW_PARTITION_DAILY || (p) == VIEW_PARTITION_WEEKLY ||   \
+     (p) == VIEW_PARTITION_MONTHLY || (p) == VIEW_PARTITION_YEARLY || \
      (p) == VIEW_PARTITION_TEST2MIN)
 
 enum view_partition_errors {
@@ -81,14 +81,14 @@ enum shard_pos {
 typedef struct timepart_sc_arg {
     /* input */
     struct schema_change_type *s;
-    char *part_name; /* need to know partition name from callback */
+    char *part_name;       /* need to know partition name from callback */
     int check_extra_shard; /* do we need to test the new shard(legacy) */
-    int start; /* start shard */
-    int cur_last; /* we want to process current shard last */
-    int lockless; /* free views lock during sc; all but new partitions */
+    int start;             /* start shard */
+    int cur_last;          /* we want to process current shard last */
+    int lockless;          /* free views lock during sc; all but new partitions */
     /* output */
-    int pos; /* is this the first and/or the last shard */
-    int indx;  /* currently selected shard index */
+    int pos;  /* is this the first and/or the last shard */
+    int indx; /* currently selected shard index */
 } timepart_sc_arg_t;
 
 extern int gbl_partitioned_table_enabled;
@@ -294,7 +294,7 @@ int comdb2_partition_check_name_reuse(const char *tblname, char **partname, int 
  * Callback receives the name of the shard and argument struct "arg"
  *
  */
-int timepart_foreach_shard(int func(const char*, timepart_view_t**, timepart_sc_arg_t*),
+int timepart_foreach_shard(int func(const char *, timepart_view_t **, timepart_sc_arg_t *),
                            timepart_sc_arg_t *arg);
 
 /**
@@ -304,7 +304,7 @@ int timepart_foreach_shard(int func(const char*, timepart_view_t**, timepart_sc_
  *
  */
 int timepart_foreach_shard_lockless(timepart_view_t *view,
-                                    int func(const char*, timepart_view_t**, timepart_sc_arg_t*),
+                                    int func(const char *, timepart_view_t **, timepart_sc_arg_t *),
                                     timepart_sc_arg_t *arg);
 
 /**
@@ -313,7 +313,6 @@ int timepart_foreach_shard_lockless(timepart_view_t *view,
  *
  */
 int views_cron_restart(timepart_views_t *views);
-
 
 /**
  * Update the retention of the existing partition
@@ -364,10 +363,8 @@ char *timepart_event_describe(sched_if_t *impl, cron_event_t *event);
  * Timepartition access routines
  *
  */
-int timepart_shards_grant_access(bdb_state_type *bdb_state, void *tran, char
-                                 *name, char *user, int access_type);
-int timepart_shards_revoke_access(bdb_state_type *bdb_state, void *tran, char
-                                  *name, char *user, int access_type);
+int timepart_shards_grant_access(bdb_state_type *bdb_state, void *tran, char *name, char *user, int access_type);
+int timepart_shards_revoke_access(bdb_state_type *bdb_state, void *tran, char *name, char *user, int access_type);
 
 /**
  * Check if name is time partition
@@ -494,7 +491,6 @@ int partition_publish(tran_type *tran, struct schema_change_type *sc);
  * Revert the results of partition publish (for cases when transaction fails
  */
 void partition_unpublish(struct schema_change_type *sc);
-
 
 /* called for a truncate rollout before finalize commits the tran */
 int partition_truncate_callback(tran_type *tran, struct schema_change_type *s);

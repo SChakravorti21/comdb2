@@ -16,17 +16,17 @@ struct fdb;
  * On success, *version points to a malloc’d string which the caller
  * must free.
  */
-int fdb_get_server_semver(const struct fdb * const fdb, const char **version);
+int fdb_get_server_semver(const struct fdb *const fdb, const char **version);
 
 /**
  * Retrieve the “dbname” portion of a foreign‐db object.
  */
-const char *fdb_dbname_name(const struct fdb * const fdb);
+const char *fdb_dbname_name(const struct fdb *const fdb);
 
 /**
  * Retrieve the routing‐class name for a foreign‐db object.
  */
-const char *fdb_dbname_class_routing(const struct fdb * const fdb);
+const char *fdb_dbname_class_routing(const struct fdb *const fdb);
 
 /**
  * Check if this fdb is local to the running node.
@@ -96,7 +96,7 @@ enum fdb_errors {
                                  feature is disabled locally */
     ,
     FDB_ERR_EXPRIDX_DISABLED =
-    -23 /* foreign table has expressions indexes but the feature is
+        -23 /* foreign table has expressions indexes but the feature is
                    disabled locally */
     ,
     FDB_ERR_INDEX_DESCRIBE = -24 /* failed to describe index */

@@ -158,7 +158,7 @@ int osql_open(struct dbenv *dbenv)
     rc = bdb_osql_init(&bdberr);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: failed to init bdb osql %d %d\n", __func__, rc,
-                bdberr);
+               bdberr);
         return -2;
     }
 
@@ -329,7 +329,7 @@ static int rese_commit(struct sqlclntstate *clnt, struct sql_thread *thd,
         irc = osql_sock_abort(clnt, osqlreq_type);
         if (irc) {
             logmsg(LOGMSG_ERROR, "%s: failed to abort sorese transaction rc=%d\n",
-                    __func__, rc);
+                   __func__, rc);
             rc = SQLITE_ERROR;
             goto goback;
         }
@@ -346,8 +346,8 @@ static int rese_commit(struct sqlclntstate *clnt, struct sql_thread *thd,
         if (rc && rc != SQLITE_ABORT && rc != SQLITE_DEADLOCK &&
             rc != SQLITE_BUSY && rc != SQLITE_CLIENT_CHANGENODE) {
             // XXX HERE IS THE BUG .. SQLITE_ERROR IS 1 - THE SAME AS DUP
-            logmsg(LOGMSG_ERROR, "%s line %d: rc is set to %d, changing rc to CLIENT_CHANGENODE\n", 
-                    __func__, __LINE__, rc);
+            logmsg(LOGMSG_ERROR, "%s line %d: rc is set to %d, changing rc to CLIENT_CHANGENODE\n",
+                   __func__, __LINE__, rc);
             rc = SQLITE_CLIENT_CHANGENODE;
             //rc = SQLITE_ERROR;
         }
@@ -380,7 +380,7 @@ static int sorese_abort(struct sqlclntstate *clnt, int osqlreq_type)
     rc = trans_abort_shadow((void **)&clnt->dbtran.shadow_tran, &bdberr);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: failed abort rc=%d bdberr=%d\n", __func__, rc,
-                bdberr);
+               bdberr);
     }
 
     return 0;
@@ -623,7 +623,7 @@ int osql_clean_sqlclntstate(struct sqlclntstate *clnt)
         rc = trans_abort_shadow((void **)&clnt->dbtran.shadow_tran, &bdberr);
         if (rc != 0) {
             logmsg(LOGMSG_ERROR, "%s:%d: abort shadow failed rc=%d bdberr=%d\n",
-                    __FILE__, __LINE__, rc, bdberr);
+                   __FILE__, __LINE__, rc, bdberr);
         }
     }
 
@@ -741,11 +741,10 @@ static void osql_scdone_abort_callback(struct ireq *iq)
         int rc = osql_delete_sc_list(uuid, NULL);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: failed to remove sc list rc %d\n",
-                    __func__, rc);
+                   __func__, rc);
         }
     }
     iq->tranddl = 0;
-
 }
 
 void osql_postcommit_handle(struct ireq *iq)

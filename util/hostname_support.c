@@ -99,31 +99,38 @@ char *get_hostname_by_fileno(int fd)
 {
     struct sockaddr_in saddr;
     socklen_t len = sizeof(saddr);
-    if (getpeername(fd, (struct sockaddr *)&saddr, &len)) return NULL;
+    if (getpeername(fd, (struct sockaddr *)&saddr, &len))
+        return NULL;
     char host[NI_MAXHOST];
-# ifdef DISABLE_HOSTADDR_CACHE
-    if (get_hostname_by_addr(&saddr, host, NI_MAXHOST)) return NULL;
+#ifdef DISABLE_HOSTADDR_CACHE
+    if (get_hostname_by_addr(&saddr, host, NI_MAXHOST))
+        return NULL;
     return strdup(host);
-# else
+#else
     char *name = find_peer_hash(saddr.sin_addr);
-    if (name) return name;
-    if (get_hostname_by_addr(&saddr, host, NI_MAXHOST)) return NULL;
+    if (name)
+        return name;
+    if (get_hostname_by_addr(&saddr, host, NI_MAXHOST))
+        return NULL;
     return add_peer_hash(saddr.sin_addr, host);
-# endif
+#endif
 }
 
 int get_hostname_by_fileno_v2(int fd, char *out, size_t sz)
 {
     struct sockaddr_in saddr;
     socklen_t len = sizeof(saddr);
-    if (getpeername(fd, (struct sockaddr *)&saddr, &len)) return -1;
-# ifdef DISABLE_HOSTADDR_CACHE
+    if (getpeername(fd, (struct sockaddr *)&saddr, &len))
+        return -1;
+#ifdef DISABLE_HOSTADDR_CACHE
     return get_hostname_by_addr(&saddr, out, sz);
-# else
+#else
     char *name = find_peer_hash(saddr.sin_addr);
-    if (name) return snprintf(out, sz, "%s", name) >= sz;
-    if (get_hostname_by_addr(&saddr, out, sz)) return -1;
+    if (name)
+        return snprintf(out, sz, "%s", name) >= sz;
+    if (get_hostname_by_addr(&saddr, out, sz))
+        return -1;
     add_peer_hash(saddr.sin_addr, out);
     return 0;
-# endif
+#endif
 }

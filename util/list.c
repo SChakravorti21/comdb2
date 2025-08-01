@@ -127,7 +127,10 @@ listc_t *listc_new(size_t diff)
     return l;
 }
 
-void listc_free(listc_t *l) { free(l); }
+void listc_free(listc_t *l)
+{
+    free(l);
+}
 
 void *listc_atl(listc_t *l, void *obj)
 {
@@ -191,7 +194,7 @@ void *listc_add_after(listc_t *l, void *obj, void *afterobj)
         /* bottom of list */
         if (l->bot != afterobj) {
             logmsg(LOGMSG_ERROR, "WARNING: ADD_AFTER %p WITH %p NOT IN LIST %p\n",
-                    obj, afterobj, l);
+                   obj, afterobj, l);
             return 0;
         }
         l->bot = obj;
@@ -222,7 +225,7 @@ void *listc_add_before(listc_t *l, void *obj, void *beforeobj)
         /* top of list */
         if (l->top != beforeobj) {
             logmsg(LOGMSG_ERROR, "WARNING: ADD_BEFORE %p WITH %p NOT IN LIST %p\n",
-                    obj, beforeobj, l);
+                   obj, beforeobj, l);
             return 0;
         }
         l->top = obj;
@@ -246,7 +249,8 @@ void *listc_maybe_rfl(listc_t *l, void *obj)
         return 0;
     }
     linkc_t *it = (linkc_t *)((intptr_t)obj + l->diff);
-    if (l->top != obj && it->prev == 0 && it->next == 0) return 0;
+    if (l->top != obj && it->prev == 0 && it->next == 0)
+        return 0;
     return listc_rfl(l, obj);
 }
 

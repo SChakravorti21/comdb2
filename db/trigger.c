@@ -48,10 +48,10 @@ typedef struct {
 } trigger_info_t;
 static hash_t *trigger_hash;
 
-#define GET_BDB_STATE_CAST(x, cast)                                            \
-    void *x = thedb->bdb_env;                                                  \
-    if (x == NULL) {                                                           \
-        return (cast)CDB2_TRIG_NOT_MASTER;                                     \
+#define GET_BDB_STATE_CAST(x, cast)        \
+    void *x = thedb->bdb_env;              \
+    if (x == NULL) {                       \
+        return (cast)CDB2_TRIG_NOT_MASTER; \
     }
 
 #define GET_BDB_STATE(x) GET_BDB_STATE_CAST(x, int)
@@ -118,7 +118,8 @@ static inline int trigger_register_int(trigger_reg_t *t)
     trigger_info_t *info;
     time_t now = time(NULL);
     if ((info = hash_find(trigger_hash, t->spname)) == NULL) {
-add:    info = malloc(sizeof(trigger_info_t) + t->spname_len + 1);
+    add:
+        info = malloc(sizeof(trigger_info_t) + t->spname_len + 1);
         info->host = intern(trigger_hostname(t));
         info->trigger_cookie = t->trigger_cookie;
         info->hbeat = now;
@@ -135,7 +136,8 @@ add:    info = malloc(sizeof(trigger_info_t) + t->spname_len + 1);
     if (diff >= gbl_queuedb_timeout_sec) {
         logmsg(LOGMSG_USER,
                "Heartbeat timeout:%.0fs sp:%s host:%s trigger_cookie:%016" PRIx64
-               "\n", diff, info->spname, info->host, info->trigger_cookie);
+               "\n",
+               diff, info->spname, info->host, info->trigger_cookie);
         ctrace("TRIGGER:%s %016" PRIx64 " UNASSIGNED TIMEOUT\n", info->spname, info->trigger_cookie);
         trigger_hash_del(info);
         goto add;
@@ -165,8 +167,7 @@ static int trigger_unregister_int(trigger_reg_t *t)
     trigger_info_t *info;
     if ((info = hash_find(trigger_hash, t->spname)) != NULL &&
         strcmp(info->host, trigger_hostname(t)) == 0 &&
-        info->trigger_cookie == t->trigger_cookie
-    ){
+        info->trigger_cookie == t->trigger_cookie) {
         ctrace("TRIGGER:%s %016" PRIx64 " UNASSIGNED\n", info->spname, info->trigger_cookie);
         trigger_hash_del(info);
         return CDB2_TRIG_REQ_SUCCESS;
@@ -205,7 +206,8 @@ static void *trigger_start_int(void *name)
 // called when master selects us as the candidate to run trigger 'name'
 void trigger_start(const char *name)
 {
-    if (!gbl_ready) return;
+    if (!gbl_ready)
+        return;
     pthread_t t;
     Pthread_mutex_lock(&trig_thd_cnt_lk);
     if (num_trigger_threads >= gbl_max_trigger_threads) {

@@ -36,7 +36,10 @@ enum {
 
 enum { REQL_BAD_CSTR_FLAG = 1 };
 
-typedef enum { EV_UNSET, EV_TXN, EV_SQL, EV_SP } evtype_t;
+typedef enum { EV_UNSET,
+               EV_TXN,
+               EV_SQL,
+               EV_SP } evtype_t;
 
 int reqlog_init(const char *dbname);
 struct reqlogger *reqlog_alloc(void);

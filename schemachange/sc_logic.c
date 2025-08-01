@@ -81,7 +81,8 @@ static void reset_sc_thread(enum thrtype oldtype, struct schema_change_type *s)
         backend_thread_event(thedb, COMDB2_THR_EVENT_DONE_RDWR);
 
         /* restore our  thread type to what it was before */
-        if (oldtype != THRTYPE_UNKNOWN) thrman_change_type(thr_self, oldtype);
+        if (oldtype != THRTYPE_UNKNOWN)
+            thrman_change_type(thr_self, oldtype);
     }
 }
 
@@ -259,10 +260,13 @@ int do_upgrade_table(struct schema_change_type *s, struct ireq *unused)
 
     set_original_tablename(s);
 
-    if (!s->resume) set_sc_flgs(s);
-    if ((rc = mark_sc_in_llmeta(s))) return rc;
+    if (!s->resume)
+        set_sc_flgs(s);
+    if ((rc = mark_sc_in_llmeta(s)))
+        return rc;
 
-    if (rc == SC_OK) rc = do_upgrade_table_int(s);
+    if (rc == SC_OK)
+        rc = do_upgrade_table_int(s);
 
     if (rc) {
         mark_schemachange_over(s->tablename);
@@ -485,7 +489,7 @@ static int do_ddl(ddl_t pre, ddl_t post, struct ireq *iq,
         s->sc_rc = SC_DETACHED;
     }
 
-    rc = pre(iq, s, NULL);                            // non-tran ??
+    rc = pre(iq, s, NULL); // non-tran ??
     if (s->done_type == alter && master_downgrading(s)) {
         s->sc_rc = SC_MASTER_DOWNGRADE;
         errstat_set_strf(
@@ -552,13 +556,16 @@ int do_alter_queues(struct schema_change_type *s, struct ireq *unused)
 
     set_original_tablename(s);
 
-    if (!s->resume) set_sc_flgs(s);
+    if (!s->resume)
+        set_sc_flgs(s);
 
     rc = propose_sc(s);
 
-    if (rc == SC_OK) rc = do_alter_queues_int(s);
+    if (rc == SC_OK)
+        rc = do_alter_queues_int(s);
 
-    if (master_downgrading(s)) return SC_MASTER_DOWNGRADE;
+    if (master_downgrading(s))
+        return SC_MASTER_DOWNGRADE;
 
     if (gbl_pushlogs_after_sc)
         push_next_log();
@@ -572,11 +579,13 @@ int do_alter_stripes(struct schema_change_type *s, struct ireq *unused)
 
     set_original_tablename(s);
 
-    if (!s->resume) set_sc_flgs(s);
+    if (!s->resume)
+        set_sc_flgs(s);
 
     rc = do_alter_stripes_int(s);
 
-    if (master_downgrading(s)) return SC_MASTER_DOWNGRADE;
+    if (master_downgrading(s))
+        return SC_MASTER_DOWNGRADE;
 
     if (gbl_pushlogs_after_sc)
         push_next_log();
@@ -588,13 +597,13 @@ int do_alter_stripes(struct schema_change_type *s, struct ireq *unused)
 char *get_ddl_type_str(struct schema_change_type *s)
 {
     char *sc_labels[] = {
-        "UNKNOWN",    "ALTER QUEUE",   "ALTER STRIPE", "QUEUE_DB",
-        "QUEUE_DB",   "VIEW",          "VIEW",         "ADDSP",
-        "DELSP",      "DEFAULTSP",     "SHOWSP",       "IS_TRIGGER",
-        "IS_TRIGGER", "IS_SFUNC",      "IS_SFUNC",     "IS_AFUNC",
-        "IS_AFUNC",   "UPGRADE",       "UPGRADE",      "DROP",
-        "TRUNCATE",   "CREATE",        "RENAME",       "ALIAS",
-        "ALTER",      "ALTER_PENDING", "REBUILD",      "ALTER_INDEX",
+        "UNKNOWN", "ALTER QUEUE", "ALTER STRIPE", "QUEUE_DB",
+        "QUEUE_DB", "VIEW", "VIEW", "ADDSP",
+        "DELSP", "DEFAULTSP", "SHOWSP", "IS_TRIGGER",
+        "IS_TRIGGER", "IS_SFUNC", "IS_SFUNC", "IS_AFUNC",
+        "IS_AFUNC", "UPGRADE", "UPGRADE", "DROP",
+        "TRUNCATE", "CREATE", "RENAME", "ALIAS",
+        "ALTER", "ALTER_PENDING", "REBUILD", "ALTER_INDEX",
         "DROP_INDEX", "REBUILD_INDEX"};
 
     return sc_labels[s->kind];
@@ -791,7 +800,7 @@ int do_schema_change_tran_thd(sc_arg_t *arg)
     rc = do_schema_change_tran_int(arg);
     bdb_thread_event(bdb_state, 0);
     if (rc == SC_COMMIT_PENDING) {
-       rc = SC_OK; 
+        rc = SC_OK;
     }
     return rc;
 }
@@ -828,7 +837,8 @@ int do_schema_change_locked(struct schema_change_type *s, void *tran)
 
 int finalize_schema_change(struct ireq *iq, tran_type *trans)
 {
-    if (iq == NULL || iq->sc == NULL) abort();
+    if (iq == NULL || iq->sc == NULL)
+        abort();
     assert(iq->sc->tran == NULL || iq->sc->tran == trans);
     struct schema_change_type *s = iq->sc;
     Pthread_mutex_lock(&s->mtx);
@@ -989,7 +999,7 @@ static int verify_sc_resumed_for_all_shards(void *obj, void *arg)
      * at this point we will block resuming a shard merging, give
      * the complexity of the changes involved
      */
-    struct schema_change_type *sc =  tpt_sc->s;
+    struct schema_change_type *sc = tpt_sc->s;
     while (sc) {
         if (sc->partition.type == PARTITION_MERGE) {
             break;
@@ -1042,9 +1052,9 @@ static int verify_sc_resumed_for_all_shards(void *obj, void *arg)
 }
 
 extern const uint8_t *osqlcomm_scl_get_key(struct sc_list *scl,
-        const uint8_t *p_buf, const uint8_t *p_buf_end);
+                                           const uint8_t *p_buf, const uint8_t *p_buf_end);
 extern const uint8_t *osqlcomm_scl_get(struct sc_list *scl,
-        const uint8_t *p_buf, const uint8_t *p_buf_end);
+                                       const uint8_t *p_buf, const uint8_t *p_buf_end);
 extern int osql_delete_sc_list(uuid_t uuid, tran_type *trans);
 
 /**
@@ -1148,7 +1158,6 @@ freetime:
     return rc;
 }
 
-
 int resume_schema_change(void)
 {
     int i;
@@ -1244,10 +1253,8 @@ int resume_schema_change(void)
             free(packed_sc_data);
 
             if (scabort || s->kind == SC_BULK_IMPORT) {
-                logmsg(LOGMSG_WARN, scabort
-                    ? "%s: Cancelling resume of schema change.\n"
-                    : "%s: Cancelling resume of schema change because it is a bulk import.\n",
-                    __func__);
+                logmsg(LOGMSG_WARN, scabort ? "%s: Cancelling resume of schema change.\n" : "%s: Cancelling resume of schema change because it is a bulk import.\n",
+                       __func__);
                 rc = bdb_set_in_schema_change(NULL, thedb->dbs[i]->tablename,
                                               NULL, 0, &bdberr);
                 if (rc)
@@ -1331,9 +1338,9 @@ int resume_schema_change(void)
                 rc = start_schema_change(s);
                 if (rc != SC_OK) {
                     logmsg(
-                            LOGMSG_ERROR,
-                            "%s: failed to resume schema change for table '%s' rc %d\n",
-                            __func__, s->tablename, rc);
+                        LOGMSG_ERROR,
+                        "%s: failed to resume schema change for table '%s' rc %d\n",
+                        __func__, s->tablename, rc);
                     /* start_schema_change will free if this fails */
                     /*
                        free_schema_change_type(s);
@@ -1387,7 +1394,8 @@ int open_temp_db_resume(struct ireq *iq, struct dbtable *db, char *prefix, int r
     int nbytes;
 
     nbytes = snprintf(NULL, 0, "%s%s", prefix, db->tablename);
-    if (nbytes <= 0) nbytes = 2;
+    if (nbytes <= 0)
+        nbytes = 2;
     nbytes++;
     tmpname = malloc(nbytes);
     snprintf(tmpname, nbytes, "%s%s", prefix, db->tablename);
@@ -1421,7 +1429,7 @@ int open_temp_db_resume(struct ireq *iq, struct dbtable *db, char *prefix, int r
     if (!db->handle) /* did not/could not open existing one, creating new one */
     {
         int rc;
-        tran_type * tmp_tran = tran;
+        tran_type *tmp_tran = tran;
     retry:
         if (!tmp_tran) {
             rc = trans_start(iq, NULL, &tmp_tran);
@@ -1658,14 +1666,20 @@ int do_setcompr(struct ireq *iq, const char *rec, const char *blob)
     struct dbtable *db = iq->usedb;
     bdb_lock_table_write(db->handle, tran);
     int ra, ba;
-    if ((rc = get_db_compress(db, &ra)) != 0) goto out;
-    if ((rc = get_db_compress_blobs(db, &ba)) != 0) goto out;
+    if ((rc = get_db_compress(db, &ra)) != 0)
+        goto out;
+    if ((rc = get_db_compress_blobs(db, &ba)) != 0)
+        goto out;
 
-    if (rec) ra = bdb_compr2algo(rec);
-    if (blob) ba = bdb_compr2algo(blob);
+    if (rec)
+        ra = bdb_compr2algo(rec);
+    if (blob)
+        ba = bdb_compr2algo(blob);
     bdb_set_odh_options(db->handle, db->odh, ra, ba);
-    if ((rc = put_db_compress(db, tran, ra)) != 0) goto out;
-    if ((rc = put_db_compress_blobs(db, tran, ba)) != 0) goto out;
+    if ((rc = put_db_compress(db, tran, ra)) != 0)
+        goto out;
+    if ((rc = put_db_compress_blobs(db, tran, ba)) != 0)
+        goto out;
     if ((rc = trans_commit(iq, tran, gbl_myhostname)) == 0) {
         logmsg(LOGMSG_USER, "%s -- TABLE:%s  REC COMP:%s  BLOB COMP:%s\n",
                __func__, db->tablename, bdb_algo2compr(ra), bdb_algo2compr(ba));

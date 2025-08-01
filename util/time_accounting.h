@@ -21,7 +21,10 @@
 
 #ifndef NDEBUG
 
-enum { CHR_IXADDK, CHR_DATADD, CHR_TMPSVOP, CHR_MAX };
+enum { CHR_IXADDK,
+       CHR_DATADD,
+       CHR_TMPSVOP,
+       CHR_MAX };
 
 /* NB: this construct is ment to encompass a function call like this:
  * ACCUMULATE_TIMING(CHR_FUNCTOMEASURE
@@ -34,16 +37,16 @@ enum { CHR_IXADDK, CHR_DATADD, CHR_TMPSVOP, CHR_MAX };
  * call print_time_accounting(CHR_FUNCTOMEASURE);
  */
 
-#define ACCUMULATE_TIMING(NAME, CODE)                                          \
-    do {                                                                       \
-        struct timeval __tv1;                                                  \
-        gettimeofday(&__tv1, NULL);                                            \
-        CODE;                                                                  \
-        struct timeval __tv2;                                                  \
-        gettimeofday(&__tv2, NULL);                                            \
-        int __sec_part = (__tv2.tv_sec - __tv1.tv_sec) * 1000000;              \
-        int __usec_part = (__tv2.tv_usec - __tv1.tv_usec);                     \
-        accumulate_time(NAME, __sec_part + __usec_part);                       \
+#define ACCUMULATE_TIMING(NAME, CODE)                             \
+    do {                                                          \
+        struct timeval __tv1;                                     \
+        gettimeofday(&__tv1, NULL);                               \
+        CODE;                                                     \
+        struct timeval __tv2;                                     \
+        gettimeofday(&__tv2, NULL);                               \
+        int __sec_part = (__tv2.tv_sec - __tv1.tv_sec) * 1000000; \
+        int __usec_part = (__tv2.tv_usec - __tv1.tv_usec);        \
+        accumulate_time(NAME, __sec_part + __usec_part);          \
     } while (0);
 
 void accumulate_time(int el, int us);
@@ -53,15 +56,15 @@ void print_all_time_accounting();
 
 #else
 
-#define ACCUMULATE_TIMING(NAME, CODE)                                          \
-    do {                                                                       \
-        CODE;                                                                  \
+#define ACCUMULATE_TIMING(NAME, CODE) \
+    do {                              \
+        CODE;                         \
     } while (0);
-#define print_all_time_accounting()                                            \
-    do {                                                                       \
+#define print_all_time_accounting() \
+    do {                            \
     } while (0);
-#define print_time_accounting(el)                                              \
-    do {                                                                       \
+#define print_time_accounting(el) \
+    do {                          \
     } while (0);
 #endif
 

@@ -53,21 +53,21 @@
 #include "csctypes.h"
 extern int gbl_datetime_precision;
 
-#define DTTZ_TEXT_TO_PREC(str, prec, def, action)                              \
-    if (str == NULL) {                                                         \
-        action;                                                                \
-    } else if ((str)[0] == 'm' || (str)[0] == 'M')                             \
-        prec = DTTZ_PREC_MSEC;                                                 \
-    else if ((str)[0] == 'u' || (str)[0] == 'U')                               \
-        prec = DTTZ_PREC_USEC;                                                 \
-    else if (atoi(str) == DTTZ_PREC_MSEC)                                      \
-        prec = DTTZ_PREC_MSEC;                                                 \
-    else if (atoi(str) == DTTZ_PREC_USEC)                                      \
-        prec = DTTZ_PREC_USEC;                                                 \
-    else if (def)                                                              \
-        prec = gbl_datetime_precision;                                         \
-    else {                                                                     \
-        action;                                                                \
+#define DTTZ_TEXT_TO_PREC(str, prec, def, action)  \
+    if (str == NULL) {                             \
+        action;                                    \
+    } else if ((str)[0] == 'm' || (str)[0] == 'M') \
+        prec = DTTZ_PREC_MSEC;                     \
+    else if ((str)[0] == 'u' || (str)[0] == 'U')   \
+        prec = DTTZ_PREC_USEC;                     \
+    else if (atoi(str) == DTTZ_PREC_MSEC)          \
+        prec = DTTZ_PREC_MSEC;                     \
+    else if (atoi(str) == DTTZ_PREC_USEC)          \
+        prec = DTTZ_PREC_USEC;                     \
+    else if (def)                                  \
+        prec = gbl_datetime_precision;             \
+    else {                                         \
+        action;                                    \
     }
 
 #include <plbitlib.h>
@@ -140,9 +140,9 @@ enum {
 **   0 -> truncate only
 **   1 -> truncate and increment
 */
-#define FIELD_CONV_OPTS_COMMON                                                 \
-    unsigned flags;                                                            \
-    int dbpad;                                                                 \
+#define FIELD_CONV_OPTS_COMMON \
+    unsigned flags;            \
+    int dbpad;                 \
     int step;
 
 struct field_conv_opts {
@@ -202,36 +202,36 @@ enum {
 
 extern int null_bit;
 
-#define set_data_int(to, from, sz, hdr)                                        \
-    do {                                                                       \
-        uint8_t *flag = (uint8_t *)(to);                                       \
-        *flag = hdr;                                                           \
-        ++flag;                                                                \
-        memcpy(flag, (from), (sz)-1);                                          \
+#define set_data_int(to, from, sz, hdr)  \
+    do {                                 \
+        uint8_t *flag = (uint8_t *)(to); \
+        *flag = hdr;                     \
+        ++flag;                          \
+        memcpy(flag, (from), (sz) - 1);  \
     } while (0)
 
-#define set_data(to, from, sz)                                                 \
-    do {                                                                       \
-        uint8_t hdr = 0;                                                       \
-        bset(&hdr, data_bit);                                                  \
-        set_data_int((to), (from), (sz), hdr);                                 \
+#define set_data(to, from, sz)                 \
+    do {                                       \
+        uint8_t hdr = 0;                       \
+        bset(&hdr, data_bit);                  \
+        set_data_int((to), (from), (sz), hdr); \
     } while (0)
 
 #define stype_is_null(p) btst(p, null_bit)
 
-#define set_null(p, len)                                                       \
-    do {                                                                       \
-        memset(p, 0, len);                                                     \
-        bset(p, null_bit);                                                     \
+#define set_null(p, len)   \
+    do {                   \
+        memset(p, 0, len); \
+        bset(p, null_bit); \
     } while (0)
 
 #define stype_is_resolve_master(p) btst(p, resolve_master_bit)
 
-#define set_resolve_master(p, len)                                                                                     \
-    do {                                                                                                               \
-        memset(p, 0, len);                                                                                             \
-        bset(p, null_bit);                                                                                             \
-        bset(p, resolve_master_bit);                                                                                   \
+#define set_resolve_master(p, len)   \
+    do {                             \
+        memset(p, 0, len);           \
+        bset(p, null_bit);           \
+        bset(p, resolve_master_bit); \
     } while (0)
 
 void comdb2_types_set_null_bit(int n);
@@ -251,8 +251,8 @@ enum {
 #define IS_CLIENT_TYPE(t) ((t) < CLIENT_MAXTYPE)
 #define IS_SERVER_TYPE(t) ((t) > SERVER_MINTYPE)
 
-#define CLIENT_TYPE_CAN_BE_PARTIAL(type)                                       \
-    ((type) == CLIENT_CSTR || (type) == CLIENT_PSTR ||                         \
+#define CLIENT_TYPE_CAN_BE_PARTIAL(type)               \
+    ((type) == CLIENT_CSTR || (type) == CLIENT_PSTR || \
      (type) == CLIENT_BYTEARRAY || (type) == CLIENT_PSTR2)
 
 /* This macro defines the characters that are valid in a string type
@@ -373,9 +373,9 @@ BB_COMPILE_TIME_ASSERT(server_intv_dsus_type_len,
 #define DFP_64_EXPBITS 10
 #define DFP_128_EXPBITS 14
 
-#define DECSINGLE_PACKED_COEF                                                  \
+#define DECSINGLE_PACKED_COEF \
     (((DECSINGLE_Pmax + 1) / 2) + (DECSINGLE_Pmax + 1) % 2)
-#define DECDOUBLE_PACKED_COEF                                                  \
+#define DECDOUBLE_PACKED_COEF \
     (((DECDOUBLE_Pmax + 1) / 2) + (DECDOUBLE_Pmax + 1) % 2)
 #define DECQUAD_PACKED_COEF (((DECQUAD_Pmax + 1) / 2) + (DECQUAD_Pmax + 1) % 2)
 

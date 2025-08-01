@@ -218,7 +218,7 @@ static void print_connect_error(const struct sockaddr *name, const char *func)
                   (const void *)&((struct sockaddr_in *)name)->sin_addr,
                   addr_str, sizeof(addr_str));
     logmsg(LOGMSG_ERROR, "tcplib:%s:connect failed to %s errno %s\n", func,
-            p_str ? addr_str : "unknown", strerror(errnocpy));
+           p_str ? addr_str : "unknown", strerror(errnocpy));
     errno = errnocpy;
 }
 
@@ -370,7 +370,7 @@ static int do_tcpconnect(struct in_addr in, int port, int myport, int timeoutms,
                                           htons((unsigned short)myport)};
         if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof my_addr) < 0) {
             logmsg(LOGMSG_ERROR, "do_tcpconnect: bind failed on local port %d: %s",
-                    myport, strerror(errno));
+                   myport, strerror(errno));
             Close(sockfd);
             return -1;
         }
@@ -469,16 +469,16 @@ int tcpfdopen(int insd, FILE **ainfil, char *inbuf, int linbuf, int ibtyp,
     }
     if ((rc = setvbuf(infil, inbuf, ibtyp, linbuf)) != 0) {
         logmsg(LOGMSG_ERROR, "emsg:tcpfdopen:failed setvbuf r typ "
-                        "%d sz %d\n",
-                ibtyp, linbuf);
+                             "%d sz %d\n",
+               ibtyp, linbuf);
         fclose(infil);
         fclose(outfil);
         return -4;
     }
     if ((rc = setvbuf(outfil, outbuf, obtyp, loutbuf)) != 0) {
         logmsg(LOGMSG_ERROR, "emsg:tcpfdopen:failed setvbuf w typ "
-                        "%d sz %d\n",
-                obtyp, loutbuf);
+                             "%d sz %d\n",
+               obtyp, loutbuf);
         fclose(infil);
         fclose(outfil);
         return -5;

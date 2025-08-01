@@ -173,7 +173,6 @@ int osql_record_genid(struct BtCursor *pCur, struct sql_thread *thd,
 
 int osql_updstat(struct BtCursor *);
 
-
 /**
 *
 * Process a schema change request

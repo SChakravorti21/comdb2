@@ -36,20 +36,20 @@
 
 /* bb */
 #if SBUF2_SERVER
-#  include <openssl/rand.h> /* RAND_pseudo_bytes() */
-#  include "mem_util.h" /* subsystem malloc routines. */
-#  include <mem_override.h> /* override malloc routines. */
+#include <openssl/rand.h> /* RAND_pseudo_bytes() */
+#include "mem_util.h"     /* subsystem malloc routines. */
+#include <mem_override.h> /* override malloc routines. */
 #endif
 
 #ifdef my_ssl_println
-#  undef my_ssl_println
+#undef my_ssl_println
 #endif
 #ifdef my_ssl_eprintln
-#  undef my_ssl_eprintln
+#undef my_ssl_eprintln
 #endif
-#define my_ssl_println(fmt, ...)     \
+#define my_ssl_println(fmt, ...) \
     ssl_println("Generic", fmt, ##__VA_ARGS__)
-#define my_ssl_eprintln(fmt, ...)    \
+#define my_ssl_eprintln(fmt, ...) \
     ssl_eprintln("Generic", "%s: " fmt, __func__, ##__VA_ARGS__)
 
 #if SBUF2_SERVER
@@ -67,7 +67,7 @@ int SBUF2_FUNC(ssl_new_ctx)(SSL_CTX **pctx, ssl_mode mode, const char *dir,
     int rc = 0;
     int servermode;
     struct stat buf;
-    STACK_OF(X509_NAME) *cert_names;
+    STACK_OF(X509_NAME) * cert_names;
     long options = 0;
     int ii;
 
@@ -114,14 +114,14 @@ int SBUF2_FUNC(ssl_new_ctx)(SSL_CTX **pctx, ssl_mode mode, const char *dir,
                 cert = strdup(buffer);
                 if (cert == NULL) {
                     ssl_sfeprint(err, n, my_ssl_eprintln,
-                            "Failed to duplicate string: %s.",
-                            strerror(errno));
+                                 "Failed to duplicate string: %s.",
+                                 strerror(errno));
                     goto error;
                 }
             } else if (servermode) {
                 ssl_sfeprint(err, n, my_ssl_eprintln,
-                        "Could not find server certificate:%s.",
-                        buffer);
+                             "Could not find server certificate:%s.",
+                             buffer);
                 goto error;
             }
         }
@@ -134,14 +134,14 @@ int SBUF2_FUNC(ssl_new_ctx)(SSL_CTX **pctx, ssl_mode mode, const char *dir,
                 key = strdup(buffer);
                 if (key == NULL) {
                     ssl_sfeprint(err, n, my_ssl_eprintln,
-                            "Failed to duplicate string: %s.",
-                            strerror(errno));
+                                 "Failed to duplicate string: %s.",
+                                 strerror(errno));
                     goto error;
                 }
             } else if (servermode) {
                 ssl_sfeprint(err, n, my_ssl_eprintln,
-                        "Could not find server key:%s.",
-                        buffer);
+                             "Could not find server key:%s.",
+                             buffer);
                 goto error;
             }
         }
@@ -262,11 +262,10 @@ int SBUF2_FUNC(ssl_new_ctx)(SSL_CTX **pctx, ssl_mode mode, const char *dir,
     if (mintlsver < 0)
         mintlsver = 0;
 
-    #define XMACRO_SSL_NO_PROTOCOLS(a, b, c) {a,b,c},
+#define XMACRO_SSL_NO_PROTOCOLS(a, b, c) {a, b, c},
     struct ssl_no_protocols ssl_no_protocols[] = {
-        SSL_NO_PROTOCOLS
-    };
-    #undef XMACRO_SSL_NO_PROTOCOLS
+        SSL_NO_PROTOCOLS};
+#undef XMACRO_SSL_NO_PROTOCOLS
 
 #ifdef SSL_OP_NO_COMPRESSION
     options |= SSL_OP_NO_COMPRESSION;
@@ -285,7 +284,7 @@ int SBUF2_FUNC(ssl_new_ctx)(SSL_CTX **pctx, ssl_mode mode, const char *dir,
     /* We need the flag to be able to write as fast as possible.
        We let sbuf2/comdb2buf take care of uncomplete writes. */
     SSL_CTX_set_mode(myctx, SSL_MODE_ENABLE_PARTIAL_WRITE |
-                            SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+                                SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     /* Adjust session cache size. */
     if (sess_sz < 0)
@@ -401,7 +400,8 @@ int SBUF2_FUNC(ssl_new_ctx)(SSL_CTX **pctx, ssl_mode mode, const char *dir,
 
     /* SSL success is 1. We want to return 0 upon success. */
     if (rc != 1) {
-error:  if (myctx != NULL) {
+    error:
+        if (myctx != NULL) {
             SSL_CTX_free(myctx);
             myctx = NULL;
         }

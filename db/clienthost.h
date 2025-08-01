@@ -30,7 +30,8 @@ struct clienthost {
     int mach_class;
     struct interned_string *s;
     int machine_dc;
-    LINKC_T (struct clienthost) lnk;
+    LINKC_T(struct clienthost)
+    lnk;
 };
 
 void clienthost_lock(void);

@@ -44,7 +44,10 @@ int gbl_prefault_toblock_local = 1;
 extern pthread_t gbl_invalid_tid;
 pthread_t gbl_invalid_tid2;
 
-int prefault_check_enabled(void) { return gbl_prefaulthelperthreads; }
+int prefault_check_enabled(void)
+{
+    return gbl_prefaulthelperthreads;
+}
 
 void clear_pfk(struct dbenv *dbenv, int i, int numops)
 {

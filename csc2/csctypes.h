@@ -33,21 +33,24 @@ XMACRO_CLIENT_TYPE(CLIENT_MAXTYPE,    18, "max")
 
 /* CLIENT side types */
 #ifdef XMACRO_CLIENT_TYPE
-#   undef XMACRO_CLIENT_TYPE
+#undef XMACRO_CLIENT_TYPE
 #endif
 #define XMACRO_CLIENT_TYPE(a, b, c) a,
 enum { CLIENT_TYPES };
 
 #undef XMACRO_CLIENT_TYPE
-#define XMACRO_CLIENT_TYPE(a, b, c) case a: client_type_to_str = c; break;
-#define CLIENT_TYPE_TO_STR(type)                                               \
-({                                                                             \
-    char *client_type_to_str  = "unknown";                                     \
-    switch (type) {                                                            \
-    CLIENT_TYPES                                                               \
-    }                                                                          \
-    client_type_to_str;                                                        \
-})
+#define XMACRO_CLIENT_TYPE(a, b, c) \
+    case a:                         \
+        client_type_to_str = c;     \
+        break;
+#define CLIENT_TYPE_TO_STR(type)              \
+    ({                                        \
+        char *client_type_to_str = "unknown"; \
+        switch (type) {                       \
+            CLIENT_TYPES                      \
+        }                                     \
+        client_type_to_str;                   \
+    })
 
 /* ONDISK types */
 enum {

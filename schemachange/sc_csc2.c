@@ -39,7 +39,8 @@ int check_table_schema(struct dbenv *dbenv, const char *table,
     int rc;
     struct dbtable *db;
 
-    if (debug_switch_skip_table_schema_check()) return 0;
+    if (debug_switch_skip_table_schema_check())
+        return 0;
 
     db = get_dbtable_by_name(table);
     if (!db) {
@@ -83,7 +84,8 @@ int check_table_schema(struct dbenv *dbenv, const char *table,
         /* on master node, store schema if we don't have one already. */
         file_csc2 = load_text_file(csc2file);
         if (!file_csc2) {
-            if (meta_csc2) free(meta_csc2);
+            if (meta_csc2)
+                free(meta_csc2);
             return -1;
         }
 
@@ -98,8 +100,10 @@ int check_table_schema(struct dbenv *dbenv, const char *table,
         rc = 0;
     }
 
-    if (meta_csc2) free(meta_csc2);
-    if (file_csc2) free(file_csc2);
+    if (meta_csc2)
+        free(meta_csc2);
+    if (file_csc2)
+        free(file_csc2);
     return rc;
 }
 
@@ -154,7 +158,8 @@ int load_new_table_schema_tran(struct dbenv *dbenv, tran_type *tran,
     int version;
     struct dbtable *db = get_dbtable_by_name(table);
 
-    if (debug_switch_skip_table_schema_check()) return 0;
+    if (debug_switch_skip_table_schema_check())
+        return 0;
     if (db && db->sc_to) {
         version = db->sc_to->schema_version;
     } else {
@@ -258,7 +263,8 @@ int get_csc2_fname(const struct dbtable *db, const char *dir, char *fname,
     int rc;
 
     rc = snprintf(fname, fname_len, "%s/%s.csc2", dir, db->tablename);
-    if (rc < 0 || rc >= fname_len) return -1;
+    if (rc < 0 || rc >= fname_len)
+        return -1;
 
     return 0;
 }
@@ -359,9 +365,11 @@ int dump_table_csc2_to_disk(const char *table)
     char *meta_csc2 = NULL;
     int meta_csc2_len;
 
-    if (!(p_db = get_dbtable_by_name(table))) return 1;
+    if (!(p_db = get_dbtable_by_name(table)))
+        return 1;
 
-    if (p_db->dbtype != DBTYPE_TAGGED_TABLE) return 1;
+    if (p_db->dbtype != DBTYPE_TAGGED_TABLE)
+        return 1;
 
     if ((version = get_csc2_version(p_db->tablename)) < 0) {
         logmsg(LOGMSG_ERROR,

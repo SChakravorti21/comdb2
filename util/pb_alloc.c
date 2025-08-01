@@ -17,9 +17,9 @@
 #include <pb_alloc.h>
 #include <mem_protobuf.h>
 
-static void* malloc_wrap(void *allocator_data, size_t n)
+static void *malloc_wrap(void *allocator_data, size_t n)
 {
-    return comdb2_malloc_protobuf (n);
+    return comdb2_malloc_protobuf(n);
 }
 
 static void free_wrap(void *allocator_data, void *p)
@@ -29,11 +29,10 @@ static void free_wrap(void *allocator_data, void *p)
 
 ProtobufCAllocator pb_alloc = {
     .alloc = malloc_wrap,
-    .free  = free_wrap
-};
+    .free = free_wrap};
 
 ProtobufCAllocator setup_pb_allocator(pb_alloc_func *af, pb_free_func *ff, void *arg)
 {
-    ProtobufCAllocator pb = { .alloc = af, .free  = ff, .allocator_data = arg };
+    ProtobufCAllocator pb = {.alloc = af, .free = ff, .allocator_data = arg};
     return pb;
 }

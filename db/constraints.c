@@ -36,7 +36,6 @@
 #include "sqloffload.h"
 #include "eventlog.h"
 
-
 static char *get_temp_ct_dbname(long long *);
 static int is_update_op(int op);
 static int is_delete_op(int op);
@@ -158,7 +157,7 @@ static int insert_add_index(struct ireq *iq, unsigned long long genid)
             iq->idxInsert[i], getkeysize(iq->usedb, i), &err);
         if (rc != 0) {
             logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_insert rc = %d\n", __func__,
-                    rc);
+                   rc);
             goto out;
         }
     }
@@ -245,7 +244,9 @@ static inline void free_cached_delayed_indexes(struct ireq *iq)
     }
 }
 
-enum ct_etype { CTE_ADD = 1, CTE_DEL, CTE_UPD };
+enum ct_etype { CTE_ADD = 1,
+                CTE_DEL,
+                CTE_UPD };
 
 struct forward_ct {
     unsigned long long genid;
@@ -557,7 +558,7 @@ int check_update_constraints(struct ireq *iq, void *trans,
 
             if (cnstrt->lcltable->ix_collattr[rixnum]) {
                 rc = extract_decimal_quantum(cnstrt->lcltable, rixnum, rkey, NULL,
-                                           0, NULL);
+                                             0, NULL);
                 if (rc) {
                     abort(); /* called doesn't return error for these arguments,
                                 at least not now */
@@ -602,7 +603,7 @@ int check_update_constraints(struct ireq *iq, void *trans,
 #endif
                 } else if (cnstrt->lcltable->ix_collattr[rixnum]) {
                     rc = extract_decimal_quantum(cnstrt->lcltable, rixnum, rnkey,
-                                               NULL, 0, NULL);
+                                                 NULL, 0, NULL);
                     if (rc) {
                         abort(); /* called doesn't return error for these
                                     arguments, at least not now */
@@ -612,7 +613,7 @@ int check_update_constraints(struct ireq *iq, void *trans,
 
             if (iq->debug) {
                 reqprintf(iq, "insert_del_op TBL %s IX %d (%s) CHECK ON TBL %s IX %d (%s) ",
-                          iq->usedb->tablename, ixnum, cnstrt->keynm[j],  cnstrt->lcltable->tablename,
+                          iq->usedb->tablename, ixnum, cnstrt->keynm[j], cnstrt->lcltable->tablename,
                           rixnum, cnstrt->lclkeyname);
                 reqdumphex(iq, rkey, rixlen);
                 reqmoref(iq, " RC %d", rc);
@@ -1108,7 +1109,6 @@ int verify_del_constraints(struct ireq *iq, void *trans, int *errout)
     return ERR_INTERNAL;
 }
 
-
 /* this is called twice so putting here to avoid mess */
 #define LIVE_SC_DELAYED_KEY_ADDS(LAST)                                         \
     do {                                                                       \
@@ -1133,27 +1133,24 @@ int verify_del_constraints(struct ireq *iq, void *trans, int *errout)
                    __func__, __LINE__, lrc, genid);                            \
     } while (0);
 
+#define REC_ERROR_LOG(fmt, ...)                                                                                                             \
+    do {                                                                                                                                    \
+        EVENTLOG_DEBUG(                                                                                                                     \
+            uuidstr_t us;                                                                                                                   \
+            if (iq->sorese) {                                                                                                               \
+                comdb2uuidstr(iq->sorese->uuid, us);                                                                                        \
+            } else {                                                                                                                        \
+                uuid_t u;                                                                                                                   \
+                comdb2uuid_clear(u);                                                                                                        \
+                comdb2uuidstr(u, us);                                                                                                       \
+            } eventlog_debug("%s:%d uuid %s tbl %s " fmt, __func__, __LINE__, us, iq->usedb ? iq->usedb->tablename : "???", __VA_ARGS__);); \
+    } while (0)
 
-#define REC_ERROR_LOG(fmt, ...) do {            \
-    EVENTLOG_DEBUG (            \
-        uuidstr_t us;   \
-        if (iq->sorese) { \
-            comdb2uuidstr(iq->sorese->uuid, us); \
-        } \
-        else {  \
-            uuid_t u; \
-            comdb2uuid_clear(u); \
-            comdb2uuidstr(u, us); \
-        } \
-        eventlog_debug("%s:%d uuid %s tbl %s " fmt, __func__, __LINE__, us, iq->usedb ? iq->usedb->tablename : "???",  __VA_ARGS__);            \
-    );            \
-} while(0)
-
-
-#define ERR(_ret, fmt, ...) do { \
-    REC_ERROR_LOG(fmt, __VA_ARGS__); \
-    return _ret; \
-} while(0)
+#define ERR(_ret, fmt, ...)              \
+    do {                                 \
+        REC_ERROR_LOG(fmt, __VA_ARGS__); \
+        return _ret;                     \
+    } while (0)
 
 int delayed_key_adds(struct ireq *iq, void *trans, int *blkpos, int *ixout,
                      int *errout)
@@ -1166,7 +1163,6 @@ int delayed_key_adds(struct ireq *iq, void *trans, int *blkpos, int *ixout,
     int od_tail_len = 0;
     char mangled_key[MAXKEYLEN + 1];
     char partial_datacopy_tail[MAXRECSZ];
-
 
 #if DEBUG_REORDER
     logmsg(LOGMSG_DEBUG, "%s(): entering\n", __func__);
@@ -1312,7 +1308,7 @@ int delayed_key_adds(struct ireq *iq, void *trans, int *blkpos, int *ixout,
         if (cached_index_genid != genid) {
             if (cache_delayed_indexes(iq, genid)) {
                 logmsg(LOGMSG_ERROR, "%s failed to cache delayed indexes\n",
-                        __func__);
+                       __func__);
                 *errout = OP_FAILED_INTERNAL;
                 close_constraint_table_cursor(cur);
                 free_cached_delayed_indexes(iq);
@@ -1387,10 +1383,9 @@ int delayed_key_adds(struct ireq *iq, void *trans, int *blkpos, int *ixout,
             }
 
             EVENTLOG_DEBUG(
-                char keyhex[(MAXKEYLEN+1) * 2 + 1];
+                char keyhex[(MAXKEYLEN + 1) * 2 + 1];
                 util_tohex(keyhex, key, bdb_keylen(iq->usedb->handle, idx));
-                REC_ERROR_LOG("ix %d key %s", idx, keyhex);
-            );
+                REC_ERROR_LOG("ix %d key %s", idx, keyhex););
 
             /* light the prefault kill bit for this subop - newkeys */
             prefault_kill_bits(iq, doidx, PFRQ_NEWKEY);
@@ -1453,10 +1448,9 @@ int delayed_key_adds(struct ireq *iq, void *trans, int *blkpos, int *ixout,
                 }
                 ERR(rc, "error", 0);
             }
-            if (rc == 0 && gbl_max_wr_logbytes_per_txn && (iq->written_logbytes_count >
-                        gbl_max_wr_logbytes_per_txn)) {
+            if (rc == 0 && gbl_max_wr_logbytes_per_txn && (iq->written_logbytes_count > gbl_max_wr_logbytes_per_txn)) {
                 reqerrstr(iq, COMDB2_CSTRT_RC_TRN_TOO_BIG,
-                        "Transaction exceeds max log-bytes limit");
+                          "Transaction exceeds max log-bytes limit");
                 rc = ERR_TRAN_TOO_BIG;
                 *blkpos = curop->blkpos;
                 *errout = OP_FAILED_INTERNAL;
@@ -1478,7 +1472,7 @@ int delayed_key_adds(struct ireq *iq, void *trans, int *blkpos, int *ixout,
         if (cached_index_genid != genid) {
             if (cache_delayed_indexes(iq, genid)) {
                 logmsg(LOGMSG_ERROR, "%s failed to cache delayed indexes\n",
-                        __func__);
+                       __func__);
                 *errout = OP_FAILED_INTERNAL;
                 close_constraint_table_cursor(cur); // AZ: this is wrong!?
                 return ERR_INTERNAL;
@@ -1767,7 +1761,7 @@ int verify_add_constraints(struct ireq *iq, void *trans, int *errout)
 
                     if (ftable->ix_collattr[fixnum]) {
                         rc = extract_decimal_quantum(ftable, fixnum, fkey, NULL,
-                                                   0, NULL);
+                                                     0, NULL);
                         if (rc) {
                             abort(); /* called doesn't return error for these
                                         arguments, at least not now */
@@ -1807,7 +1801,7 @@ int verify_add_constraints(struct ireq *iq, void *trans, int *errout)
                             reqmoref(iq, " RC %d", rc);
                         }
 
-                        generate_fkconstraint_error(iq, get_dbtable_by_name(ct->lcltable->tablename), ondisk_tag, 
+                        generate_fkconstraint_error(iq, get_dbtable_by_name(ct->lcltable->tablename), ondisk_tag,
                                                     ftable, fondisk_tag,
                                                     "key value does not exist in parent table");
                         *errout = OP_FAILED_INTERNAL + ERR_FIND_CONSTRAINT;
@@ -1817,9 +1811,9 @@ int verify_add_constraints(struct ireq *iq, void *trans, int *errout)
                     }
                     if (iq->debug) {
                         reqprintf(iq, "VERKYCNSTRT VERIFIED %s:%s AGAINST %s:%s ",
-                            iq->usedb->tablename, ct->lclkeyname, ct->table[ridx], ct->keynm[ridx]);
-                            reqdumphex(iq, fkey, fixlen);
-                            reqmoref(iq, " RC %d", rc);
+                                  iq->usedb->tablename, ct->lclkeyname, ct->table[ridx], ct->keynm[ridx]);
+                        reqdumphex(iq, fkey, fixlen);
+                        reqmoref(iq, " RC %d", rc);
                     }
                 }
             }
@@ -2290,7 +2284,7 @@ int populate_reverse_constraints(struct dbtable *db)
             if (sckey == NULL) {
                 ++n_errors;
                 logmsg(LOGMSG_ERROR, "constraint error for key %s: key %s is not found in "
-                       "table %s\n",
+                                     "table %s\n",
                        cnstrt->lclkeyname, cnstrt->keynm[jj],
                        cnstrt->table[jj]);
                 continue;
@@ -2394,7 +2388,6 @@ constraint_t *get_constraint_for_ix(struct dbtable *db_table, int ix)
     return NULL;
 }
 
-
 /* helper method to convert from this tbl key to a foreign key
  */
 int convert_key_to_foreign_key(constraint_t *ct, char *lcl_tag, char *lcl_key,
@@ -2474,7 +2467,6 @@ int update_constraint_genid(struct ireq *iq, int opcode, int blkpos, int flags,
     void bdb_temp_table_debug_dump(bdb_state_type * bdb_state, void *cur, int);
     bdb_temp_table_debug_dump(thedb->bdb_env, cur, LOGMSG_DEBUG);
 #endif
-
 
     rc = bdb_temp_table_first(thedb->bdb_env, cur, &err);
     if (rc == IX_EMPTY) {

@@ -82,9 +82,15 @@ void reqerrstrhdr(struct ireq *iq, char *format, ...)
     va_end(ap);
 }
 
-void reqerrstrclr(struct ireq *iq) { errstat_clr(&iq->errstat); }
+void reqerrstrclr(struct ireq *iq)
+{
+    errstat_clr(&iq->errstat);
+}
 
-void reqerrstrhdrclr(struct ireq *iq) { errstat_clr_hdr(&iq->errstat); }
+void reqerrstrhdrclr(struct ireq *iq)
+{
+    errstat_clr_hdr(&iq->errstat);
+}
 
 void reqdumphex(struct ireq *iq, void *buf, int nb)
 {

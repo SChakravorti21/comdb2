@@ -46,7 +46,8 @@ static char *ctime_r_nnl(time_t *t, char *out)
 {
     ctime_r(t, out);
     size_t n = strlen(out);
-    if (out[n - 1] == '\n') out[n - 1] = 0;
+    if (out[n - 1] == '\n')
+        out[n - 1] = 0;
     return out;
 }
 
@@ -84,18 +85,18 @@ void reset_aa_counter(char *tblname)
 
     char my_buf[30];
     char my_buf2[30];
-    ctrace("AUTOANALYZE: Analyzed Table %s, reseting counter to %"PRId64", last run time %s, needs analyze time %s\n",
+    ctrace("AUTOANALYZE: Analyzed Table %s, reseting counter to %" PRId64 ", last run time %s, needs analyze time %s\n",
            tbl->tablename, tbl->aa_saved_counter,
            ctime_r_nnl((time_t *)&tbl->aa_lastepoch, my_buf),
            ctime_r_nnl((time_t *)&tbl->aa_needs_analyze_time, my_buf2));
 }
 
-#define loc_print_date(t, outresult)                                                               \
-    ({                                                                                             \
-        struct tm tmresult;                                                                        \
-        localtime_r((time_t *)t, &tmresult);                                                                 \
-        strftime(outresult, sizeof(outresult), "%F %T (%s)", &tmresult);                           \
-        outresult;                                                                                 \
+#define loc_print_date(t, outresult)                                     \
+    ({                                                                   \
+        struct tm tmresult;                                              \
+        localtime_r((time_t *)t, &tmresult);                             \
+        strftime(outresult, sizeof(outresult), "%F %T (%s)", &tmresult); \
+        outresult;                                                       \
     })
 
 /* auto_analyze_table() will be passed a copy of the table name,
@@ -119,7 +120,7 @@ void *auto_analyze_table(void *arg)
     logmsg(LOGMSG_WARN, "%s: STARTING %s\n", __func__, tblname);
     SBUF2 *sb = sbuf2open(fileno(stdout), 0);
     bdb_thread_event(thedb->bdb_env, BDBTHR_EVENT_START_RDWR);
-    int percent = bdb_attr_get(thedb->bdb_attr, 
+    int percent = bdb_attr_get(thedb->bdb_attr,
                                BDB_ATTR_DEFAULT_ANALYZE_PERCENT);
 
     if ((rc = analyze_table(tblname, sb, percent, 0, 1)) == 0) {
@@ -189,16 +190,16 @@ int load_auto_analyze_counters_tran(tran_type *trans)
         int64_t saved_counter = 0;
         int64_t lastepoch = 0;
         int64_t needs_analyze_time = 0;
-        
+
         if (save_freq > 0) {
             get_saved_counter_epochs(trans, tbl->tablename, &saved_counter, &lastepoch, &needs_analyze_time);
             char my_buf[30];
             char my_buf2[30];
-            ctrace("AUTOANALYZE: Loading table %s, count %"PRId64", last run time %s, needs analyze time %s\n",
+            ctrace("AUTOANALYZE: Loading table %s, count %" PRId64 ", last run time %s, needs analyze time %s\n",
                    tbl->tablename, saved_counter, ctime_r_nnl((time_t *)&lastepoch, my_buf),
                    ctime_r_nnl((time_t *)&needs_analyze_time, my_buf2));
         }
-        
+
         XCHANGE64(tbl->aa_saved_counter, saved_counter);
         XCHANGE64(tbl->aa_lastepoch, lastepoch);
         XCHANGE64(tbl->aa_needs_analyze_time, needs_analyze_time);
@@ -287,9 +288,9 @@ void get_auto_analyze_tbl_stats(struct dbtable *tbl, int include_updates, int *d
                                 int64_t *newautoanalyze_counter, double *new_aa_percnt)
 {
     int64_t prev = tbl->saved_write_count[RECORD_WRITE_DEL] +
-                    tbl->saved_write_count[RECORD_WRITE_INS];
+                   tbl->saved_write_count[RECORD_WRITE_INS];
     int64_t curr = tbl->write_count[RECORD_WRITE_DEL] +
-                    tbl->write_count[RECORD_WRITE_INS];
+                   tbl->write_count[RECORD_WRITE_INS];
 
     if (include_updates) {
         prev += tbl->saved_write_count[RECORD_WRITE_UPD];
@@ -348,15 +349,16 @@ void stat_auto_analyze(void)
     double new_aa_percnt;
     for (int i = 0; i < thedb->num_dbs; i++) {
         struct dbtable *tbl = thedb->dbs[i];
-        if (is_sqlite_stat(tbl->tablename)) continue;
+        if (is_sqlite_stat(tbl->tablename))
+            continue;
         get_auto_analyze_tbl_stats(tbl, include_updates, &delta, &saved_counter, &newautoanalyze_counter, &new_aa_percnt);
         int64_t lastepoch = ATOMIC_LOAD64(tbl->aa_lastepoch);
         int64_t needs_analyze_time = ATOMIC_LOAD64(tbl->aa_needs_analyze_time);
         char lastepoch_str[128], needs_analyze_time_str[128];
         logmsg(LOGMSG_USER,
-               "Table %s, aa counter=%"PRId64" (saved %"PRId64", new %d, percent of tbl %.2f), last run time=%s, needs analyze time=%s\n",
+               "Table %s, aa counter=%" PRId64 " (saved %" PRId64 ", new %d, percent of tbl %.2f), last run time=%s, needs analyze time=%s\n",
                tbl->tablename, newautoanalyze_counter, saved_counter, delta, new_aa_percnt,
-               loc_print_date((time_t *) &lastepoch, lastepoch_str), loc_print_date((time_t *) &needs_analyze_time, needs_analyze_time_str));
+               loc_print_date((time_t *)&lastepoch, lastepoch_str), loc_print_date((time_t *)&needs_analyze_time, needs_analyze_time_str));
     }
 }
 
@@ -449,26 +451,26 @@ void *auto_analyze_main(void *unused)
                     XCHANGE64(tbl->aa_needs_analyze_time, needs_analyze_time);
                     time_t t1 = tbl->aa_lastepoch;
                     time_t t2 = needs_analyze_time;
-                    ctrace("AUTOANALYZE: Requesting analyze be run for Table %s, counter (%"PRId64") (setting needs analyze time); last run time %s, needs analyze time %s\n",
+                    ctrace("AUTOANALYZE: Requesting analyze be run for Table %s, counter (%" PRId64 ") (setting needs analyze time); last run time %s, needs analyze time %s\n",
                            tbl->tablename, newautoanalyze_counter, ctime_r_nnl(&t1, my_buf), ctime_r_nnl(&t2, my_buf2));
 
                     if (save_freq > 0) {
                         char needs_analyze_time_str[30] = {0};
-                        sprintf(needs_analyze_time_str, "%"PRId64"", needs_analyze_time);
+                        sprintf(needs_analyze_time_str, "%" PRId64 "", needs_analyze_time);
                         bdb_set_table_parameter(NULL, tbl->tablename, aa_needs_analyze_time_str, needs_analyze_time_str);
                     }
                 } else {
                     time_t t1 = tbl->aa_lastepoch;
                     time_t t2 = needs_analyze_time;
-                    ctrace("AUTOANALYZE: Table %s, counter (%"PRId64") needs analyze time already set, doing nothing; last run time %s, needs analyze time %s\n",
+                    ctrace("AUTOANALYZE: Table %s, counter (%" PRId64 ") needs analyze time already set, doing nothing; last run time %s, needs analyze time %s\n",
                            tbl->tablename, newautoanalyze_counter, ctime_r_nnl(&t1, my_buf), ctime_r_nnl(&t2, my_buf2));
                 }
             } else {
                 ctrace(
-                    "AUTOANALYZE: Analyzing Table %s, counter (%"PRId64"); last run time %s, needs analyze time %s\n",
+                    "AUTOANALYZE: Analyzing Table %s, counter (%" PRId64 "); last run time %s, needs analyze time %s\n",
                     tbl->tablename, newautoanalyze_counter, ctime_r_nnl((time_t *)&lastepoch, my_buf), ctime_r_nnl((time_t *)&needs_analyze_time, my_buf2));
                 auto_analyze_running = 1; // will be reset by
-                                             // auto_analyze_table()
+                                          // auto_analyze_table()
                 pthread_t analyze;
                 // will be freed in auto_analyze_table()
                 char *tblname = strdup(tbl->tablename);
@@ -481,10 +483,10 @@ void *auto_analyze_main(void *unused)
             get_saved_counter_epochs(NULL, tbl->tablename, &llmeta_aa_saved_counter, NULL, NULL);
             int delta = newautoanalyze_counter - llmeta_aa_saved_counter;
             if (delta > 0) {
-                ctrace("AUTOANALYZE: Table %s, saving counter (%"PRId64"); last run time %s, needs analyze time %s\n",
-                        tbl->tablename, newautoanalyze_counter, ctime_r_nnl((time_t *)&lastepoch, my_buf), ctime_r_nnl((time_t *)&needs_analyze_time, my_buf2));
+                ctrace("AUTOANALYZE: Table %s, saving counter (%" PRId64 "); last run time %s, needs analyze time %s\n",
+                       tbl->tablename, newautoanalyze_counter, ctime_r_nnl((time_t *)&lastepoch, my_buf), ctime_r_nnl((time_t *)&needs_analyze_time, my_buf2));
                 char str[12] = {0};
-                sprintf(str, "%"PRId64"", newautoanalyze_counter);
+                sprintf(str, "%" PRId64 "", newautoanalyze_counter);
                 bdb_set_table_parameter(NULL, tbl->tablename, aa_counter_str, str);
             }
         }

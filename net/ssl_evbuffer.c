@@ -103,7 +103,8 @@ static void ssl_handshake_evbuffer(int fd, short what, void *data)
 static struct ssl_handshake_arg *new_ssl_handshake(struct ssl_data *ssl_data, struct event_base *base, ssl_evbuffer_cb *error_cb, ssl_evbuffer_cb *success_cb, void *data)
 {
     ssl_data->ssl = SSL_new(gbl_ssl_ctx);
-    if (!ssl_data->ssl) return NULL;
+    if (!ssl_data->ssl)
+        return NULL;
 
     SSL_set_mode(ssl_data->ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
     SSL_set_fd(ssl_data->ssl, ssl_data->fd);
@@ -157,8 +158,10 @@ int rd_ssl_evbuffer(struct evbuffer *rd_buf, struct ssl_data *ssl_data, int *eof
     }
     int err = SSL_get_error(ssl, rc);
     switch (err) {
-    case SSL_ERROR_ZERO_RETURN: *eof = 1; /* fallthrough */
-    case SSL_ERROR_WANT_READ: return 1;
+    case SSL_ERROR_ZERO_RETURN:
+        *eof = 1; /* fallthrough */
+    case SSL_ERROR_WANT_READ:
+        return 1;
     case SSL_ERROR_WANT_WRITE:
         logmsg(LOGMSG_ERROR, "%s:%d SSL_read rc:%d err:%d SSL_ERROR_WANT_WRITE]\n",
                __func__, __LINE__, rc, err);
@@ -181,7 +184,8 @@ int wr_ssl_evbuffer(struct ssl_data *ssl_data, struct evbuffer *wr_buf)
 {
     SSL *ssl = ssl_data->ssl;
     int len = evbuffer_get_length(wr_buf);
-    if (len > KB(16)) len = KB(16);
+    if (len > KB(16))
+        len = KB(16);
     const void *buf = evbuffer_pullup(wr_buf, len);
     ERR_clear_error();
     int rc = SSL_write(ssl, buf, len);
@@ -230,20 +234,30 @@ int verify_ssl_evbuffer(struct ssl_data *ssl_data, ssl_mode mode)
     }
     switch (mode) {
     case SSL_PREFER_VERIFY_DBNAME:
-    case SSL_VERIFY_DBNAME: if (verify_dbname(cert) != 0) return -1; // fallthrough
+    case SSL_VERIFY_DBNAME:
+        if (verify_dbname(cert) != 0)
+            return -1; // fallthrough
     case SSL_PREFER_VERIFY_HOSTNAME:
-    case SSL_VERIFY_HOSTNAME: if (verify_hostname(ssl_data->fd, cert) != 0) return -1; // fallthrough
+    case SSL_VERIFY_HOSTNAME:
+        if (verify_hostname(ssl_data->fd, cert) != 0)
+            return -1; // fallthrough
     case SSL_PREFER_VERIFY_CA:
-    case SSL_VERIFY_CA: if (!cert) return -1; // fallthrough
-    default: return 0;
+    case SSL_VERIFY_CA:
+        if (!cert)
+            return -1; // fallthrough
+    default:
+        return 0;
     }
 }
 
 void ssl_data_free(struct ssl_data *ssl_data)
 {
-    if (!ssl_data) return;
-    if (ssl_data->ev) event_free(ssl_data->ev);
-    if (ssl_data->do_shutdown) SSL_shutdown(ssl_data->ssl);
+    if (!ssl_data)
+        return;
+    if (ssl_data->ev)
+        event_free(ssl_data->ev);
+    if (ssl_data->do_shutdown)
+        SSL_shutdown(ssl_data->ssl);
     SSL_free(ssl_data->ssl);
     X509_free(ssl_data->cert);
     free(ssl_data);
@@ -269,7 +283,8 @@ int ssl_data_has_cert(struct ssl_data *ssl_data)
 
 int ssl_data_cert(struct ssl_data *ssl_data, int nid, void *out, int outsz)
 {
-    if (!ssl_data || !ssl_data->cert) return EINVAL;
+    if (!ssl_data || !ssl_data->cert)
+        return EINVAL;
     return ssl_x509_get_attr(ssl_data->cert, nid, out, outsz);
 }
 

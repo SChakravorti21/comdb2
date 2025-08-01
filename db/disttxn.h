@@ -22,7 +22,12 @@
 #define DISTRIBUTED_TRANSACTIONS_TABLE "comdb2_distributed_transactions"
 
 /* coordinator_wait / participant_wait rcodes */
-enum { KEEP_RCODE = 0, HAS_COMMITTED = 1, HAS_ABORTED = 2, IS_NOT_DURABLE = 3, NO_DIST_TABLE = 4, LOCK_DESIRED = 5 };
+enum { KEEP_RCODE = 0,
+       HAS_COMMITTED = 1,
+       HAS_ABORTED = 2,
+       IS_NOT_DURABLE = 3,
+       NO_DIST_TABLE = 4,
+       LOCK_DESIRED = 5 };
 
 /* This coordinator records participant information */
 int collect_participants(const char *dist_txnid, participant_list_t *participants);

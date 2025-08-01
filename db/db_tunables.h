@@ -25,7 +25,8 @@
 */
 
 REGISTER_TUNABLE("abort_during_downgrade_if_scs_dont_stop", "Abort if scs don't stop within 60 seconds"
-                 "after starting a downgrade (default OFF)", TUNABLE_BOOLEAN,
+                                                            "after starting a downgrade (default OFF)",
+                 TUNABLE_BOOLEAN,
                  &gbl_abort_during_downgrade_if_scs_dont_stop, 0, NULL, NULL,
                  NULL, NULL);
 REGISTER_TUNABLE("abort_on_in_use_rqid", NULL, TUNABLE_BOOLEAN,
@@ -111,7 +112,8 @@ REGISTER_TUNABLE("buffers_per_context", NULL, TUNABLE_INTEGER,
                  NULL);
 REGISTER_TUNABLE("bulk_import_validation_werror",
                  "Treat bulk import input validation warnings as errors. "
-                 "(Default: on)", TUNABLE_BOOLEAN,
+                 "(Default: on)",
+                 TUNABLE_BOOLEAN,
                  &gbl_bulk_import_validation_werror, 0, NULL, NULL, NULL,
                  NULL);
 /*
@@ -582,7 +584,7 @@ REGISTER_TUNABLE("foreign_db_allow_cross_class", NULL, TUNABLE_BOOLEAN, &gbl_fdb
                  READONLY | NOARG | READEARLY, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("foreign_db_resolve_local", NULL, TUNABLE_BOOLEAN, &gbl_fdb_resolve_local,
                  READONLY | NOARG | READEARLY, NULL, NULL, NULL, NULL);
-REGISTER_TUNABLE("foreign_db_push_remote", "Fdb proxy more for reads (OFF turns off writes as well). (Default: on)", TUNABLE_BOOLEAN, &gbl_fdb_push_remote, NOARG, NULL, NULL, 
+REGISTER_TUNABLE("foreign_db_push_remote", "Fdb proxy more for reads (OFF turns off writes as well). (Default: on)", TUNABLE_BOOLEAN, &gbl_fdb_push_remote, NOARG, NULL, NULL,
                  fdb_push_update, NULL);
 REGISTER_TUNABLE("foreign_db_push_remote_writes", "Fdb proxy mode for writes (ON turns on reads as well). (Default: off)", TUNABLE_BOOLEAN, &gbl_fdb_push_remote_write, NOARG, NULL, NULL,
                  fdb_push_write_update, NULL);
@@ -745,7 +747,8 @@ REGISTER_TUNABLE("mallocregions", NULL, TUNABLE_INTEGER,
 
 REGISTER_TUNABLE("mask_internal_tunables",
                  "When enabled, comdb2_tunables system table would not list "
-                 "INTERNAL tunables (Default: on)", TUNABLE_BOOLEAN,
+                 "INTERNAL tunables (Default: on)",
+                 TUNABLE_BOOLEAN,
                  &gbl_mask_internal_tunables, NOARG, NULL, NULL, NULL, NULL);
 
 /*
@@ -1003,11 +1006,13 @@ REGISTER_TUNABLE("print_syntax_err",
                  NULL, NULL, NULL);
 REGISTER_TUNABLE("prioritize_queries",
                  "Prioritize SQL queries based on loaded rulesets. "
-                 "(Default: off)", TUNABLE_BOOLEAN, &gbl_prioritize_queries,
+                 "(Default: off)",
+                 TUNABLE_BOOLEAN, &gbl_prioritize_queries,
                  EXPERIMENTAL | INTERNAL, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("verbose_prioritize_queries",
                  "Show prioritized SQL queries based on origin and "
-                 "fingerprint.  (Default: off)", TUNABLE_BOOLEAN,
+                 "fingerprint.  (Default: off)",
+                 TUNABLE_BOOLEAN,
                  &gbl_verbose_prioritize_queries, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("random_lock_release_interval", NULL, TUNABLE_INTEGER,
@@ -1148,8 +1153,7 @@ REGISTER_TUNABLE("sqlsortermem", "Maximum amount of memory to be "
                  NULL, NULL);
 REGISTER_TUNABLE("sql_stat4_scan", "Possibly adjust the cost of a full table "
                                    "scan based on STAT4 data.  (Default: off)",
-                 TUNABLE_BOOLEAN, &gbl_sqlite_stat4_scan, READONLY | INTERNAL |
-                 EXPERIMENTAL, NULL, NULL, NULL, NULL);
+                 TUNABLE_BOOLEAN, &gbl_sqlite_stat4_scan, READONLY | INTERNAL | EXPERIMENTAL, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("sqlsortermult", NULL, TUNABLE_INTEGER, &gbl_sqlite_sortermult,
                  0, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("sqlsorterpenalty",
@@ -1219,7 +1223,8 @@ REGISTER_TUNABLE(
     "The maximum number of records for typessql to buffer and find non-null types before giving up. (Default: 1000)",
     TUNABLE_INTEGER, &gbl_typessql_records_max, 0, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("db_lock_maxid_override", "Override berkley lock_maxid for "
-                 "testing. (Default: 0)", TUNABLE_INTEGER,
+                                           "testing. (Default: 0)",
+                 TUNABLE_INTEGER,
                  &gbl_db_lock_maxid_override, EXPERIMENTAL | INTERNAL, NULL,
                  NULL, NULL, NULL);
 REGISTER_TUNABLE("udp", NULL, TUNABLE_BOOLEAN, &gbl_udp, NOARG, NULL,
@@ -1487,13 +1492,16 @@ REGISTER_TUNABLE("dump_net_queue_on_partial_write",
                  TUNABLE_BOOLEAN, &gbl_dump_net_queue_on_partial_write,
                  EXPERIMENTAL | INTERNAL, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("debug_partial_write", "Simulate partial write in net.  "
-                 "(Default: 0)", TUNABLE_INTEGER, &gbl_debug_partial_write,
-                 EXPERIMENTAL | INTERNAL, NULL,NULL, NULL, NULL);
+                                        "(Default: 0)",
+                 TUNABLE_INTEGER, &gbl_debug_partial_write,
+                 EXPERIMENTAL | INTERNAL, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("debug_verify_sleep", "Sleep one-second per record in verify.  "
-                 "(Default: off)", TUNABLE_BOOLEAN, &gbl_debug_sleep_on_verify,
-                 EXPERIMENTAL | INTERNAL, NULL,NULL, NULL, NULL);
+                                       "(Default: off)",
+                 TUNABLE_BOOLEAN, &gbl_debug_sleep_on_verify,
+                 EXPERIMENTAL | INTERNAL, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("debug_drop_nth_rep_message", "Drop the Nth replication message "
-                 "for testing purposes (Default: 0)", TUNABLE_INTEGER,
+                                               "for testing purposes (Default: 0)",
+                 TUNABLE_INTEGER,
                  &gbl_debug_drop_nth_rep_message, EXPERIMENTAL | INTERNAL, NULL,
                  NULL, NULL, NULL);
 REGISTER_TUNABLE(
@@ -1651,11 +1659,13 @@ REGISTER_TUNABLE("queuedb_genid_filename",
                  NULL, NULL, NULL);
 REGISTER_TUNABLE("queuedb_file_threshold",
                  "Maximum queuedb file size (in MB) before enqueueing to the "
-                 "alternate file.  (Default: 0)", TUNABLE_INTEGER,
+                 "alternate file.  (Default: 0)",
+                 TUNABLE_INTEGER,
                  &gbl_queuedb_file_threshold, READONLY, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("queuedb_file_interval",
                  "Check on this interval each queuedb against its configured "
-                 "maximum file size. (Default: 60000ms)", TUNABLE_INTEGER,
+                 "maximum file size. (Default: 60000ms)",
+                 TUNABLE_INTEGER,
                  &gbl_queuedb_file_interval, READONLY, NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("random_election_timeout",
                  "Use a random timeout in election.  (Default: on)",
@@ -1681,7 +1691,7 @@ REGISTER_TUNABLE("abort_on_reconstruct_failure",
 
 REGISTER_TUNABLE("netconndumptime",
                  "Dump connection statistics to ctrace this often.",
-                 TUNABLE_INTEGER, NULL, 0, netconndumptime_value, NULL, 
+                 TUNABLE_INTEGER, NULL, 0, netconndumptime_value, NULL,
                  netconndumptime_update, NULL);
 
 REGISTER_TUNABLE("timeseries_metrics_maxpoints",
@@ -1922,7 +1932,7 @@ REGISTER_TUNABLE("revsql_cdb2_debug",
                  TUNABLE_BOOLEAN, &gbl_revsql_cdb2_debug, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("revsql_connect_freq_sec", "This node will attempt to (reverse) "
-                 "connect to the remote host at this frequency. (Default: 5secs)",
+                                            "connect to the remote host at this frequency. (Default: 5secs)",
                  TUNABLE_INTEGER, &gbl_revsql_connect_freq_sec, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("revsql_force_rte", "Force reverse sql connections to use rte. (Default: on)", TUNABLE_BOOLEAN,
@@ -1936,7 +1946,7 @@ REGISTER_TUNABLE("revsql_debug",
                  TUNABLE_BOOLEAN, &gbl_revsql_debug, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("revsql_host_refresh_freq_sec", "The frequency at which the "
-                 "reverse connection host list will be refreshed (Default: 5secs)",
+                                                 "reverse connection host list will be refreshed (Default: 5secs)",
                  TUNABLE_INTEGER, &gbl_revsql_host_refresh_freq_sec, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 REGISTER_TUNABLE("reverse_hosts_v2", "Use reverse_hosts_v2, which includes class and cluster.  (Default: Off)",
@@ -2139,7 +2149,8 @@ REGISTER_TUNABLE("snapshot_serial_verify_retry",
 REGISTER_TUNABLE("strict_double_quotes",
                  "In SQL queries, forbid the use of double-quotes to denote "
                  "a string literal.  Any attempts to do so will result in a "
-                 "syntax error (Default: off)", TUNABLE_BOOLEAN,
+                 "syntax error (Default: off)",
+                 TUNABLE_BOOLEAN,
                  &gbl_strict_dbl_quotes, EXPERIMENTAL | INTERNAL, NULL, NULL,
                  NULL, NULL);
 
@@ -2166,9 +2177,9 @@ REGISTER_TUNABLE("ufid_log", "Generate ufid logs.  (Default: on)", TUNABLE_BOOLE
                  EXPERIMENTAL | INTERNAL | READONLY, NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("utxnid_log", "Generate utxnid logs. (Default: on)", TUNABLE_BOOLEAN, &gbl_utxnid_log,
-                 NOARG|READEARLY, NULL, NULL, NULL, NULL);
+                 NOARG | READEARLY, NULL, NULL, NULL, NULL);
 
-REGISTER_TUNABLE("ufid_add_on_collect", "Add to ufid-hash on collect.  (Default: off)", TUNABLE_BOOLEAN, 
+REGISTER_TUNABLE("ufid_add_on_collect", "Add to ufid-hash on collect.  (Default: off)", TUNABLE_BOOLEAN,
                  &gbl_ufid_add_on_collect, EXPERIMENTAL | INTERNAL | READONLY, NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("collect_before_locking", "Collect a transaction from the log before acquiring locks.  (Default: on)",
@@ -2177,7 +2188,7 @@ REGISTER_TUNABLE("collect_before_locking", "Collect a transaction from the log b
 REGISTER_TUNABLE("debug_ddlk", "Generate random deadlocks.  (Default: 0)", TUNABLE_INTEGER, &gbl_ddlk,
                  EXPERIMENTAL | INTERNAL, NULL, NULL, NULL, NULL);
 
-REGISTER_TUNABLE("abort_on_missing_ufid", "Abort if ufid is not found.  (Default: off)", 
+REGISTER_TUNABLE("abort_on_missing_ufid", "Abort if ufid is not found.  (Default: off)",
                  TUNABLE_BOOLEAN, &gbl_abort_on_missing_ufid, EXPERIMENTAL | INTERNAL | READONLY,
                  NULL, NULL, NULL, NULL);
 
@@ -2185,11 +2196,11 @@ REGISTER_TUNABLE("ufid_dbreg_test", "Enable ufid-dbreg test.  (Default: off)", T
                  EXPERIMENTAL | INTERNAL | READONLY, NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("javasp_early_release", "Release javasp-lock before distributed commit.  (Default: on)",
-                 TUNABLE_BOOLEAN, &gbl_javasp_early_release, EXPERIMENTAL | INTERNAL, 
+                 TUNABLE_BOOLEAN, &gbl_javasp_early_release, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("debug_add_replication_latency", "Sleep after distributed commit.  (Default: off)",
-                 TUNABLE_BOOLEAN, &gbl_debug_add_replication_latency, EXPERIMENTAL | INTERNAL, 
+                 TUNABLE_BOOLEAN, &gbl_debug_add_replication_latency, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("ref_sync_pollms",
@@ -2249,7 +2260,8 @@ REGISTER_TUNABLE("debug_queuedb",
 REGISTER_TUNABLE("lua_prepare_retries",
                  "Maximum number of times to retry SQL query preparation "
                  "when faced with 'database schema has changed' errors in "
-                 "the Lua subsystem.  (Default: 0)", TUNABLE_INTEGER,
+                 "the Lua subsystem.  (Default: 0)",
+                 TUNABLE_INTEGER,
                  &gbl_lua_prepare_max_retries, EXPERIMENTAL | INTERNAL, NULL,
                  NULL, NULL, NULL);
 
@@ -2275,7 +2287,8 @@ REGISTER_TUNABLE("client_running_slow_seconds",
 
 REGISTER_TUNABLE("client_abort_on_slow",
                  "Enable watchdog to abort if a \"slow\" client is detected."
-                 "  (Default: off)", TUNABLE_BOOLEAN, &gbl_client_abort_on_slow,
+                 "  (Default: off)",
+                 TUNABLE_BOOLEAN, &gbl_client_abort_on_slow,
                  EXPERIMENTAL | INTERNAL, NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE(
@@ -2328,7 +2341,7 @@ REGISTER_TUNABLE("reject_mixed_ddl_dml", "Reject write schedules which mix DDL a
                  TUNABLE_BOOLEAN, &gbl_reject_mixed_ddl_dml, EXPERIMENTAL | INTERNAL, NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("debug_create_master_entry", "Reproduce startup race in create_master_entry.  (Default: off)",
-                 TUNABLE_BOOLEAN, &gbl_debug_create_master_entry, EXPERIMENTAL | INTERNAL, 
+                 TUNABLE_BOOLEAN, &gbl_debug_create_master_entry, EXPERIMENTAL | INTERNAL,
                  NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("sockbplog",
@@ -2383,7 +2396,6 @@ REGISTER_TUNABLE("externalauth_connect", "Check for externalauth only once on co
 REGISTER_TUNABLE("externalauth_warn", "Warn instead of returning error in case of missing authdata",
                  TUNABLE_BOOLEAN, &gbl_externalauth_warn, NOARG | READEARLY,
                  NULL, NULL, NULL, NULL);
-
 
 REGISTER_TUNABLE("view_feature", "Enables support for VIEWs (Default: ON)",
                  TUNABLE_BOOLEAN, &gbl_view_feature, 0, NULL, NULL, NULL, NULL);
@@ -2498,7 +2510,7 @@ REGISTER_TUNABLE("timer_warn_interval",
 
 REGISTER_TUNABLE("timer_pstack_threshold",
                  "Request pstack if timers tick longer than specified interval in msec. (Default: 5000ms)",
-                  TUNABLE_INTEGER, &gbl_timer_pstack_threshold, INTERNAL, NULL, NULL, NULL, NULL);
+                 TUNABLE_INTEGER, &gbl_timer_pstack_threshold, INTERNAL, NULL, NULL, NULL, NULL);
 
 REGISTER_TUNABLE("timer_pstack_interval",
                  "Skip another pstack within specified interval in secs (Default: disabled)",

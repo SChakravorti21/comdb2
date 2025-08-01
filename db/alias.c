@@ -26,7 +26,8 @@ struct table_alias {
     char *tablename;
 };
 
-void load_aliases_from_llmeta() {
+void load_aliases_from_llmeta()
+{
     if (!alias_tbl_hash) {
         alias_tbl_hash = hash_init_strptr(0);
     }
@@ -44,19 +45,22 @@ static int free_alias(void *obj, void *arg)
     return 0;
 }
 
-void clear_aliases() {
+void clear_aliases()
+{
     Pthread_mutex_lock(&alias_tbl_hash_lk);
     hash_for(alias_tbl_hash, free_alias, NULL);
     hash_clear(alias_tbl_hash);
     Pthread_mutex_unlock(&alias_tbl_hash_lk);
 }
 
-void reload_aliases() {
+void reload_aliases()
+{
     clear_aliases();
     load_aliases_from_llmeta();
 }
 
-char *get_tablename(const char *alias) {
+char *get_tablename(const char *alias)
+{
     struct table_alias *t = NULL;
     char *result = NULL;
     Pthread_mutex_lock(&alias_tbl_hash_lk);
@@ -68,7 +72,8 @@ char *get_tablename(const char *alias) {
     return result;
 }
 
-int add_alias(const char *alias, const char *tablename){
+int add_alias(const char *alias, const char *tablename)
+{
     struct table_alias *t = calloc(1, sizeof(struct table_alias));
     if (!t) {
         logmsg(LOGMSG_ERROR, "%s:%d : OOM\n", __func__, __LINE__);
@@ -88,11 +93,12 @@ int add_alias(const char *alias, const char *tablename){
     return 0;
 }
 
-void remove_alias(const char *alias) {
+void remove_alias(const char *alias)
+{
     struct table_alias *t = NULL;
     Pthread_mutex_lock(&alias_tbl_hash_lk);
     t = hash_find(alias_tbl_hash, &alias);
-    if(!t) {
+    if (!t) {
         logmsg(LOGMSG_WARN, "Couldn't find alias %s\n", alias);
     } else {
         hash_del(alias_tbl_hash, t);
@@ -100,7 +106,8 @@ void remove_alias(const char *alias) {
     Pthread_mutex_unlock(&alias_tbl_hash_lk);
 }
 
-char *get_alias(const char *tablename){
+char *get_alias(const char *tablename)
+{
     struct table_alias *t = NULL;
     void *ent;
     unsigned int bkt;
@@ -108,7 +115,7 @@ char *get_alias(const char *tablename){
     Pthread_mutex_lock(&alias_tbl_hash_lk);
     for (t = (struct table_alias *)hash_first(alias_tbl_hash, &ent, &bkt); t;
          t = (struct table_alias *)hash_next(alias_tbl_hash, &ent, &bkt)) {
-        if (strcmp(t->tablename, tablename)==0) {
+        if (strcmp(t->tablename, tablename) == 0) {
             result = strdup(t->alias);
             break;
         }
@@ -116,7 +123,6 @@ char *get_alias(const char *tablename){
     Pthread_mutex_unlock(&alias_tbl_hash_lk);
     return result;
 }
-
 
 static int print_alias_info(void *obj, void *arg)
 {
@@ -126,10 +132,9 @@ static int print_alias_info(void *obj, void *arg)
     }
     return 0;
 }
-void dump_alias_info() {
+void dump_alias_info()
+{
     Pthread_mutex_lock(&alias_tbl_hash_lk);
     hash_for(alias_tbl_hash, print_alias_info, NULL);
     Pthread_mutex_unlock(&alias_tbl_hash_lk);
 }
-
-

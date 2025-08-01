@@ -40,10 +40,10 @@ struct fdb_sqlstat_table {
 };
 
 struct fdb_sqlstat_cache {
-    fdb_t *fdb;          /* which foreign db this belong to */
-    const char *fdbname; /* pointer to fdb name, not owned */
-    int nalloc;          /* allocated array */
-    int nused;           /* number of cached sqlite stats, usually 1 or 2 */
+    fdb_t *fdb;               /* which foreign db this belong to */
+    const char *fdbname;      /* pointer to fdb name, not owned */
+    int nalloc;               /* allocated array */
+    int nused;                /* number of cached sqlite stats, usually 1 or 2 */
     fdb_sqlstat_table_t *arr; /* array of cached sqlite stat data */
     pthread_mutex_t arr_lock; /* array lock */
 };
@@ -151,7 +151,7 @@ static int fdb_sqlstat_populate_table(fdb_t *fdb, fdb_sqlstat_cache_t *cache,
                 /* TODO: downgrade protocol */
                 abort();
             }
-            if (rc != IX_EMPTY/* && rc != IX_PASTEOF*/) {
+            if (rc != IX_EMPTY /* && rc != IX_PASTEOF*/) {
                 logmsg(
                     LOGMSG_ERROR,
                     "%s: failed to read first row from %s.%s rc=%d retry %d\n",
@@ -617,7 +617,10 @@ static int fdb_sqlstat_cursor_set_hint(BtCursor *pCur, void *hint)
     return -1;
 }
 
-static void *fdb_sqlstat_cursor_get_hint(BtCursor *pCur) { return NULL; }
+static void *fdb_sqlstat_cursor_get_hint(BtCursor *pCur)
+{
+    return NULL;
+}
 
 static int fdb_sqlstat_cursor_set_sql(BtCursor *pCur, const char *sql)
 {
@@ -632,9 +635,15 @@ static char *fdb_sqlstat_cursor_name(BtCursor *pCur)
     return fdbc->name;
 }
 
-static int fdb_sqlstat_cursor_has_partidx(BtCursor *pCur) { return 0; }
+static int fdb_sqlstat_cursor_has_partidx(BtCursor *pCur)
+{
+    return 0;
+}
 
-static int fdb_sqlstat_cursor_has_expridx(BtCursor *pCur) { return 0; }
+static int fdb_sqlstat_cursor_has_expridx(BtCursor *pCur)
+{
+    return 0;
+}
 
 static char *fdb_sqlstat_cursor_dbname(BtCursor *pCur)
 {
@@ -651,7 +660,10 @@ static fdb_tbl_ent_t *fdb_sqlstat_cursor_table_entry(BtCursor *pCur)
     return fdb_table_entry_by_name(fdbc->fdb, fdbc->name);
 }
 
-static int fdb_sqlstat_cursor_access(BtCursor *pCur, int how) { return 0; }
+static int fdb_sqlstat_cursor_access(BtCursor *pCur, int how)
+{
+    return 0;
+}
 
 static int fdb_sqlstat_cursor_insert(BtCursor *pCur, struct sqlclntstate *clnt,
                                      fdb_tran_t *trans,

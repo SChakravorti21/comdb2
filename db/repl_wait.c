@@ -96,7 +96,7 @@ struct repl_object *add_genid_to_repl_list(unsigned long long genid,
         obj = pool_getablk(pool);
         if (!obj) {
             logmsg(LOGMSG_ERROR, "%s: out of memory in pool for genid %llx\n",
-                    __func__, genid);
+                   __func__, genid);
             errUNLOCK(&lock);
             return head;
         }

@@ -36,7 +36,10 @@ extern void __berkdb_register_failed_write_callback(void (*callback)(int bytes))
 extern void __berkdb_register_memp_callback(void (*callback)(void));
 extern void __berkdb_register_fsync_callback(void (*callback)(int fd));
 
-static void user_request_done(void *st) { free(st); }
+static void user_request_done(void *st)
+{
+    free(st);
+}
 
 static struct global_stats global = {0};
 
@@ -196,6 +199,12 @@ void user_request_init(void)
     __berkdb_register_fsync_callback(user_request_fsync_callback);
 }
 
-void user_request_on(void) { enabled = 1; }
+void user_request_on(void)
+{
+    enabled = 1;
+}
 
-void user_request_off(void) { enabled = 0; }
+void user_request_off(void)
+{
+    enabled = 0;
+}

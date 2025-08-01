@@ -117,8 +117,7 @@ static const char *help_text =
     "Examples:\n"
     "  comdb2 name                  start database:name from default location\n"
     "  comdb2 --create name         create database:name at default location\n"
-    "  comdb2 --dir /db name        start database:name at location:/db\n"
-    ;
+    "  comdb2 --dir /db name        start database:name at location:/db\n";
 
 struct read_lrl_option_type {
     int lineno;
@@ -172,9 +171,10 @@ static void set_dbdir(char *dir)
 struct CmdLineTunable;
 struct CmdLineTunable {
     char *arg;
-    STAILQ_ENTRY(CmdLineTunable) entry;
+    STAILQ_ENTRY(CmdLineTunable)
+    entry;
 };
-STAILQ_HEAD(CmdLineTunables, CmdLineTunable) *cmd_line_tunables;
+STAILQ_HEAD(CmdLineTunables, CmdLineTunable) * cmd_line_tunables;
 
 static void add_cmd_line_tunable(char *arg)
 {
@@ -192,7 +192,8 @@ void add_cmd_line_tunables_to_file(FILE *f)
     if (cmd_line_tunables == NULL)
         return;
     struct CmdLineTunable *t, *tmp;
-    STAILQ_FOREACH_SAFE(t, cmd_line_tunables, entry, tmp) {
+    STAILQ_FOREACH_SAFE(t, cmd_line_tunables, entry, tmp)
+    {
         fprintf(f, "%s\n", t->arg);
         free(t);
     }
@@ -207,7 +208,8 @@ static void read_cmd_line_tunables(struct dbenv *dbenv)
     struct read_lrl_option_type options = {
         .lineno = 0, .lrlname = "cmd_line_args", .dbname = dbenv->envname};
     struct CmdLineTunable *t, *tmp;
-    STAILQ_FOREACH_SAFE(t, cmd_line_tunables, entry, tmp) {
+    STAILQ_FOREACH_SAFE(t, cmd_line_tunables, entry, tmp)
+    {
         read_lrl_option(dbenv, t->arg, &options, strlen(t->arg), NULL);
         free(t);
     }
@@ -302,15 +304,18 @@ struct deferred_option {
     char *option;
     int line;
     int len;
-    LINKC_T(struct deferred_option) lnk;
+    LINKC_T(struct deferred_option)
+    lnk;
 };
 
-LISTC_T(struct deferred_option) deferred_options;
+LISTC_T(struct deferred_option)
+deferred_options;
 
 static int defer_option(char *option, int len, int line)
 {
     struct deferred_option *opt;
-    if (len == -1) len = strlen(option);
+    if (len == -1)
+        len = strlen(option);
     opt = malloc(sizeof(struct deferred_option));
     if (opt == NULL) {
         logmsg(LOGMSG_ERROR, "%s:%d out of memory\n", __FILE__, __LINE__);
@@ -370,7 +375,8 @@ int deferred_do_commands(struct dbenv *env, char *option,
         for (int i = 0; i < thedb->num_dbs; ++i) {
             if (strcasecmp(tablename, env->dbs[i]->tablename) == 0) {
                 logmsg(LOGMSG_USER, "comdbg: overriding dbnum for %s (old: %d "
-                       "new: %d)\n", env->dbs[i]->tablename, env->dbs[i]->dbnum,
+                                    "new: %d)\n",
+                       env->dbs[i]->tablename, env->dbs[i]->dbnum,
                        dbnum);
                 env->dbs[i]->dbnum = dbnum;
                 break;
@@ -385,7 +391,8 @@ int deferred_do_commands(struct dbenv *env, char *option,
 void process_deferred_options(struct dbenv *dbenv, lrl_reader *callback)
 {
     struct deferred_option *opt;
-    LISTC_FOR_EACH(&deferred_options, opt, lnk) {
+    LISTC_FOR_EACH(&deferred_options, opt, lnk)
+    {
         callback(dbenv, opt->option, NULL, opt->len);
     }
 }
@@ -470,7 +477,8 @@ static char *legacy_options[] = {
 int gbl_legacy_defaults = 0;
 int pre_read_legacy_defaults(void *_, void *__)
 {
-    if (gbl_legacy_defaults != 0) return 0;
+    if (gbl_legacy_defaults != 0)
+        return 0;
     gbl_legacy_defaults = 1;
     for (int i = 0; i < sizeof(legacy_options) / sizeof(legacy_options[0]); i++) {
         pre_read_option(legacy_options[i], strlen(legacy_options[i]));
@@ -481,7 +489,8 @@ int pre_read_legacy_defaults(void *_, void *__)
 static void read_legacy_defaults(struct dbenv *dbenv,
                                  struct read_lrl_option_type *options)
 {
-    if (gbl_legacy_defaults != 1) return;
+    if (gbl_legacy_defaults != 1)
+        return;
     gbl_legacy_defaults = 2;
     for (int i = 0; i < sizeof(legacy_options) / sizeof(legacy_options[0]); i++) {
         read_lrl_option(dbenv, legacy_options[i], options, strlen(legacy_options[i]), NULL);
@@ -530,7 +539,8 @@ static int pre_read_option(char *line, int llen)
     comdb2_tunable_err rc;
 
     tok = segtok(line, llen, &st, &ltok);
-    if (ltok == 0 || tok[0] == '#') return 0;
+    if (ltok == 0 || tok[0] == '#')
+        return 0;
 
     /* if this is an "if" statement that evaluates to false, skip */
     if (!lrl_if(&tok, line, llen, &st, &ltok)) {
@@ -577,7 +587,9 @@ static struct dbenv *read_lrl_file_int(struct dbenv *dbenv, const char *lrlname,
     char line[512] = {0}; // valgrind doesn't like sse42 instructions
     struct lrlfile *lrlfile;
     struct read_lrl_option_type options = {
-        .lineno = 0, .lrlname = lrlname, .dbname = dbenv->envname,
+        .lineno = 0,
+        .lrlname = lrlname,
+        .dbname = dbenv->envname,
     };
 
     dbenv->nsiblings = 1;
@@ -606,7 +618,8 @@ static struct dbenv *read_lrl_file_int(struct dbenv *dbenv, const char *lrlname,
     int is_table = 0;
     while (fgets(line, sizeof(line), ff)) {
         char *s = strchr(line, '\n');
-        if (s) *s = 0;
+        if (s)
+            *s = 0;
         options.lineno++;
         read_lrl_option(dbenv, line, &options, strlen(line), &is_table);
         if (is_table) { // read lrl tables last
@@ -672,7 +685,8 @@ static char *get_qdb_name(const char *file)
     char *name = NULL;
     s = getline(&name, &n, f);
     fclose(f);
-    if (s == -1) return NULL;
+    if (s == -1)
+        return NULL;
 
     name[s - 1] = 0;
     return name;
@@ -682,9 +696,11 @@ static char *get_qdb_name(const char *file)
 static int lrltokignore(char *tok, int ltok)
 {
     /* used by comdb2backup script */
-    if (tokcmp(tok, ltok, "backup") == 0) return 0;
+    if (tokcmp(tok, ltok, "backup") == 0)
+        return 0;
     /* reserved for use by cmdb2filechk script */
-    if (tokcmp(tok, ltok, "filechkopts") == 0) return 0;
+    if (tokcmp(tok, ltok, "filechkopts") == 0)
+        return 0;
     /*not a reserved token */
     return 1;
 }
@@ -724,7 +740,8 @@ static int new_table_from_schema(struct dbenv *dbenv, char *tblname,
  *
  * switch_val: 1 if toggling on and 0 if toggling off.
  */
-static void toggle_modsnap(int switch_val) {
+static void toggle_modsnap(int switch_val)
+{
     gbl_use_modsnap_for_snapshot = switch_val;
     gbl_modsnap_asof = switch_val;
 }
@@ -734,7 +751,8 @@ static void toggle_modsnap(int switch_val) {
  *
  * switch_val: 1 if toggling on and 0 if toggling off.
  */
-static void toggle_new_snapisol(int switch_val) {
+static void toggle_new_snapisol(int switch_val)
+{
     gbl_new_snapisol = switch_val;
     gbl_new_snapisol_asof = switch_val;
     gbl_new_snapisol_logging = switch_val;
@@ -746,7 +764,8 @@ static void toggle_new_snapisol(int switch_val) {
  *
  * impl: The value to output as a string.
  */
-const char *snap_impl_str(snap_impl_enum impl) {
+const char *snap_impl_str(snap_impl_enum impl)
+{
     switch (impl) {
     case SNAP_IMPL_ORIG:
         return "ORIGINAL";
@@ -763,12 +782,14 @@ const char *snap_impl_str(snap_impl_enum impl) {
     }
 }
 
-static const char * value_on_off(int switch_var) {
-    const char * value = switch_var ? "ON" : "OFF";
+static const char *value_on_off(int switch_var)
+{
+    const char *value = switch_var ? "ON" : "OFF";
     return value;
 }
 
-void print_snap_config(loglvl lvl) {
+void print_snap_config(loglvl lvl)
+{
     logmsg(lvl, "Snapshot is %s; "
                 "Implementation set to '%s'; "
                 "gbl_use_modsnap_for_snapshot=%s; "
@@ -776,13 +797,13 @@ void print_snap_config(loglvl lvl) {
                 "gbl_new_snapisol=%s; "
                 "gbl_new_snapisol_asof=%s; "
                 "gbl_new_snapisol_logging=%s\n",
-                value_on_off(gbl_snapisol),
-                snap_impl_str(gbl_snap_impl),
-                value_on_off(gbl_use_modsnap_for_snapshot),
-                value_on_off(gbl_modsnap_asof),
-                value_on_off(gbl_new_snapisol),
-                value_on_off(gbl_new_snapisol_asof),
-                value_on_off(gbl_new_snapisol_logging));
+           value_on_off(gbl_snapisol),
+           snap_impl_str(gbl_snap_impl),
+           value_on_off(gbl_use_modsnap_for_snapshot),
+           value_on_off(gbl_modsnap_asof),
+           value_on_off(gbl_new_snapisol),
+           value_on_off(gbl_new_snapisol_asof),
+           value_on_off(gbl_new_snapisol_logging));
 }
 
 /*
@@ -790,7 +811,8 @@ void print_snap_config(loglvl lvl) {
  *
  * impl: The implementation to be set.
  */
-void set_snapshot_impl(snap_impl_enum impl) {
+void set_snapshot_impl(snap_impl_enum impl)
+{
     gbl_snap_impl = impl;
     gbl_snap_impl == SNAP_IMPL_MODSNAP ? toggle_modsnap(1) : toggle_modsnap(0);
     gbl_snap_impl == SNAP_IMPL_NEW ? toggle_new_snapisol(1) : toggle_new_snapisol(0);
@@ -800,8 +822,9 @@ void set_snapshot_impl(snap_impl_enum impl) {
  * Determines what the fallback implementation should be for the current
  * snapshot implementation and switches to it.
  */
-static void fallback_from_snap_impl() {
-    const snap_impl_enum fallback_impl = 
+static void fallback_from_snap_impl()
+{
+    const snap_impl_enum fallback_impl =
         gbl_snap_fallback_impl != gbl_snap_impl ? gbl_snap_fallback_impl : gbl_snap_backup_fallback_impl;
 
     assert(fallback_impl != gbl_snap_impl);
@@ -813,27 +836,28 @@ static void fallback_from_snap_impl() {
  *
  * dbenv: Parent environment.
  */
-static void enable_snapshot(struct dbenv *dbenv) {
+static void enable_snapshot(struct dbenv *dbenv)
+{
     if (gbl_snapisol) {
         return;
     }
 
-    set_snapshot_impl(gbl_snap_impl); 
+    set_snapshot_impl(gbl_snap_impl);
     bdb_attr_set(dbenv->bdb_attr, BDB_ATTR_SNAPISOL, 1);
     gbl_snapisol = 1;
 }
 
-#define parse_lua_funcs(pfx)                                                                                           \
-    do {                                                                                                               \
-        tok = segtok(line, strlen(line), &st, &ltok);                                                                  \
-        int num = toknum(tok, ltok);                                                                                   \
-        pfx##funcs = malloc(sizeof(char *) * (num + 1));                                                               \
-        int i;                                                                                                         \
-        for (i = 0; i < num; ++i) {                                                                                    \
-            tok = segtok(line, strlen(line), &st, &ltok);                                                              \
-            pfx##funcs[i] = tokdup(tok, ltok);                                                                         \
-        }                                                                                                              \
-        pfx##funcs[i] = NULL;                                                                                          \
+#define parse_lua_funcs(pfx)                              \
+    do {                                                  \
+        tok = segtok(line, strlen(line), &st, &ltok);     \
+        int num = toknum(tok, ltok);                      \
+        pfx##funcs = malloc(sizeof(char *) * (num + 1));  \
+        int i;                                            \
+        for (i = 0; i < num; ++i) {                       \
+            tok = segtok(line, strlen(line), &st, &ltok); \
+            pfx##funcs[i] = tokdup(tok, ltok);            \
+        }                                                 \
+        pfx##funcs[i] = NULL;                             \
     } while (0)
 
 static bdb_state_type *queuehndl(const char *name)
@@ -917,10 +941,11 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
             char suffix[50];
 
             tok = segtok(line, len, &st, &ltok);
-            if (ltok == 0) break;
+            if (ltok == 0)
+                break;
             if (ltok >= 50) {
                 logmsg(LOGMSG_ERROR, "suffix name too long. max : %d\n",
-                                    49);
+                       49);
                 return -1;
             }
             tokcpy(tok, ltok, suffix);
@@ -1018,7 +1043,8 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
             while (1) {
                 char nodename[512];
                 tok = segtok(line, len, &st, &ltok);
-                if (ltok == 0) break;
+                if (ltok == 0)
+                    break;
                 if (ltok > sizeof(nodename)) {
                     logmsg(LOGMSG_ERROR,
                            "host %.*s name too long (expected < %zu)\n", ltok,
@@ -1032,11 +1058,11 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
                 struct in_addr addr;
                 char *name = nodename;
                 int rc = comdb2_gethostbyname(&name, &addr);
-                if (rc!=0) {
+                if (rc != 0) {
                     logmsg(LOGMSG_FATAL, "Could not resolve host %s. Exiting Database...\n", name);
                     exit(1);
                 }
-                if (rc==0 && addr.s_addr == gbl_myaddr.s_addr) {
+                if (rc == 0 && addr.s_addr == gbl_myaddr.s_addr) {
                     /* Assume I am better known by this name. */
                     gbl_myhostname_interned = intern_ptr(name);
                     gbl_myhostname = gbl_myhostname_interned->str;
@@ -1146,7 +1172,8 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
     else if (tokcmp(tok, ltok, "version") == 0) {
         tok = segtok(line, len, &st, &ltok);
         for (ii = 0; ii < 10; ii++)
-            if (!isprint(tok[ii])) tok[ii] = '\0';
+            if (!isprint(tok[ii]))
+                tok[ii] = '\0';
 
         logmsg(LOGMSG_ERROR, "lrl file for comdb2 version %s found\n", tok);
 
@@ -1261,7 +1288,7 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
             /* optional dbnum */
             tok = segtok(line, len, &st, &ltok);
             if (ltok >= MAXTABLELEN) {
-                logmsg(LOGMSG_ERROR, "dbnum too long. Max %d\n", MAXTABLELEN-1);
+                logmsg(LOGMSG_ERROR, "dbnum too long. Max %d\n", MAXTABLELEN - 1);
                 return -1;
             }
             tokcpy(tok, ltok, tmpname);
@@ -1336,8 +1363,10 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
         }
         file = tokdup(tok, ltok);
         addresource(name, file);
-        if (name) free(name);
-        if (file) free(file);
+        if (name)
+            free(name);
+        if (file)
+            free(file);
     } else if (tokcmp(tok, ltok, "procedure") == 0) {
         char *name;
         char *jartok;
@@ -1355,7 +1384,8 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
             return -1;
         }
         jartok = tokdup(tok, ltok);
-        if (javasp_add_procedure(name, jartok, line + st) != 0) return -1;
+        if (javasp_add_procedure(name, jartok, line + st) != 0)
+            return -1;
         free(name);
         free(jartok);
     } else if (tokcmp(tok, ltok, "use_parallel_schema_change") == 0) {
@@ -1424,7 +1454,8 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
         free(attrval);
     } else if (tokcmp(tok, ltok, "querylimit") == 0) {
         rc = query_limit_cmd(line, len, st);
-        if (rc) return -1;
+        if (rc)
+            return -1;
     } else if (tokcmp(tok, ltok, "iopool") == 0) {
         berkdb_iopool_process_message(line, len, st);
     } else if (tokcmp(tok, ltok, "decimal_rounding") == 0) {
@@ -1632,7 +1663,8 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
         // see if any plugins know how to handle this
         struct lrl_handler *h;
         rc = 1;
-        LISTC_FOR_EACH(&dbenv->lrl_handlers, h, lnk) {
+        LISTC_FOR_EACH(&dbenv->lrl_handlers, h, lnk)
+        {
             rc = h->handle(dbenv, tok);
             if (rc == 0)
                 break;
@@ -1645,11 +1677,11 @@ static int read_lrl_option(struct dbenv *dbenv, char *line,
             if (rc) {
                 if (gbl_bad_lrl_fatal) {
                     logmsg(LOGMSG_ERROR, "unknown opcode '%.*s' in lrl %s\n", ltok,
-                            tok, options->lrlname);
+                           tok, options->lrlname);
                     return -1;
                 } else {
                     logmsg(LOGMSG_WARN, "unknown opcode '%.*s' in lrl %s\n", ltok,
-                            tok, options->lrlname);
+                           tok, options->lrlname);
                 }
             }
         }
@@ -1688,14 +1720,17 @@ static int read_config_dir(struct dbenv *dbenv, char *dir)
             char *file = comdb2_asprintf("%s/%s", dir, ent->d_name);
             pre_read_lrl_file(dbenv, file);
             rc = (read_lrl_file(dbenv, file, 0) == NULL);
-            if (rc) logmsg(LOGMSG_ERROR, "Error processing %s\n", file);
+            if (rc)
+                logmsg(LOGMSG_ERROR, "Error processing %s\n", file);
             free(file);
-            if (rc) goto done;
+            if (rc)
+                goto done;
         }
     }
 
 done:
-    if (d) closedir(d);
+    if (d)
+        closedir(d);
     free(ent);
     return rc;
 }
@@ -1732,15 +1767,16 @@ int read_lrl_files(struct dbenv *dbenv, const char *lrlname)
     listc_init(&deferred_options, offsetof(struct deferred_option, lnk));
     listc_init(&dbenv->lrl_files, offsetof(struct lrlfile, lnk));
 
-#   ifdef LEGACY_DEFAULTS
+#ifdef LEGACY_DEFAULTS
     struct read_lrl_option_type options = {0};
     options.lrlname = "legacy_defaults";
     options.dbname = dbenv->envname;
     pre_read_legacy_defaults(NULL, NULL);
     read_legacy_defaults(dbenv, &options);
-#   endif
+#endif
 
-    if (lrlname) pre_read_lrl_file(dbenv, lrlname);
+    if (lrlname)
+        pre_read_lrl_file(dbenv, lrlname);
 
     /* if we havn't been told not to load the /bb/bin/ config files */
     if (!gbl_nogbllrl) {

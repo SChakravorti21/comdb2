@@ -48,7 +48,8 @@ static void (*describe_func[MAX_RESOURCE_TYPE])(void *);
 struct thread_resource {
     int type;
     void *resource;
-    LINKC_T(struct thread_resource) lnk;
+    LINKC_T(struct thread_resource)
+    lnk;
     unsigned int nframes;
     void *stack[MAXSTACKDEPTH];
 };
@@ -57,7 +58,8 @@ struct thread_info {
     pthread_t tid;
     arch_tid archtid;
     char *name;
-    LISTC_T(struct thread_resource) resource_list;
+    LISTC_T(struct thread_resource)
+    resource_list;
     hash_t *resource_hash;
 };
 
@@ -84,7 +86,7 @@ void thread_started(char *name)
     info->name = strdup(name);
     if (thread_debug)
         printf("thd: started %s tid %p archtid %" PRIxPTR "0x%p\n", name,
-               (void *)info->tid, (intptr_t) info->archtid, info);
+               (void *)info->tid, (intptr_t)info->archtid, info);
 }
 
 void thread_add_resource(int type, void *resource)
@@ -124,7 +126,7 @@ void thread_remove_resource(void *resource, void (*freefunc)(void *))
     r = hash_find(info->resource_hash, &resource);
     if (r == NULL) {
         printf("resource 0x%p not found, thread %p archtid %" PRIxPTR "\n", resource,
-               (void *)info->tid, (intptr_t) info->archtid);
+               (void *)info->tid, (intptr_t)info->archtid);
         return;
     }
     listc_rfl(&info->resource_list, r);
@@ -141,7 +143,7 @@ static void thread_ended(void *p)
     if (thread_debug)
         printf("thd: ended %s tid %p"
                " archtid %" PRIxPTR "0x%p listsz %d hashsz %d\n",
-               info->name, (void *)info->tid, (intptr_t) info->archtid, p,
+               info->name, (void *)info->tid, (intptr_t)info->archtid, p,
                listc_size(&info->resource_list),
                hash_get_num_entries(info->resource_hash));
 
@@ -200,17 +202,17 @@ static void thread_util_donework_int(struct thread_info *info)
         {
             if (r->type < 0 || r->type >= MAX_RESOURCE_TYPE) {
                 printf("thread %p archtid %" PRIxPTR "resource 0x%p unknown type %d\n",
-                       (void *)info->tid, (intptr_t) info->archtid, r->resource, r->type);
+                       (void *)info->tid, (intptr_t)info->archtid, r->resource, r->type);
                 continue;
             }
             if (describe_func[r->type]) {
                 printf("thread %p archtid %" PRIxPTR ":\n", (void *)info->tid,
-                       (intptr_t) info->archtid);
+                       (intptr_t)info->archtid);
                 describe_func[r->type](r->resource);
             } else {
                 printf("thread %p archtid %" PRIxPTR "still holds a type %d resource "
                        "0x%p at exit\n",
-                       (void *)info->tid, (intptr_t) info->archtid, r->type, r->resource);
+                       (void *)info->tid, (intptr_t)info->archtid, r->type, r->resource);
             }
             for (i = 3; i < r->nframes; i++) {
                 printf("0x%p ", r->stack[i]);
@@ -247,17 +249,23 @@ void thread_util_donework(void)
 #include <unistd.h>
 #include <sys/syscall.h>
 
-arch_tid getarchtid(void) { return syscall(__NR_gettid); }
+arch_tid getarchtid(void)
+{
+    return syscall(__NR_gettid);
+}
 
 #elif defined(__APPLE__)
 
 arch_tid getarchtid(void)
 {
-    return (arch_tid) pthread_self();
+    return (arch_tid)pthread_self();
 }
 
 #else
 
-arch_tid getarchtid(void) { return pthread_self(); }
+arch_tid getarchtid(void)
+{
+    return pthread_self();
+}
 
 #endif

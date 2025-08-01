@@ -14,8 +14,8 @@
    limitations under the License.
  */
 #ifdef __sun
-   /* for PTHREAD_STACK_MIN on Solaris */
-#  define __EXTENSIONS__
+/* for PTHREAD_STACK_MIN on Solaris */
+#define __EXTENSIONS__
 #endif
 
 #include <errno.h>
@@ -49,7 +49,8 @@ typedef struct thr_arg {
     void *stack;           /* real stack address */
     size_t stacksz;        /* stack size */
     comdb2ma alloc;        /* allocator - for trimming */
-    LINKC_T(struct thr_arg) lnk;
+    LINKC_T(struct thr_arg)
+    lnk;
 } thr_arg_t;
 
 static size_t __page_size;
@@ -114,9 +115,9 @@ static void *free_stack_thr(void *unused)
         while (signal_count != 0) {
             arg = listc_rtl(&stack_list);
             if (arg == NULL)
-                logmsg(LOGMSG_FATAL, 
-                        "%s:%d WARNING stack_list corrupted. could be a bug.\n",
-                        __func__, __LINE__);
+                logmsg(LOGMSG_FATAL,
+                       "%s:%d WARNING stack_list corrupted. could be a bug.\n",
+                       __func__, __LINE__);
             else {
                 comdb2ma saved_ma;
 #ifdef M_MMAP_THRESHOLD
@@ -130,7 +131,7 @@ static void *free_stack_thr(void *unused)
                 // calling trim() at this point should always succeed
                 comdb2_malloc_trim(saved_ma, 0);
 #ifdef M_MMAP_THRESHOLD
-                if (comdb2ma_niceness() && /* Be nice. */
+                if (comdb2ma_niceness() &&            /* Be nice. */
                     comdb2ma_mmap_threshold() == 0 && /* no user mmap thresh */
                     stacksz > MIN_MMAP_THRESH &&
                     stacksz > pthr_mmap_threshold) {
@@ -203,18 +204,18 @@ static void *thr_func(void *arg)
 
 #if (defined(_LINUX_SOURCE) || defined(_SUN_SOURCE))
     if (mprotect((void *)((char *)stack - __page_size),
-        __page_size, RW) == -1) {
-        logmsg(LOGMSG_FATAL, 
-                "failed to restore thread stack guard page access: %d\n",
-                errno);
+                 __page_size, RW) == -1) {
+        logmsg(LOGMSG_FATAL,
+               "failed to restore thread stack guard page access: %d\n",
+               errno);
         abort();
     }
 
     if (mprotect((void *)((char *)stack + stacksz),
-        __page_size, RW) == -1) {
-        logmsg(LOGMSG_FATAL, 
-                "failed to restore thread stack guard page access: %d\n",
-                errno);
+                 __page_size, RW) == -1) {
+        logmsg(LOGMSG_FATAL,
+               "failed to restore thread stack guard page access: %d\n",
+               errno);
         abort();
     }
 #endif

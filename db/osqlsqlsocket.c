@@ -261,22 +261,22 @@ int osql_read_buffer_default(char *buf, int buflen, SBUF2 *sb)
     return osql_read_buffer(buf, buflen, sb, &timeout, gbl_sockbplog_poll);
 }
 
-#define GDATA(obj)                                                                                                     \
-    do {                                                                                                               \
-        rc = osql_read_buffer_default((char *)&(obj), sizeof(obj), sb);                                                \
-        if (rc) {                                                                                                      \
-            logmsg(LOGMSG_ERROR, "Failure to read message %d rc %d\n", __LINE__, rc);                                  \
-            goto done;                                                                                                 \
-        }                                                                                                              \
+#define GDATA(obj)                                                                    \
+    do {                                                                              \
+        rc = osql_read_buffer_default((char *)&(obj), sizeof(obj), sb);               \
+        if (rc) {                                                                     \
+            logmsg(LOGMSG_ERROR, "Failure to read message %d rc %d\n", __LINE__, rc); \
+            goto done;                                                                \
+        }                                                                             \
     } while (0)
 
-#define GDATALEN(obj, objlen)                                                                                          \
-    do {                                                                                                               \
-        rc = osql_read_buffer_default((char *)obj, (objlen), sb);                                                      \
-        if (rc) {                                                                                                      \
-            logmsg(LOGMSG_ERROR, "Failure to read message %d rc %d\n", __LINE__, rc);                                  \
-            goto done;                                                                                                 \
-        }                                                                                                              \
+#define GDATALEN(obj, objlen)                                                         \
+    do {                                                                              \
+        rc = osql_read_buffer_default((char *)obj, (objlen), sb);                     \
+        if (rc) {                                                                     \
+            logmsg(LOGMSG_ERROR, "Failure to read message %d rc %d\n", __LINE__, rc); \
+            goto done;                                                                \
+        }                                                                             \
     } while (0)
 
 int osqlcomm_req_socket(SBUF2 *sb, char **sql, char tzname[DB_MAX_TZNAMEDB],

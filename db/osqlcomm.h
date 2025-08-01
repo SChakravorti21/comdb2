@@ -26,7 +26,8 @@
 
 #define OSQL_SEND_ERROR_WRONGMASTER (-1234)
 
-enum { OSQL_PROCESS_FLAGS_BLOB_OPTIMIZATION = 0x00000001, };
+enum { OSQL_PROCESS_FLAGS_BLOB_OPTIMIZATION = 0x00000001,
+};
 
 /**
  * Initializes this node for osql communication
@@ -290,8 +291,8 @@ const uint8_t *osqlcomm_errstat_type_get(errstat_t *p_errstat_type,
  *
  */
 uint8_t *osqlcomm_errstat_type_put(const errstat_t *p_errstat_type,
-                                          uint8_t *p_buf,
-                                          const uint8_t *p_buf_end);
+                                   uint8_t *p_buf,
+                                   const uint8_t *p_buf_end);
 
 const uint8_t *osqlcomm_query_effects_get(struct query_effects *effects,
                                           const uint8_t *p_buf,
@@ -322,7 +323,6 @@ int osql_comm_echo(char *host, int stream, unsigned long long *sent,
  *
  */
 int osql_comm_check_bdb_lock(const char *func, int line);
-
 
 netinfo_type *osql_get_netinfo(void);
 

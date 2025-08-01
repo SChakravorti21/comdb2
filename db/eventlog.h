@@ -25,12 +25,13 @@ void eventlog_debug(char *fmt, ...);
 
 int eventlog_debug_enabled(void);
 
-#define EVENTLOG_DEBUG(_code) do { \
-    if (eventlog_debug_enabled()) {  \
-        do {                       \
-            _code                  \
-        } while(0);                \
-    }                              \
-} while(0)
+#define EVENTLOG_DEBUG(_code)           \
+    do {                                \
+        if (eventlog_debug_enabled()) { \
+            do {                        \
+                _code                   \
+            } while (0);                \
+        }                               \
+    } while (0)
 
 #endif

@@ -36,23 +36,23 @@
 #endif
 
 #if SBUF2_SERVER
-#  ifndef SBUF2_DFL_SIZE
-#    define SBUF2_DFL_SIZE 1024ULL
-#  endif
-#  ifdef PER_THREAD_MALLOC
-#    include "mem_util.h"
-#    define calloc comdb2_calloc_util
-#    define malloc(size) comdb2_malloc(sb->allocator, size)
-#    define free comdb2_free
-#  endif
+#ifndef SBUF2_DFL_SIZE
+#define SBUF2_DFL_SIZE 1024ULL
+#endif
+#ifdef PER_THREAD_MALLOC
+#include "mem_util.h"
+#define calloc comdb2_calloc_util
+#define malloc(size) comdb2_malloc(sb->allocator, size)
+#define free comdb2_free
+#endif
 #else /* SBUF2_SERVER */
-#  ifndef SBUF2_DFL_SIZE
-#    define SBUF2_DFL_SIZE (1024ULL * 128ULL)
-#  endif
+#ifndef SBUF2_DFL_SIZE
+#define SBUF2_DFL_SIZE (1024ULL * 128ULL)
+#endif
 #endif /* !SBUF2_SERVER */
 
 #if SBUF2_UNGETC
-#  define SBUF2UNGETC_BUF_MAX 8 /* see also net/net_evbuffer.c */
+#define SBUF2UNGETC_BUF_MAX 8 /* see also net/net_evbuffer.c */
 #endif
 
 #ifdef my_ssl_println
@@ -62,7 +62,7 @@
 #undef my_ssl_eprintln
 #endif
 #define my_ssl_println(fmt, ...) ssl_println("SBUF2", fmt, ##__VA_ARGS__)
-#define my_ssl_eprintln(fmt, ...)                                              \
+#define my_ssl_eprintln(fmt, ...) \
     ssl_eprintln("SBUF2", "%s: " fmt, __func__, ##__VA_ARGS__)
 
 struct sbuf2 {
@@ -93,9 +93,9 @@ struct sbuf2 {
     void *userptr;
 
 #if SBUF2_SERVER
-#   ifdef PER_THREAD_MALLOC
+#ifdef PER_THREAD_MALLOC
     comdb2ma allocator;
-#   endif
+#endif
     struct sqlclntstate *clnt;
 #endif
 
@@ -198,7 +198,7 @@ int SBUF2_FUNC(sbuf2flush)(SBUF2 *sb)
 
 #if SBUF2_SERVER
         void *ssl;
-ssl_downgrade:
+    ssl_downgrade:
         ssl = sb->ssl;
         rc = sb->write(sb, (char *)&sb->wbuf[sb->wtl], len);
         if (rc == 0 && sb->ssl != ssl) {
@@ -367,7 +367,7 @@ int SBUF2_FUNC(sbuf2getc)(SBUF2 *sb)
         sb->rhd = 0;
 #if SBUF2_SERVER
         void *ssl;
-ssl_downgrade:
+    ssl_downgrade:
         ssl = sb->ssl;
         rc = sb->read(sb, (char *)sb->rbuf, sb->lbuf - 1);
         if (rc == 0 && sb->ssl != ssl) {
@@ -479,7 +479,7 @@ static int sbuf2fread_int(char *ptr, int size, int nitems,
             sb->rhd = 0;
 #if SBUF2_SERVER
             void *ssl;
-ssl_downgrade:
+        ssl_downgrade:
             ssl = sb->ssl;
             rc = sb->read(sb, (char *)sb->rbuf, sb->lbuf - 1);
             if (rc == 0 && sb->ssl != ssl)
@@ -828,9 +828,9 @@ SBUF2 *SBUF2_FUNC(sbuf2open)(int fd, int flags)
     sb->fd = fd;
     sb->flags = flags;
 #if SBUF2_SERVER
-#   ifdef PER_THREAD_MALLOC
+#ifdef PER_THREAD_MALLOC
     sb->allocator = alloc;
-#   endif
+#endif
     sb->clnt = NULL;
 #endif
 

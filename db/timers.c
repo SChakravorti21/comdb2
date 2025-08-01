@@ -48,7 +48,6 @@ void timer_init(void (*func)(struct timer_parm *))
     comdb2_time_init();
 }
 
-
 #define left(n) (((n + 1) * 2) - 1)
 #define right(n) (((n + 1) * 2))
 #define parent(n) ((n + 1) / 2 - 1)

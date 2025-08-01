@@ -25,54 +25,83 @@
 
 #include <logmsg.h>
 
-uint32_t crc32c_software(const uint8_t* buf, uint32_t sz, uint32_t crc)
+uint32_t crc32c_software(const uint8_t *buf, uint32_t sz, uint32_t crc)
 {
-	/* Process misaligned data byte at a time */
-	intptr_t misaligned = (intptr_t)buf & (sizeof(intptr_t) - 1);
-	unsigned adj = misaligned ? sizeof(intptr_t) - misaligned : 0;
-	if (adj > sz) adj = sz;
-	int i = 0;
-	switch (adj) {
-	case 7: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 6: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 5: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 4: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 3: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 2: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 1: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-		sz -= adj;
-		buf += i;
-	}
-	/* Process 8 bytes at a time */
-	const uint8_t *end = buf + (sz & (~0x7));
-	while (buf < end) {
-		// read two little endian ints
-		uint32_t u32a, u32b;
-		u32a = (buf[0]<<0) | (buf[1]<<8) | (buf[2]<<16) | (buf[3]<<24);
-		buf += 4;
-		u32b = (buf[0]<<0) | (buf[1]<<8) | (buf[2]<<16) | (buf[3]<<24);
-		buf += 4;
-		crc ^= u32a;
-		uint32_t term1 = crc_tableil8_o88[crc & 0x000000FF] ^ crc_tableil8_o80[(crc >> 8) & 0x000000FF];
-		uint32_t term2 = crc >> 16;
-		crc = term1 ^ crc_tableil8_o72[term2 & 0x000000FF] ^ crc_tableil8_o64[(term2 >> 8) & 0x000000FF];
-		term1 = crc_tableil8_o56[u32b & 0x000000FF] ^ crc_tableil8_o48[(u32b >> 8) & 0x000000FF];
-		term2 = u32b >> 16;
-		crc = crc ^ term1 ^ crc_tableil8_o40[term2  & 0x000000FF] ^ crc_tableil8_o32[(term2 >> 8) & 0x000000FF];
-	}
-	/* Process the last 7 (or less) bytes */
-	sz &= 0x7;
-	i = 0;
-	switch (sz) {
-	case 7: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 6: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 5: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 4: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 3: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 2: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	case 1: crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8); ++i;
-	}
-	return crc;
+    /* Process misaligned data byte at a time */
+    intptr_t misaligned = (intptr_t)buf & (sizeof(intptr_t) - 1);
+    unsigned adj = misaligned ? sizeof(intptr_t) - misaligned : 0;
+    if (adj > sz)
+        adj = sz;
+    int i = 0;
+    switch (adj) {
+    case 7:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 6:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 5:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 4:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 3:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 2:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 1:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+        sz -= adj;
+        buf += i;
+    }
+    /* Process 8 bytes at a time */
+    const uint8_t *end = buf + (sz & (~0x7));
+    while (buf < end) {
+        // read two little endian ints
+        uint32_t u32a, u32b;
+        u32a = (buf[0] << 0) | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+        buf += 4;
+        u32b = (buf[0] << 0) | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+        buf += 4;
+        crc ^= u32a;
+        uint32_t term1 = crc_tableil8_o88[crc & 0x000000FF] ^ crc_tableil8_o80[(crc >> 8) & 0x000000FF];
+        uint32_t term2 = crc >> 16;
+        crc = term1 ^ crc_tableil8_o72[term2 & 0x000000FF] ^ crc_tableil8_o64[(term2 >> 8) & 0x000000FF];
+        term1 = crc_tableil8_o56[u32b & 0x000000FF] ^ crc_tableil8_o48[(u32b >> 8) & 0x000000FF];
+        term2 = u32b >> 16;
+        crc = crc ^ term1 ^ crc_tableil8_o40[term2 & 0x000000FF] ^ crc_tableil8_o32[(term2 >> 8) & 0x000000FF];
+    }
+    /* Process the last 7 (or less) bytes */
+    sz &= 0x7;
+    i = 0;
+    switch (sz) {
+    case 7:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 6:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 5:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 4:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 3:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 2:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    case 1:
+        crc = crc_tableil8_o32[(crc ^ buf[i]) & 0x000000FF] ^ (crc >> 8);
+        ++i;
+    }
+    return crc;
 }
 
 #ifdef __x86_64__
@@ -84,11 +113,11 @@ uint32_t crc32c_software(const uint8_t* buf, uint32_t sz, uint32_t crc)
 static uint32_t crc32c_sse_pcl(const uint8_t *buf, uint32_t sz, uint32_t crc);
 static uint32_t crc32c_sse(const uint8_t *buf, uint32_t sz, uint32_t crc);
 
-typedef uint32_t(*crc32c_t)(const uint8_t* data, uint32_t size, uint32_t crc);
+typedef uint32_t (*crc32c_t)(const uint8_t *data, uint32_t size, uint32_t crc);
 static crc32c_t crc32c_func;
 
 /* Vector type so that we can use pclmul */
-typedef long long v2di __attribute__ ((vector_size(16)));
+typedef long long v2di __attribute__((vector_size(16)));
 
 /* Select best method to compute crc32c */
 #include <cpuid.h>
@@ -101,35 +130,35 @@ typedef long long v2di __attribute__ ((vector_size(16)));
 #endif
 void crc32c_init(int v)
 {
-	uint32_t eax, ebx, ecx, edx;
-	__cpuid(1, eax, ebx, ecx, edx);
-	if (ecx & SSE4_2) {
-		if (ecx & PCLMUL) {
-			crc32c_func = crc32c_sse_pcl;
-			if (v) {
-				logmsg(LOGMSG_INFO, "SSE 4.2 + PCLMUL SUPPORT FOR CRC32C\n");
-				logmsg(LOGMSG_INFO, "crc32c = crc32c_sse_pcl\n");
-			}
-		} else {
-			crc32c_func = crc32c_sse;
-			if (v) {
+    uint32_t eax, ebx, ecx, edx;
+    __cpuid(1, eax, ebx, ecx, edx);
+    if (ecx & SSE4_2) {
+        if (ecx & PCLMUL) {
+            crc32c_func = crc32c_sse_pcl;
+            if (v) {
+                logmsg(LOGMSG_INFO, "SSE 4.2 + PCLMUL SUPPORT FOR CRC32C\n");
+                logmsg(LOGMSG_INFO, "crc32c = crc32c_sse_pcl\n");
+            }
+        } else {
+            crc32c_func = crc32c_sse;
+            if (v) {
                 logmsg(LOGMSG_INFO, "SSE 4.2 SUPPORT FOR CRC32C\n");
-				logmsg(LOGMSG_INFO, "crc32c = crc32c_sse\n");
-			}
-		}
-	}
-	if (crc32c_func == NULL) {
-		crc32c_func = crc32c_software;
-		if (v) {
-			logmsg(LOGMSG_INFO, "NO HARDWARE SUPPORT FOR CRC32C\n");
-			logmsg(LOGMSG_INFO, "crc32c = crc32c_software\n");
-		}
-	}
+                logmsg(LOGMSG_INFO, "crc32c = crc32c_sse\n");
+            }
+        }
+    }
+    if (crc32c_func == NULL) {
+        crc32c_func = crc32c_software;
+        if (v) {
+            logmsg(LOGMSG_INFO, "NO HARDWARE SUPPORT FOR CRC32C\n");
+            logmsg(LOGMSG_INFO, "crc32c = crc32c_software\n");
+        }
+    }
 }
 
-uint32_t crc32c_comdb2(const uint8_t* buf, uint32_t sz)
+uint32_t crc32c_comdb2(const uint8_t *buf, uint32_t sz)
 {
-	return crc32c_func(buf, sz, CRC32C_SEED);
+    return crc32c_func(buf, sz, CRC32C_SEED);
 }
 
 /* Helper routines */
@@ -151,36 +180,50 @@ static inline uint32_t crc32c_8s(const uint8_t *buf, uint32_t sz, uint32_t crc);
     REPEAT_8(x) REPEAT_4(x) REPEAT_2(x) x
 
 // Intel White Paper: Fast CRC Computation for iSCSI Polynomial Using CRC32 Instruction
-#define THREESOME			\
-c1 = _mm_crc32_u64(c1, b1[i]);	\
-c2 = _mm_crc32_u64(c2, b2[i]);	\
-c3 = _mm_crc32_u64(c3, b3[i]);	\
-++i;
+#define THREESOME                  \
+    c1 = _mm_crc32_u64(c1, b1[i]); \
+    c2 = _mm_crc32_u64(c2, b2[i]); \
+    c3 = _mm_crc32_u64(c3, b3[i]); \
+    ++i;
 
 /* Compute chksum processing 8 bytes at a time */
 static inline uint32_t crc32c_8s(const uint8_t *buf, uint32_t sz, uint32_t crc)
 {
-	crc = crc32c_until_aligned(&buf, &sz, crc);
-	const uint8_t *end = buf + sz;
-	const uint64_t *b = (uint64_t *) buf;
-	const uint64_t *e = b + (sz / 8);
-	while (b < e) {
-		crc = _mm_crc32_u64(crc, *b);
-		++b;
-	}
-	buf = (uint8_t *) b;
-	intptr_t diff = end - buf;
-	int i = 0;
-	switch (diff) {
-	case 7: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 6: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 5: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 4: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 3: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 2: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 1: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	}
-	return crc;
+    crc = crc32c_until_aligned(&buf, &sz, crc);
+    const uint8_t *end = buf + sz;
+    const uint64_t *b = (uint64_t *)buf;
+    const uint64_t *e = b + (sz / 8);
+    while (b < e) {
+        crc = _mm_crc32_u64(crc, *b);
+        ++b;
+    }
+    buf = (uint8_t *)b;
+    intptr_t diff = end - buf;
+    int i = 0;
+    switch (diff) {
+    case 7:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 6:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 5:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 4:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 3:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 2:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 1:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    }
+    return crc;
 }
 
 /*
@@ -189,19 +232,19 @@ static inline uint32_t crc32c_8s(const uint8_t *buf, uint32_t sz, uint32_t crc)
  */
 static uint32_t crc32c_sse(const uint8_t *buf, uint32_t sz, uint32_t crc)
 {
-	crc = crc32c_until_aligned(&buf, &sz, crc);
-	uint32_t i = sz % 1024;
-	if (i) {
-		sz -= i;
-		crc = crc32c_8s(buf, i, crc);
-		buf += i;
-		i = 0;
-	}
-	while (i < sz) {
-		crc = crc32c_1024_sse_int(&buf[i], crc);
-		i += 1024;
-	}
-	return crc;
+    crc = crc32c_until_aligned(&buf, &sz, crc);
+    uint32_t i = sz % 1024;
+    if (i) {
+        sz -= i;
+        crc = crc32c_8s(buf, i, crc);
+        buf += i;
+        i = 0;
+    }
+    while (i < sz) {
+        crc = crc32c_1024_sse_int(&buf[i], crc);
+        i += 1024;
+    }
+    return crc;
 }
 
 /*
@@ -210,96 +253,111 @@ static uint32_t crc32c_sse(const uint8_t *buf, uint32_t sz, uint32_t crc)
  */
 static uint32_t crc32c_sse_pcl(const uint8_t *buf, uint32_t sz, uint32_t crc)
 {
-	crc = crc32c_until_aligned(&buf, &sz, crc);
-	const uint64_t *b1, *b2, *b3;
-	uint64_t c1, c2, c3;
-	uint64_t out = crc;
-	v2di x1 = {0}, x2 = {0};
-	const v2di K = {0x1a0f717c4, 0x0170076fa};
+    crc = crc32c_until_aligned(&buf, &sz, crc);
+    const uint64_t *b1, *b2, *b3;
+    uint64_t c1, c2, c3;
+    uint64_t out = crc;
+    v2di x1 = {0}, x2 = {0};
+    const v2di K = {0x1a0f717c4, 0x0170076fa};
 
-	while (sz >= _3K) {
-		b1 = (const uint64_t *) &buf[0];
-		b2 = (const uint64_t *) &buf[1024];
-		b3 = (const uint64_t *) &buf[2048];
-		c1 = out;
-		c2 = c3 = 0;
-		int i = 0;
+    while (sz >= _3K) {
+        b1 = (const uint64_t *)&buf[0];
+        b2 = (const uint64_t *)&buf[1024];
+        b3 = (const uint64_t *)&buf[2048];
+        c1 = out;
+        c2 = c3 = 0;
+        int i = 0;
 
-		REPEAT_127(THREESOME);
+        REPEAT_127(THREESOME);
 
-		// Combine three results
-		x1[0] = _mm_crc32_u64(c1, b1[127]); // block 1 crc
-		x2[0] = _mm_crc32_u64(c2, b2[127]); // block 2 crc
+        // Combine three results
+        x1[0] = _mm_crc32_u64(c1, b1[127]); // block 1 crc
+        x2[0] = _mm_crc32_u64(c2, b2[127]); // block 2 crc
 
-		x1 = _mm_clmulepi64_si128(x1, K, 0x00); // mul by K[0]
-		x2 = _mm_clmulepi64_si128(x2, K, 0x10); // mul by K[1]
-		x1 = _mm_xor_si128(x1, x2);
+        x1 = _mm_clmulepi64_si128(x1, K, 0x00); // mul by K[0]
+        x2 = _mm_clmulepi64_si128(x2, K, 0x10); // mul by K[1]
+        x1 = _mm_xor_si128(x1, x2);
 
-		out = x1[0];    // boring scalar operations
-		out ^= b3[127];
-		out = _mm_crc32_u64(c3, out);
+        out = x1[0]; // boring scalar operations
+        out ^= b3[127];
+        out = _mm_crc32_u64(c3, out);
 
-		buf += _3K;
-		sz -= _3K;
-	}
-	if (sz) out = crc32c_sse(buf, sz, out);
-	return out;
+        buf += _3K;
+        sz -= _3K;
+    }
+    if (sz)
+        out = crc32c_sse(buf, sz, out);
+    return out;
 }
 
 /* Compute chksum 1 byte at a time until input is sizeof(intptr) aligned */
-static inline
-uint32_t crc32c_until_aligned(const uint8_t **buf_, uint32_t *sz_, uint32_t crc)
+static inline uint32_t crc32c_until_aligned(const uint8_t **buf_, uint32_t *sz_, uint32_t crc)
 {
-	const uint8_t *buf = *buf_;
-	uint32_t sz = *sz_;
-	intptr_t misaligned = (intptr_t)buf & (sizeof(intptr_t) - 1);
-	unsigned adj = misaligned ? sizeof(intptr_t) - misaligned : 0;
-	if (adj > sz) adj = sz;
-	int i = 0;
-	switch (adj) {
-	case 7: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 6: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 5: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 4: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 3: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 2: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-	case 1: crc = _mm_crc32_u8(crc, buf[i]); ++i;
-		sz -= adj;
-		*sz_ = sz;
-		*buf_ = buf + i;
-	}
-	return crc;
+    const uint8_t *buf = *buf_;
+    uint32_t sz = *sz_;
+    intptr_t misaligned = (intptr_t)buf & (sizeof(intptr_t) - 1);
+    unsigned adj = misaligned ? sizeof(intptr_t) - misaligned : 0;
+    if (adj > sz)
+        adj = sz;
+    int i = 0;
+    switch (adj) {
+    case 7:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 6:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 5:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 4:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 3:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 2:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+    case 1:
+        crc = _mm_crc32_u8(crc, buf[i]);
+        ++i;
+        sz -= adj;
+        *sz_ = sz;
+        *buf_ = buf + i;
+    }
+    return crc;
 }
 
 /* Compute chksum for 1024 bytes using SSE & recombine using lookup tables */
 #include "crc32c_1024.h"
 static inline uint32_t crc32c_1024_sse_int(const uint8_t *buf, uint32_t crc)
 {
-	uint64_t c1, c2, c3, tmp;
-	const uint64_t *b8 = (const uint64_t *) buf;
-	const uint64_t *b1 = &b8[1];
-	const uint64_t *b2 = &b8[43];
-	const uint64_t *b3 = &b8[85];
-	c2 = c3 = 0;
+    uint64_t c1, c2, c3, tmp;
+    const uint64_t *b8 = (const uint64_t *)buf;
+    const uint64_t *b1 = &b8[1];
+    const uint64_t *b2 = &b8[43];
+    const uint64_t *b3 = &b8[85];
+    c2 = c3 = 0;
 
-	c1 = _mm_crc32_u64(crc, b8[0]);
-	int i = 0;
-	REPEAT_42(THREESOME);
+    c1 = _mm_crc32_u64(crc, b8[0]);
+    int i = 0;
+    REPEAT_42(THREESOME);
 
-	// merge in c2
-	tmp = b8[127];
-	tmp ^= mul_table1_336[c2 & 0xFF];
-	tmp ^= ((uint64_t) mul_table1_336[(c2 >> 8) & 0xFF]) << 8;
-	tmp ^= ((uint64_t) mul_table1_336[(c2 >> 16) & 0xFF]) << 16;
-	tmp ^= ((uint64_t) mul_table1_336[(c2 >> 24) & 0xFF]) << 24;
+    // merge in c2
+    tmp = b8[127];
+    tmp ^= mul_table1_336[c2 & 0xFF];
+    tmp ^= ((uint64_t)mul_table1_336[(c2 >> 8) & 0xFF]) << 8;
+    tmp ^= ((uint64_t)mul_table1_336[(c2 >> 16) & 0xFF]) << 16;
+    tmp ^= ((uint64_t)mul_table1_336[(c2 >> 24) & 0xFF]) << 24;
 
-	// merge in c1
-	tmp ^= mul_table1_672[c1 & 0xFF];
-	tmp ^= ((uint64_t) mul_table1_672[(c1 >> 8) & 0xFF]) << 8;
-	tmp ^= ((uint64_t) mul_table1_672[(c1 >> 16) & 0xFF]) << 16;
-	tmp ^= ((uint64_t) mul_table1_672[(c1 >> 24) & 0xFF]) << 24;
+    // merge in c1
+    tmp ^= mul_table1_672[c1 & 0xFF];
+    tmp ^= ((uint64_t)mul_table1_672[(c1 >> 8) & 0xFF]) << 8;
+    tmp ^= ((uint64_t)mul_table1_672[(c1 >> 16) & 0xFF]) << 16;
+    tmp ^= ((uint64_t)mul_table1_672[(c1 >> 24) & 0xFF]) << 24;
 
-	return _mm_crc32_u64(c3, tmp);
+    return _mm_crc32_u64(c3, tmp);
 }
 
 #endif // Intel only
@@ -309,7 +367,7 @@ static inline uint32_t crc32c_1024_sse_int(const uint8_t *buf, uint32_t crc)
 #include <asm/hwcap.h>
 #include <sys/auxv.h>
 
-typedef uint32_t(*crc32c_t)(const uint8_t* data, uint32_t size, uint32_t crc);
+typedef uint32_t (*crc32c_t)(const uint8_t *data, uint32_t size, uint32_t crc);
 static crc32c_t crc32c_func;
 
 /* compute chksum for a small (<8) number of items word then half word then byte 
@@ -350,11 +408,12 @@ static inline uint32_t crc32c_until_aligned_arm(const uint8_t **buf_, uint32_t *
     uint32_t sz = *sz_;
     intptr_t misaligned = (intptr_t)buf & (sizeof(intptr_t) - 1);
     unsigned adj = misaligned ? sizeof(intptr_t) - misaligned : 0;
-    if (adj > sz) adj = sz;
+    if (adj > sz)
+        adj = sz;
     return crc32c_process_small_arm(buf_, sz_, adj, crc);
 }
 
-static inline uint32_t crc32c_arm(const uint8_t* buf, uint32_t sz, uint32_t crc)
+static inline uint32_t crc32c_arm(const uint8_t *buf, uint32_t sz, uint32_t crc)
 {
     // If we will need to process long buffers aligned we
     // should call it here: crc32c_until_aligned_arm(&buf, &sz, crc);
@@ -389,18 +448,17 @@ void crc32c_init(int v)
     }
 }
 
-uint32_t crc32c_comdb2(const uint8_t* buf, uint32_t sz)
+uint32_t crc32c_comdb2(const uint8_t *buf, uint32_t sz)
 {
     return crc32c_func(buf, sz, CRC32C_SEED);
 }
 
 #endif
 
-
-
 #if TEST_CRC32C
 
-int logmsg(loglvl lvl, const char *fmt, ...) {
+int logmsg(loglvl lvl, const char *fmt, ...)
+{
     va_list args;
     va_start(args, fmt);
     int ret = printf(fmt, args);
@@ -411,12 +469,13 @@ int logmsg(loglvl lvl, const char *fmt, ...) {
 #include <assert.h>
 #include <sys/time.h>
 
-void timediff(const char * s) {
+void timediff(const char *s)
+{
     static struct timeval tv;
     struct timeval tmp;
 
     gettimeofday(&tmp, NULL);
-    int sec = (tmp.tv_sec - tv.tv_sec)*1000000;
+    int sec = (tmp.tv_sec - tv.tv_sec) * 1000000;
     int usec = (tmp.tv_usec - tv.tv_usec);
     if (tv.tv_sec)
         printf("%20.20s diff = %12.dusec\n", s, sec + usec);
@@ -432,42 +491,43 @@ int main()
 {
     crc32c_init(1);
 
-    printf("Test that NULL does not crash hw %d", crc32c_comdb2(NULL, 0)); printf("...check\n");
+    printf("Test that NULL does not crash hw %d", crc32c_comdb2(NULL, 0));
+    printf("...check\n");
 
-    printf("''   sw 0x%x hw 0x%x", crc32c_software((const uint8_t*)"", 0, 0), crc32c_comdb2((const uint8_t*)"", 0));
-    if (crc32c_comdb2((const uint8_t*)"", 0) != 0x0) {
+    printf("''   sw 0x%x hw 0x%x", crc32c_software((const uint8_t *)"", 0, 0), crc32c_comdb2((const uint8_t *)"", 0));
+    if (crc32c_comdb2((const uint8_t *)"", 0) != 0x0) {
         printf("...crc2c for '' not correct\n");
         exit(1);
     } else
         printf("...check\n");
 
-    printf("'a'  sw 0x%x hw 0x%x", crc32c_software((const uint8_t*)"a", 1, 0), crc32c_comdb2((const uint8_t*)"a", 1));
-    if (crc32c_comdb2((const uint8_t*)"a", 1) != 0x93ad1061) {
+    printf("'a'  sw 0x%x hw 0x%x", crc32c_software((const uint8_t *)"a", 1, 0), crc32c_comdb2((const uint8_t *)"a", 1));
+    if (crc32c_comdb2((const uint8_t *)"a", 1) != 0x93ad1061) {
         printf("...crc2c for 'a' not correct\n");
         exit(1);
     } else
         printf("...check\n");
-#define MAXLEN 1<<15
+#define MAXLEN 1 << 15
     uint8_t lbuf[MAXLEN];
     int i;
     lbuf[0] = 'a';
 
-    for(i = 1; i < MAXLEN; i++)
+    for (i = 1; i < MAXLEN; i++)
         lbuf[i] = i;
     timediff("start");
 
-    for(i = 1; i < MAXLEN; i++) {
+    for (i = 1; i < MAXLEN; i++) {
         int a = crc32c_software(lbuf, i, 0);
         f(a);
     }
     timediff("software: ");
-    for(i = 1; i < MAXLEN; i++) {
+    for (i = 1; i < MAXLEN; i++) {
         int a = crc32c_comdb2(lbuf, i);
         f(a);
     }
     timediff("hardware: ");
 
-    for(i = 1; i < MAXLEN; i++) {
+    for (i = 1; i < MAXLEN; i++) {
         assert(crc32c_software(lbuf, i, 0) == crc32c_comdb2(lbuf, i));
     }
     printf("successfully tested %d strings\n", i);

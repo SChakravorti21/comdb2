@@ -100,10 +100,12 @@ struct item {
     void *destructor_arg;
 
     /* Link in list of items for the item type. */
-    LINKC_T(struct item) typestr_items_linkv;
+    LINKC_T(struct item)
+    typestr_items_linkv;
 
     /* Link in lru list of all items. */
-    LINKC_T(struct item) lru_linkv;
+    LINKC_T(struct item)
+    lru_linkv;
 
     /* Chain back to parent. */
     struct itemtype *type;
@@ -112,10 +114,11 @@ struct item {
 /* For each unique typestr we keep one of these at the head of the list. */
 struct itemtype {
     /* Items, with most recently donated at the bottom of the list. */
-    LISTC_T(struct item) item_list;
+    LISTC_T(struct item)
+    item_list;
     struct stats stats;
     struct stats dbgstats; /* for dbglog */
-    char typestr[1]; /* must be last thing in struct; this is hash table key */
+    char typestr[1];       /* must be last thing in struct; this is hash table key */
 };
 
 static hash_t *hash = NULL;
@@ -152,7 +155,10 @@ void socket_pool_reset_connection_(void)
     sockpool_fd = -1;
 }
 
-void socket_pool_set_max_fds(unsigned new_max) { max_active_fds = new_max; }
+void socket_pool_set_max_fds(unsigned new_max)
+{
+    max_active_fds = new_max;
+}
 
 void socket_pool_set_max_fds_per_typestr(unsigned new_max)
 {
@@ -165,7 +171,10 @@ void socket_pool_enable(void)
     syslog(LOG_INFO, "Socket pool enabled\n");
 }
 
-void socket_pool_enable_(void) { socket_pool_enable(); }
+void socket_pool_enable_(void)
+{
+    socket_pool_enable();
+}
 
 void socket_pool_disable(void)
 {
@@ -174,15 +183,30 @@ void socket_pool_disable(void)
     socket_pool_free_all();
 }
 
-void socket_pool_disable_(void) { socket_pool_disable(); }
+void socket_pool_disable_(void)
+{
+    socket_pool_disable();
+}
 
-void sockpool_enable(void) { sockpool_enabled = 1; }
+void sockpool_enable(void)
+{
+    sockpool_enabled = 1;
+}
 
-void sockpool_enable_(void) { sockpool_enable(); }
+void sockpool_enable_(void)
+{
+    sockpool_enable();
+}
 
-void sockpool_disable(void) { sockpool_enabled = 0; }
+void sockpool_disable(void)
+{
+    sockpool_enabled = 0;
+}
 
-void sockpool_disable_(void) { sockpool_disable(); }
+void sockpool_disable_(void)
+{
+    sockpool_disable();
+}
 
 /* Because we maintain a long lived connection to sockpool we run the risk
  * that sockpool may crash and that we will receive SIGPIPE the next time we
@@ -219,13 +243,13 @@ static void hold_sigpipe_ll(int on)
     } else if (!sigismember(&oset, SIGPIPE)) {
         /* unblock SIGPIPE (if it wasn't blocked before).
          * Also catch any pending sigpipes. */
-#       ifndef __APPLE__
+#ifndef __APPLE__
         struct timespec timeout = {0, 0};
         if (sigtimedwait(&sset, NULL, &timeout) == -1 && errno != EAGAIN) {
             fprintf(stderr, "%s:sigtimedwait: %d %s\n", __func__, errno,
                     strerror(errno));
         }
-#       endif
+#endif
         rc = pthread_sigmask(SIG_SETMASK, &oset, NULL);
         if (rc != 0) {
             fprintf(stderr, "%s:pthread_sigmask(%d): %d %s\n", __func__, on, rc,
@@ -383,7 +407,10 @@ void socket_pool_close_all(void)
     Pthread_mutex_unlock(&sockpool_lk);
 }
 
-void socket_pool_close_all_(void) { socket_pool_close_all(); }
+void socket_pool_close_all_(void)
+{
+    socket_pool_close_all();
+}
 
 static int socket_pool_free_callback(void *obj, void *voidarg)
 {
@@ -391,7 +418,10 @@ static int socket_pool_free_callback(void *obj, void *voidarg)
     return 0;
 }
 
-void socket_pool_end_event_(void) { socket_pool_end_event(); }
+void socket_pool_end_event_(void)
+{
+    socket_pool_end_event();
+}
 
 void socket_pool_end_event(void)
 {
@@ -417,7 +447,10 @@ void socket_pool_free_all(void)
     Pthread_mutex_unlock(&sockpool_lk);
 }
 
-void socket_pool_free_all_(void) { socket_pool_free_all(); }
+void socket_pool_free_all_(void)
+{
+    socket_pool_free_all();
+}
 
 /* Check for sockets that have timed out and close them */
 void socket_pool_timeout(void)
@@ -445,7 +478,10 @@ void socket_pool_timeout(void)
     Pthread_mutex_unlock(&sockpool_lk);
 }
 
-void socket_pool_timeout_(void) { socket_pool_timeout(); }
+void socket_pool_timeout_(void)
+{
+    socket_pool_timeout();
+}
 
 struct stats_args {
     int all;
@@ -453,7 +489,6 @@ struct stats_args {
     int syslog;
     FILE *fh;
 };
-
 
 static int socket_pool_stats_callback(void *obj, void *voidarg)
 {
@@ -463,10 +498,10 @@ static int socket_pool_stats_callback(void *obj, void *voidarg)
         memcmp(&type->stats, &empty_stats, sizeof(struct stats)) != 0) {
         if (args->syslog) {
             syslog(LOG_INFO, "%-32s [%2d/%2u] %5u, %5u (%u, %u, %u)\n",
-                    type->typestr, listc_size(&type->item_list),
-                    type->stats.peak_n_held, type->stats.n_donated,
-                    type->stats.n_reused, type->stats.n_duped,
-                    type->stats.n_trimmed, type->stats.n_timeouts);
+                   type->typestr, listc_size(&type->item_list),
+                   type->stats.peak_n_held, type->stats.n_donated,
+                   type->stats.n_reused, type->stats.n_duped,
+                   type->stats.n_trimmed, type->stats.n_timeouts);
         } else {
             fprintf(args->fh, "%-32s [%2d/%2u] %5u, %5u (%u, %u, %u)\n",
                     type->typestr, listc_size(&type->item_list),
@@ -490,17 +525,17 @@ void socket_pool_dump_stats(FILE *fh, int reset, int all)
 void socket_pool_dump_stats_syslog(int reset, int all)
 {
     syslog(LOG_INFO, "Socket pool stats, enabled=%d, sockpool enabled=%d\n", enabled,
-            sockpool_enabled);
+           sockpool_enabled);
     Pthread_mutex_lock(&sockpool_lk);
     if (hash) {
         struct stats_args args = {all, reset, 1, NULL};
         hash_for(hash, socket_pool_stats_callback, &args);
         syslog(LOG_INFO, "%-32s [%2d/%2u] %5u, %5u (%u, %u, %u)\n", "Global stats:",
-                listc_size(&lru_list), stats.peak_n_held, stats.n_donated,
-                stats.n_reused, stats.n_duped, stats.n_trimmed,
-                stats.n_timeouts);
+               listc_size(&lru_list), stats.peak_n_held, stats.n_donated,
+               stats.n_reused, stats.n_duped, stats.n_trimmed,
+               stats.n_timeouts);
         syslog(LOG_INFO, "Counters are: [fds held/peak held] num donated, num "
-                    "reused (num duped, trimmed, timed out)\n");
+                         "reused (num duped, trimmed, timed out)\n");
 
     } else {
         syslog(LOG_INFO, "Socket pool unused\n");

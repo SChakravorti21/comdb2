@@ -80,9 +80,7 @@ void net_cmd(netinfo_type *netinfo_ptr, char *line, int lline, int st, int op1)
         int ii;
         for (ii = 0; help_msg[ii]; ii++)
             logmsg(LOGMSG_USER, "%s\n", help_msg[ii]);
-    }
-    else if (tokcmp(tok, ltok, "conn") == 0)
-    {
+    } else if (tokcmp(tok, ltok, "conn") == 0) {
         logmsg(LOGMSG_USER, "All connect times\n");
         quantize_dump(netinfo_ptr->conntime_all, stdout);
         logmsg(LOGMSG_USER, "\n");
@@ -91,14 +89,17 @@ void net_cmd(netinfo_type *netinfo_ptr, char *line, int lline, int st, int op1)
     }
 }
 
-int64_t net_get_num_accepts(netinfo_type *netinfo_ptr) {
-   return netinfo_ptr->num_accepts;
+int64_t net_get_num_accepts(netinfo_type *netinfo_ptr)
+{
+    return netinfo_ptr->num_accepts;
 }
 
-int64_t net_get_num_accept_timeouts(netinfo_type *netinfo_ptr) {
-   return netinfo_ptr->num_accept_timeouts;
+int64_t net_get_num_accept_timeouts(netinfo_type *netinfo_ptr)
+{
+    return netinfo_ptr->num_accept_timeouts;
 }
 
-int64_t net_get_num_current_non_appsock_accepts(netinfo_type *netinfo_ptr) {
-   return netinfo_ptr->num_current_non_appsock_accepts;
+int64_t net_get_num_current_non_appsock_accepts(netinfo_type *netinfo_ptr)
+{
+    return netinfo_ptr->num_current_non_appsock_accepts;
 }

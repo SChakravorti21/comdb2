@@ -105,4 +105,3 @@ void fdb_sequence_request(struct sqlclntstate *tran_clnt, fdb_tran_t *trans,
                           int seq);
 
 #endif
-

@@ -63,13 +63,14 @@ int reject_anon_id(struct sqlclntstate *clnt)
 
 int (*externalComdb2AuthenticateUserMakeRequest)(void *, const char *) = NULL;
 
-void get_client_origin(char *out, size_t outlen, struct sqlclntstate *clnt) {
+void get_client_origin(char *out, size_t outlen, struct sqlclntstate *clnt)
+{
     snprintf(out, outlen,
-            "%s:origin:%s:pid:%d",
-            clnt->argv0 ? clnt->argv0 : "?",
-            clnt->origin ? clnt->origin: "?",
-            clnt->conninfo.pid);
-} 
+             "%s:origin:%s:pid:%d",
+             clnt->argv0 ? clnt->argv0 : "?",
+             clnt->origin ? clnt->origin : "?",
+             clnt->conninfo.pid);
+}
 
 /* If user password does not match this function
  * will write error response and return a non 0 rc
@@ -93,8 +94,8 @@ int check_user_password(struct sqlclntstate *clnt)
     }
 
     if ((gbl_uses_externalauth || gbl_uses_externalauth_connect) &&
-            (externalComdb2AuthenticateUserMakeRequest || debug_switch_ignore_null_auth_func()) &&
-            !clnt->admin && !clnt->current_user.bypass_auth) {
+        (externalComdb2AuthenticateUserMakeRequest || debug_switch_ignore_null_auth_func()) &&
+        !clnt->admin && !clnt->current_user.bypass_auth) {
         clnt->authdata = get_authdata(clnt);
         if (clnt->allow_make_request)
             return 0;
@@ -120,11 +121,11 @@ int check_user_password(struct sqlclntstate *clnt)
             write_response(clnt, RESPONSE_ERROR,
                            errstr,
                            CDB2ERR_ACCESS);
-         } else {
-             clnt->allow_make_request = 1;
-             ATOMIC_ADD64(gbl_num_auth_allowed, 1);
-         }
-         return rc;
+        } else {
+            clnt->allow_make_request = 1;
+            ATOMIC_ADD64(gbl_num_auth_allowed, 1);
+        }
+        return rc;
     }
 
     if (!remsql_warned && (!gbl_uses_password && !gbl_uses_externalauth) &&
@@ -250,7 +251,7 @@ int access_control_check_sql_write(struct BtCursor *pCur,
         snprintf(client_info, sizeof(client_info),
                  "%s:origin:%s:pid:%d",
                  clnt->argv0 ? clnt->argv0 : "?",
-                 clnt->origin ? clnt->origin: "?",
+                 clnt->origin ? clnt->origin : "?",
                  clnt->conninfo.pid);
         if (!clnt->authdata && clnt->secure && !gbl_allow_anon_id_for_spmux) {
             return reject_anon_id(clnt);
@@ -262,7 +263,7 @@ int access_control_check_sql_write(struct BtCursor *pCur,
             ATOMIC_ADD64(gbl_num_auth_denied, 1);
             char msg[1024];
             snprintf(msg, sizeof(msg), "Write access denied to table %s for user %s",
-                      table_name, clnt->externalAuthUser ? clnt->externalAuthUser : "");
+                     table_name, clnt->externalAuthUser ? clnt->externalAuthUser : "");
             logmsg(LOGMSG_INFO, "%s\n", msg);
             errstat_set_rc(&thd->clnt->osql.xerr, SQLITE_ACCESS);
             errstat_set_str(&thd->clnt->osql.xerr, msg);
@@ -271,7 +272,7 @@ int access_control_check_sql_write(struct BtCursor *pCur,
     } else {
         /* Check read access if its not user schema. */
         /* Check it only if engine is open already. */
-        if (gbl_uses_password &&  !clnt->current_user.bypass_auth && (thd->clnt->in_sqlite_init == 0)) {
+        if (gbl_uses_password && !clnt->current_user.bypass_auth && (thd->clnt->in_sqlite_init == 0)) {
             rc = bdb_check_user_tbl_access(
                 pCur->db->dbenv->bdb_env, thd->clnt->current_user.name,
                 pCur->db->tablename, ACCESS_WRITE, &bdberr);
@@ -333,7 +334,7 @@ int access_control_check_sql_read(struct BtCursor *pCur, struct sql_thread *thd,
         snprintf(client_info, sizeof(client_info),
                  "%s:origin:%s:pid:%d",
                  clnt->argv0 ? clnt->argv0 : "?",
-                 clnt->origin ? clnt->origin: "?",
+                 clnt->origin ? clnt->origin : "?",
                  clnt->conninfo.pid);
         if (!clnt->authdata && clnt->secure && !gbl_allow_anon_id_for_spmux)
             return reject_anon_id(clnt);
@@ -344,7 +345,7 @@ int access_control_check_sql_read(struct BtCursor *pCur, struct sql_thread *thd,
             ATOMIC_ADD64(gbl_num_auth_denied, 1);
             char msg[1024];
             snprintf(msg, sizeof(msg), "Read access denied to table %s for user %s",
-                      table_name, clnt->externalAuthUser ? clnt->externalAuthUser : "");
+                     table_name, clnt->externalAuthUser ? clnt->externalAuthUser : "");
             logmsg(LOGMSG_INFO, "%s\n", msg);
             errstat_set_rc(&thd->clnt->osql.xerr, SQLITE_ACCESS);
             errstat_set_str(&thd->clnt->osql.xerr, msg);
@@ -378,7 +379,8 @@ int access_control_check_sql_read(struct BtCursor *pCur, struct sql_thread *thd,
     return 0;
 }
 
-static int check_tag_access(struct ireq *iq) {
+static int check_tag_access(struct ireq *iq)
+{
     if ((gbl_uses_password || gbl_uses_externalauth) && !gbl_unauth_tag_access && !iq->authdata) {
         reqerrstr(iq, ERR_ACCESS,
                   "Tag access denied for table %s from %s\n",
@@ -457,7 +459,7 @@ int comdb2_check_vtab_access(sqlite3 *db, sqlite3_module *module)
             snprintf(client_info, sizeof(client_info),
                      "%s:origin:%s:pid:%d",
                      clnt->argv0 ? clnt->argv0 : "?",
-                     clnt->origin ? clnt->origin: "?",
+                     clnt->origin ? clnt->origin : "?",
                      clnt->conninfo.pid);
             if (!clnt->authdata && clnt->secure && !gbl_allow_anon_id_for_spmux)
                 return reject_anon_id(clnt);
@@ -495,4 +497,3 @@ int comdb2_check_vtab_access(sqlite3 *db, sqlite3_module *module)
     assert(0);
     return 0;
 }
-

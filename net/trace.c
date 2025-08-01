@@ -35,7 +35,7 @@ enum {
 
 static pthread_mutex_t trace_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static void host_node_vprintf(loglvl lvl, host_node_type *host_node_ptr, 
+static void host_node_vprintf(loglvl lvl, host_node_type *host_node_ptr,
                               int flags, const char *fmt, va_list ap)
 {
     struct netinfo_struct *netinfo_ptr = host_node_ptr->netinfo_ptr;

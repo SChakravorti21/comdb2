@@ -44,12 +44,12 @@ hash_t *ongoing_alters = NULL;
 int gbl_abort_during_downgrade_if_scs_dont_stop = 0;
 
 /* monitor queue latency on master during alter schema changes */
-int gbl_altersc_latency = 1; /* enable alter sc latency check and delay */
-int gbl_altersc_delay_usec = 0; /* wait this many useconds if threshold reached */
-int gbl_altersc_latency_thr = 5; /* threshold, default latency +1msec/sec */
-int gbl_altersc_sampling_sec = 5; /* every "sec" seconds we get the average of queue time */
+int gbl_altersc_latency = 1;        /* enable alter sc latency check and delay */
+int gbl_altersc_delay_usec = 0;     /* wait this many useconds if threshold reached */
+int gbl_altersc_latency_thr = 5;    /* threshold, default latency +1msec/sec */
+int gbl_altersc_sampling_sec = 5;   /* every "sec" seconds we get the average of queue time */
 int gbl_altersc_latency_inc = 1000; /* increment for latency, 1 msec */
-static struct time_metric* latency;
+static struct time_metric *latency;
 
 pthread_mutex_t sc_resuming_mtx = PTHREAD_MUTEX_INITIALIZER;
 struct schema_change_type *sc_resuming = NULL;
@@ -92,9 +92,12 @@ static int stopsc = 0; /* stop schemachange, so it can resume */
 
 inline int is_dta_being_rebuilt(struct scplan *plan)
 {
-    if (!plan) return 1;
-    if (!gbl_use_plan) return 1;
-    if (plan->dta_plan) return 1;
+    if (!plan)
+        return 1;
+    if (!gbl_use_plan)
+        return 1;
+    if (plan->dta_plan)
+        return 1;
 
     return 0;
 }
@@ -198,7 +201,8 @@ const char *get_sc_to_name(const char *name)
     }
 
     if (get_schema_change_in_progress(__func__, __LINE__)) {
-        if (strncasecmp(name, pref, preflen) == 0) return name + preflen;
+        if (strncasecmp(name, pref, preflen) == 0)
+            return name + preflen;
     }
     return NULL;
 }
@@ -349,7 +353,8 @@ int sc_set_running(struct ireq *iq, struct schema_change_type *s, char *table,
 
 done:
     ctrace("%s(table=%s running=%d): gbl_schema_change_in_progress %d"
-           " from %s:%d rc=%d\n", __func__, table, running,
+           " from %s:%d rc=%d\n",
+           __func__, table, running,
            get_schema_change_in_progress(__func__, __LINE__),
            func, line, rc);
 

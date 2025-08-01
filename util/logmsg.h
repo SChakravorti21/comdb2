@@ -14,14 +14,14 @@ typedef enum {
 } loglvl;
 
 #ifdef _SUN_SOURCE
-#define FORMAT_PRINTF(x,y)
+#define FORMAT_PRINTF(x, y)
 #else
-#define FORMAT_PRINTF(x,y) __attribute__((format(printf,x,y)))
+#define FORMAT_PRINTF(x, y) __attribute__((format(printf, x, y)))
 #endif
 
 #ifndef NDEBUG
-#define DEBUGMSG(fmt, args...)                                                 \
-    logmsg(LOGMSG_DEBUG, "tid 0x%lu %s:%d " fmt, pthread_self(), __func__,     \
+#define DEBUGMSG(fmt, args...)                                             \
+    logmsg(LOGMSG_DEBUG, "tid 0x%lu %s:%d " fmt, pthread_self(), __func__, \
            __LINE__, ##args)
 #else
 #define DEBUGMSG(fmt, args...)

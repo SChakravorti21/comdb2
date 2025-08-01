@@ -35,7 +35,8 @@
    per-request
    (sql query, qtrap, etc.) basis. It's intentionally vague. Yes, another
    pthread key. */
-enum request_type { REQUEST_TYPE_SQL_QUERY = 1, REQUEST_TYPE_QTRAP = 2 };
+enum request_type { REQUEST_TYPE_SQL_QUERY = 1,
+                    REQUEST_TYPE_QTRAP = 2 };
 
 enum {
     FLAG_REQUEST_TRACK_READS = 0x01,

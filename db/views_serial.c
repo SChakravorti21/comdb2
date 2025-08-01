@@ -60,7 +60,7 @@
 static char *_concat(char *str, int *len, const char *fmt, ...);
 
 const char *cson_extract_str(cson_object *cson_obj, const char *param,
-                                     struct errstat *err);
+                             struct errstat *err);
 static timepart_view_t *partition_deserialize_cson_value(cson_value *cson_view,
                                                          struct errstat *err);
 static timepart_views_t *_create_all_views(const char *views_str);
@@ -284,7 +284,9 @@ timepart_view_t *timepart_deserialize_view(const char *str, struct errstat *err)
     }
 
 done:
-    if (cson_view) { cson_free_value(cson_view); }
+    if (cson_view) {
+        cson_free_value(cson_view);
+    }
     return view;
 }
 
@@ -480,23 +482,23 @@ static int _views_do_partition_create(void *tran, timepart_views_t *views,
                  first_shard);
         goto error;
     }
-    
+
     check_columns_null_and_dbstore(view->name, db);
 
     /* check to see if the name exists either as a table, or part of a
        different partition */
-    rc = comdb2_partition_check_name_reuse(first_shard, &err_partname, 
+    rc = comdb2_partition_check_name_reuse(first_shard, &err_partname,
                                            &err_shardidx);
-    if(rc) {
+    if (rc) {
         if (rc != VIEW_ERR_EXIST)
             abort();
 
-        if(err_shardidx == -1) {
-            snprintf(err->errstr, sizeof(err->errstr), 
+        if (err_shardidx == -1) {
+            snprintf(err->errstr, sizeof(err->errstr),
                      "Partition name \"%s\" matches seed shard in partition \"%s\"",
                      first_shard, err_partname);
         } else {
-            snprintf(err->errstr, sizeof(err->errstr), 
+            snprintf(err->errstr, sizeof(err->errstr),
                      "Partition name \"%s\" matches shard %d in partition \"%s\"",
                      first_shard, err_shardidx, err_partname);
         }
@@ -1204,7 +1206,7 @@ char *normalize_string(const char *str)
 }
 
 const char *cson_extract_str(cson_object *cson_obj, const char *param,
-                                     struct errstat *err)
+                             struct errstat *err)
 {
     cson_value *param_val;
     const char *ret_str;
@@ -1239,7 +1241,7 @@ const char *cson_extract_str(cson_object *cson_obj, const char *param,
 }
 
 int cson_extract_int(cson_object *cson_obj, const char *param,
-                             struct errstat *err)
+                     struct errstat *err)
 {
     cson_value *param_val;
     const char *ret_str;
@@ -1278,7 +1280,7 @@ int cson_extract_int(cson_object *cson_obj, const char *param,
 }
 
 cson_array *cson_extract_array(cson_object *cson_obj, const char *param,
-                                       struct errstat *err)
+                               struct errstat *err)
 {
     cson_value *param_val;
 
@@ -1404,7 +1406,7 @@ static timepart_view_t *partition_deserialize_cson_value(cson_value *cson_view,
     starttime = _cson_extract_start_string(obj, tmp_str, period, err);
 
     tmp_str = cson_extract_str(obj, "SOURCE_ID", err);
-    if(!tmp_str)
+    if (!tmp_str)
         comdb2uuid_clear(source_id);
     else if (uuid_parse(tmp_str, source_id)) {
         errs = "Wrong JSON format, SOURCE_ID value invalid uuid";
@@ -1544,7 +1546,6 @@ oom:
     goto error;
 }
 
-
 char *convert_epoch_to_time_string(int epoch, char *buf, int buflen)
 {
     server_datetime_t dt = {0};
@@ -1552,7 +1553,7 @@ char *convert_epoch_to_time_string(int epoch, char *buf, int buflen)
     int isnull;
     int rc;
     struct field_conv_opts_tz outopts = {0};
-    struct sql_thread *thd =pthread_getspecific(query_info_key);
+    struct sql_thread *thd = pthread_getspecific(query_info_key);
 
     /* types.c expects big-endian, or flag for LENDIAN */
     epoch = htonl(epoch);
@@ -1563,7 +1564,7 @@ char *convert_epoch_to_time_string(int epoch, char *buf, int buflen)
     }
 
     isnull = outlen = 0;
-    if(!thd || !thd->clnt)
+    if (!thd || !thd->clnt)
         strcpy(outopts.tzname, "UTC");
     else
         strcpy(outopts.tzname, thd->clnt->tzname);
@@ -1586,9 +1587,9 @@ int convert_time_string_to_epoch(const char *time_str)
     int outdtsz;
     int ret = 0;
     int isnull = 0;
-    struct sql_thread *thd =pthread_getspecific(query_info_key);
+    struct sql_thread *thd = pthread_getspecific(query_info_key);
 
-    if(!thd || !thd->clnt)
+    if (!thd || !thd->clnt)
         strcpy(convopts.tzname, "UTC");
     else
         strcpy(convopts.tzname, thd->clnt->tzname);
@@ -1922,4 +1923,3 @@ int main(int argc, char **argv)
 }
 
 #endif
-

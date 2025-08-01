@@ -11,28 +11,32 @@
 #include <crc32c.h>
 #include <assert.h>
 #define MAX_COPIES 8
-#define HASH_VAL_COUNT 4294967296               // 2^32 hash values
-
+#define HASH_VAL_COUNT 4294967296 // 2^32 hash values
 
 static int debug_ch = 0;
 
-uint8_t *get_node_data(ch_hash_node_t *ch_node) {
+uint8_t *get_node_data(ch_hash_node_t *ch_node)
+{
     return ch_node->data;
 }
 
-size_t get_node_data_len(ch_hash_node_t *ch_node) {
+size_t get_node_data_len(ch_hash_node_t *ch_node)
+{
     return ch_node->data_len;
 }
 
-ch_keyhash_t **get_key_hashes(ch_hash_t *ch_node) {
+ch_keyhash_t **get_key_hashes(ch_hash_t *ch_node)
+{
     return ch_node->key_hashes;
 }
 
-uint32_t get_num_keyhashes(ch_hash_t *ch_node) {
+uint32_t get_num_keyhashes(ch_hash_t *ch_node)
+{
     return ch_node->num_keyhashes;
 }
 
-int ch_hash_sha(uint8_t *buf, size_t buf_len, uint32_t *hash){ 
+int ch_hash_sha(uint8_t *buf, size_t buf_len, uint32_t *hash)
+{
     uint8_t sha_hash[32];
 
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
@@ -59,7 +63,8 @@ int ch_hash_sha(uint8_t *buf, size_t buf_len, uint32_t *hash){
     return CH_NOERR;
 }
 
-int ch_hash_md5(uint8_t *buf, size_t buf_len, uint32_t *hash) {
+int ch_hash_md5(uint8_t *buf, size_t buf_len, uint32_t *hash)
+{
     uint8_t md5_hash[16];
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
     unsigned int hash_len = 0;
@@ -73,7 +78,7 @@ int ch_hash_md5(uint8_t *buf, size_t buf_len, uint32_t *hash) {
     EVP_DigestUpdate(md5, buf, buf_len);
     EVP_DigestFinal_ex(md5, md5_hash, &hash_len);
     EVP_MD_CTX_free(md5);
-#else    
+#else
     MD5_CTX md5;
 
     MD5_Init(&md5);
@@ -86,18 +91,22 @@ int ch_hash_md5(uint8_t *buf, size_t buf_len, uint32_t *hash) {
     return CH_NOERR;
 }
 
-int ch_hash_crc32(uint8_t *buf, size_t buf_len, uint32_t *hash) {
+int ch_hash_crc32(uint8_t *buf, size_t buf_len, uint32_t *hash)
+{
     *hash = crc32c(buf, buf_len);
     return CH_NOERR;
 }
 
-static int keyhash_cmp(const void *key1, const void *key2) {
+static int keyhash_cmp(const void *key1, const void *key2)
+{
     ch_keyhash_t *h1 = *(ch_keyhash_t **)key1;
     ch_keyhash_t *h2 = *(ch_keyhash_t **)key2;
-    return h1->hash_val > h2->hash_val ? 1 : h1->hash_val < h2->hash_val ? -1 : 0;
+    return h1->hash_val > h2->hash_val ? 1 : h1->hash_val < h2->hash_val ? -1
+                                                                         : 0;
 }
 
-static int validate_input(ch_hash_t *ch, uint8_t *data, size_t data_len) {
+static int validate_input(ch_hash_t *ch, uint8_t *data, size_t data_len)
+{
     if (!ch) {
         logmsg(LOGMSG_ERROR, "%s:%d invalid input : NULL hash\n", __func__, __LINE__);
         return CH_ERR_PARAM;
@@ -115,26 +124,29 @@ static int validate_input(ch_hash_t *ch, uint8_t *data, size_t data_len) {
     return CH_NOERR;
 }
 
-static void print_key_hashes(ch_hash_t *ch) {
-    for (int i=0; i< ch->num_keyhashes; i++) {
-        printf("%"PRIu64"\n", ch->key_hashes[i]->hash_val);
+static void print_key_hashes(ch_hash_t *ch)
+{
+    for (int i = 0; i < ch->num_keyhashes; i++) {
+        printf("%" PRIu64 "\n", ch->key_hashes[i]->hash_val);
     }
 }
 
-static int ch_hash_remove_node_locked(ch_hash_t *ch, uint8_t *data, size_t data_len) {
+static int ch_hash_remove_node_locked(ch_hash_t *ch, uint8_t *data, size_t data_len)
+{
     struct consistent_hash_node *item, *tmp;
 
-    LISTC_FOR_EACH_SAFE(&ch->nodes, item, tmp, lnk) {
-        if (item->data_len == data_len && memcmp(item->data, data, data_len)==0) {
+    LISTC_FOR_EACH_SAFE(&ch->nodes, item, tmp, lnk)
+    {
+        if (item->data_len == data_len && memcmp(item->data, data, data_len) == 0) {
             /* remove all key_hashes for this node */
-            int i=0;
-            while(i<ch->num_keyhashes){
+            int i = 0;
+            while (i < ch->num_keyhashes) {
                 if (ch->key_hashes[i] != NULL && ch->key_hashes[i]->node == item) {
                     ch->key_hashes[i]->node = NULL;
                     free(ch->key_hashes[i]);
                     /*swap with last key_hash and set current to NULL*/
-                    ch->key_hashes[i] = ch->key_hashes[ch->num_keyhashes-1];
-                    ch->key_hashes[ch->num_keyhashes-1] = NULL;
+                    ch->key_hashes[i] = ch->key_hashes[ch->num_keyhashes - 1];
+                    ch->key_hashes[ch->num_keyhashes - 1] = NULL;
                     ch->num_keyhashes--;
                     continue;
                 }
@@ -152,34 +164,35 @@ static int ch_hash_remove_node_locked(ch_hash_t *ch, uint8_t *data, size_t data_
 /*
  * Find if a given hashval exists 
  */
-ch_keyhash_t* ch_hash_find_hashval_locked(ch_hash_t *ch, uint64_t hashval) {
+ch_keyhash_t *ch_hash_find_hashval_locked(ch_hash_t *ch, uint64_t hashval)
+{
     if (!ch) {
         logmsg(LOGMSG_ERROR, "%s:%d Consistent hash cannot be NULL!\n", __func__, __LINE__);
         return NULL;
     }
 
-    if (hashval<0 || hashval > HASH_VAL_COUNT) {
-        logmsg(LOGMSG_ERROR, "%s:%d Invalid hash value :%"PRIu64"\n",__func__, __LINE__, hashval);
+    if (hashval < 0 || hashval > HASH_VAL_COUNT) {
+        logmsg(LOGMSG_ERROR, "%s:%d Invalid hash value :%" PRIu64 "\n", __func__, __LINE__, hashval);
         return NULL;
     }
-    if (ch->num_keyhashes==0) {
-        logmsg(LOGMSG_ERROR, "%s:%d No keyhashes in the consistent hash\n",__func__, __LINE__);
+    if (ch->num_keyhashes == 0) {
+        logmsg(LOGMSG_ERROR, "%s:%d No keyhashes in the consistent hash\n", __func__, __LINE__);
         return NULL;
     }
     int32_t low = 0, mid = 0;
     uint64_t midval = 0;
-    int32_t high = ch->num_keyhashes-1;
-    while(low<=high) {
-        mid = low + (high-low)/2;
+    int32_t high = ch->num_keyhashes - 1;
+    while (low <= high) {
+        mid = low + (high - low) / 2;
         //logmsg(LOGMSG_USER, "l: %d, mid: %d, r: %d\n",low, mid, high);
         midval = ch->key_hashes[mid]->hash_val;
         //logmsg(LOGMSG_USER, "midval is %ld\n", midval);
         if (midval == hashval) {
             return ch->key_hashes[mid];
         } else if (midval < hashval) {
-            low = mid+1;
+            low = mid + 1;
         } else {
-            high = mid-1;
+            high = mid - 1;
         }
     }
     //logmsg(LOGMSG_USER, "%s:%d Hashval %ld was not found\n",__func__, __LINE__, hashval);
@@ -189,19 +202,20 @@ ch_keyhash_t* ch_hash_find_hashval_locked(ch_hash_t *ch, uint64_t hashval) {
 /*
  * Add a node at hashval hash value 
  */
-static int ch_hash_add_node_to_hashval_locked(ch_hash_t *ch, ch_hash_node_t *node, uint64_t hashval) {
-    ch_keyhash_t **temp = NULL, *keyhash=NULL;
+static int ch_hash_add_node_to_hashval_locked(ch_hash_t *ch, ch_hash_node_t *node, uint64_t hashval)
+{
+    ch_keyhash_t **temp = NULL, *keyhash = NULL;
 
     keyhash = ch_hash_find_hashval_locked(ch, hashval);
     if (keyhash) {
         if (debug_ch) {
-            logmsg(LOGMSG_USER, "%s:%d keyhash %"PRIu64" already exists\n",__func__, __LINE__, hashval);
+            logmsg(LOGMSG_USER, "%s:%d keyhash %" PRIu64 " already exists\n", __func__, __LINE__, hashval);
         }
         if (keyhash->node) {
-            logmsg(LOGMSG_ERROR, "%s:%d keyhash %"PRIu64" has a node associated with it. Not adding new node\n", __func__, __LINE__, hashval);
+            logmsg(LOGMSG_ERROR, "%s:%d keyhash %" PRIu64 " has a node associated with it. Not adding new node\n", __func__, __LINE__, hashval);
             return CH_ERR_DUP;
         }
-    } else {        
+    } else {
         /* Hashval doesn't exist. Add a new one */
         keyhash = (ch_keyhash_t *)malloc(sizeof(ch_keyhash_t));
         if (!keyhash) {
@@ -215,12 +229,12 @@ static int ch_hash_add_node_to_hashval_locked(ch_hash_t *ch, ch_hash_node_t *nod
             logmsg(LOGMSG_ERROR, ":%s:%d realloc failed!\n", __func__, __LINE__);
             goto cleanup;
         }
-        temp[ch->num_keyhashes-1] = keyhash;
+        temp[ch->num_keyhashes - 1] = keyhash;
         ch->key_hashes = temp;
         temp = NULL;
     }
     if (debug_ch) {
-        logmsg(LOGMSG_USER, "Adding node to hashval %"PRIu64"\n", hashval);
+        logmsg(LOGMSG_USER, "Adding node to hashval %" PRIu64 "\n", hashval);
     }
     keyhash->node = node;
     if (ch->num_keyhashes > 1) {
@@ -240,36 +254,39 @@ cleanup:
     return CH_ERR_MALLOC;
 }
 
-static ch_hash_node_t *ch_hash_lookup_node(ch_hash_t *ch, uint8_t *bytes, size_t len) {
+static ch_hash_node_t *ch_hash_lookup_node(ch_hash_t *ch, uint8_t *bytes, size_t len)
+{
     ch_hash_node_t *node = NULL;
-    LISTC_FOR_EACH(&ch->nodes, node, lnk) {
+    LISTC_FOR_EACH(&ch->nodes, node, lnk)
+    {
         if (memcmp(bytes, node->data, len) == 0) {
             return node;
         }
     }
     return NULL;
 }
-static ch_keyhash_t* ch_keyhash_upper_bound(ch_hash_t *ch, uint64_t hash) {
-    if (ch==NULL) {
-        if (ch==NULL) {
+static ch_keyhash_t *ch_keyhash_upper_bound(ch_hash_t *ch, uint64_t hash)
+{
+    if (ch == NULL) {
+        if (ch == NULL) {
             logmsg(LOGMSG_ERROR, "CH is NULL\n");
         }
         return NULL;
     }
     if (debug_ch) {
-        logmsg(LOGMSG_USER, "Looking for hash %"PRIu64"\n",hash);
+        logmsg(LOGMSG_USER, "Looking for hash %" PRIu64 "\n", hash);
     }
-    int l=0, mid=0, r=ch->num_keyhashes-1, ans=0;
-    while (l<=r) {
+    int l = 0, mid = 0, r = ch->num_keyhashes - 1, ans = 0;
+    while (l <= r) {
         if (debug_ch) {
-            logmsg(LOGMSG_USER, "l: %d, mid: %d, r: %d\n",l, mid, r);
+            logmsg(LOGMSG_USER, "l: %d, mid: %d, r: %d\n", l, mid, r);
         }
-        mid = l + (r-l) / 2;
+        mid = l + (r - l) / 2;
         if (ch->key_hashes[mid]->hash_val <= hash) {
             l = mid + 1;
         } else {
             ans = mid;
-            r = mid-1;
+            r = mid - 1;
         }
     }
     if (debug_ch) {
@@ -277,23 +294,24 @@ static ch_keyhash_t* ch_keyhash_upper_bound(ch_hash_t *ch, uint64_t hash) {
     }
     return ch->key_hashes[ans];
 }
-static ch_keyhash_t* ch_keyhash_lower_bound(ch_hash_t *ch, uint64_t hash) {
-    if (ch==NULL) {
-        if (ch==NULL) {
+static ch_keyhash_t *ch_keyhash_lower_bound(ch_hash_t *ch, uint64_t hash)
+{
+    if (ch == NULL) {
+        if (ch == NULL) {
             logmsg(LOGMSG_ERROR, "CH is NULL\n");
         }
         return NULL;
     }
 
     if (debug_ch) {
-        logmsg(LOGMSG_USER, "Looking for hash %"PRIu64"\n",hash);
+        logmsg(LOGMSG_USER, "Looking for hash %" PRIu64 "\n", hash);
     }
-    int l=0, mid=0, r=ch->num_keyhashes-1, ans=0;
-    while (l<=r) {
+    int l = 0, mid = 0, r = ch->num_keyhashes - 1, ans = 0;
+    while (l <= r) {
         if (debug_ch) {
-            logmsg(LOGMSG_USER, "l: %d, mid: %d, r: %d\n",l, mid, r);
+            logmsg(LOGMSG_USER, "l: %d, mid: %d, r: %d\n", l, mid, r);
         }
-        mid = l + (r-l)/ 2;
+        mid = l + (r - l) / 2;
         if (ch->key_hashes[mid]->hash_val >= hash) {
             r = mid - 1;
         } else {
@@ -308,13 +326,14 @@ static ch_keyhash_t* ch_keyhash_lower_bound(ch_hash_t *ch, uint64_t hash) {
     return ch->key_hashes[ans];
 }
 
-static int ch_hash_add_node_locked(ch_hash_t *ch, uint8_t *data, size_t data_len, uint64_t hashval) {
+static int ch_hash_add_node_locked(ch_hash_t *ch, uint8_t *data, size_t data_len, uint64_t hashval)
+{
     int rc = 0;
 
     ch_hash_node_t *node = NULL;
     node = ch_hash_lookup_node(ch, data, data_len);
-    if (node!=NULL) {
-        logmsg(LOGMSG_ERROR, "%s:%d Node already exists. Try adding a replica instead.\n",__func__, __LINE__);
+    if (node != NULL) {
+        logmsg(LOGMSG_ERROR, "%s:%d Node already exists. Try adding a replica instead.\n", __func__, __LINE__);
         return CH_ERR_HASH;
     }
     node = (ch_hash_node_t *)malloc(sizeof(ch_hash_node_t));
@@ -334,7 +353,7 @@ static int ch_hash_add_node_locked(ch_hash_t *ch, uint8_t *data, size_t data_len
     rc = ch_hash_add_node_to_hashval_locked(ch, node, hashval);
 
     if (rc) {
-        if (rc==CH_ERR_DUP) {
+        if (rc == CH_ERR_DUP) {
             return CH_NOERR;
         }
         ch_hash_remove_node_locked(ch, node->data, node->data_len);
@@ -352,7 +371,8 @@ oom:
     return CH_ERR_MALLOC;
 }
 
-ch_hash_node_t *ch_hash_find_node_locked(ch_hash_t *ch, uint8_t *key, size_t key_len) {
+ch_hash_node_t *ch_hash_find_node_locked(ch_hash_t *ch, uint8_t *key, size_t key_len)
+{
     int rc = 0;
     uint32_t hash_key = 0;
     ch_keyhash_t *next_biggest = NULL;
@@ -368,10 +388,9 @@ ch_hash_node_t *ch_hash_find_node_locked(ch_hash_t *ch, uint8_t *key, size_t key
     }
 
     next_biggest = ch_keyhash_upper_bound(ch, hash_key);
-    assert(next_biggest!=NULL);
+    assert(next_biggest != NULL);
     return next_biggest->node;
 }
-
 
 /*
  * Input : num_nodes -> number of nodes (ex: database servers)
@@ -379,7 +398,8 @@ ch_hash_node_t *ch_hash_find_node_locked(ch_hash_t *ch, uint8_t *key, size_t key
  * Output: object of type ch_hash_t with hash value ranges assigned
  *         for each node 
  */
-ch_hash_t *ch_hash_create(uint64_t num_nodes, hash_func func) {
+ch_hash_t *ch_hash_create(uint64_t num_nodes, hash_func func)
+{
     uint64_t hash_range_increment = 0;
     if (num_nodes < 1) {
         logmsg(LOGMSG_ERROR, "num_nodes should atleast be 1\n");
@@ -392,7 +412,7 @@ ch_hash_t *ch_hash_create(uint64_t num_nodes, hash_func func) {
     }
 
     ch_hash_t *ch = (ch_hash_t *)malloc(sizeof(ch_hash_t));
-    if(!ch){
+    if (!ch) {
         logmsg(LOGMSG_ERROR, "%s:%d malloc error\n", __func__, __LINE__);
         return NULL;
     }
@@ -401,23 +421,23 @@ ch_hash_t *ch_hash_create(uint64_t num_nodes, hash_func func) {
     hash_range_increment = HASH_VAL_COUNT / num_nodes;
 
     if (debug_ch) {
-        logmsg(LOGMSG_USER, "the hash_range_increment is %"PRIu64"\n", hash_range_increment);
+        logmsg(LOGMSG_USER, "the hash_range_increment is %" PRIu64 "\n", hash_range_increment);
     }
-    listc_init(&ch->nodes, offsetof(struct consistent_hash_node, lnk)); 
+    listc_init(&ch->nodes, offsetof(struct consistent_hash_node, lnk));
     /* 
      * Create num_nodes hash ranges, one for each node in the consistent hash
-     */ 
+     */
     ch->num_keyhashes = num_nodes;
-    ch->key_hashes = (ch_keyhash_t**)malloc(sizeof(ch_keyhash_t*) * ch->num_keyhashes);
+    ch->key_hashes = (ch_keyhash_t **)malloc(sizeof(ch_keyhash_t *) * ch->num_keyhashes);
     if (!ch->key_hashes) {
         logmsg(LOGMSG_ERROR, "%s:%d malloc error\n", __func__, __LINE__);
         goto cleanup;
     }
     int64_t curHashVal = 0;
-    for(int i=0;i<ch->num_keyhashes;i++){
+    for (int i = 0; i < ch->num_keyhashes; i++) {
         ch->key_hashes[i] = (ch_keyhash_t *)malloc(sizeof(ch_keyhash_t));
         if (!ch->key_hashes[i]) {
-            logmsg(LOGMSG_ERROR,"%s:%d malloc error\n", __func__, __LINE__);
+            logmsg(LOGMSG_ERROR, "%s:%d malloc error\n", __func__, __LINE__);
             goto cleanup;
         }
         ch->key_hashes[i]->node = NULL;
@@ -425,7 +445,7 @@ ch_hash_t *ch_hash_create(uint64_t num_nodes, hash_func func) {
         curHashVal += hash_range_increment;
 
         if (debug_ch) {
-            logmsg(LOGMSG_USER, "assigning hash val %"PRIu64"\n",ch->key_hashes[i]->hash_val);
+            logmsg(LOGMSG_USER, "assigning hash val %" PRIu64 "\n", ch->key_hashes[i]->hash_val);
         }
     }
     ch->func = func;
@@ -435,7 +455,7 @@ ch_hash_t *ch_hash_create(uint64_t num_nodes, hash_func func) {
 cleanup:
     if (ch) {
         if (ch->key_hashes) {
-            for(int i=0;i<ch->num_keyhashes;i++) {
+            for (int i = 0; i < ch->num_keyhashes; i++) {
                 if (ch->key_hashes[i]) {
                     free(ch->key_hashes[i]);
                     ch->key_hashes[i] = NULL;
@@ -452,19 +472,20 @@ cleanup:
  * Add a replica on the hash ring for an existing node. 
  * If node doesn't exists return error.
  */
-int ch_hash_add_replica(ch_hash_t *hash, uint8_t *data, size_t data_len, uint64_t hashval) {
+int ch_hash_add_replica(ch_hash_t *hash, uint8_t *data, size_t data_len, uint64_t hashval)
+{
     int rc = 0;
 
     if (hashval < 0 || hashval > HASH_VAL_COUNT) {
-        logmsg(LOGMSG_ERROR, "Cannot add node at %"PRIu64". Invalid hash value\n", hashval);
+        logmsg(LOGMSG_ERROR, "Cannot add node at %" PRIu64 ". Invalid hash value\n", hashval);
         return -1;
     }
 
     rc = validate_input(hash, data, data_len);
     Pthread_rwlock_wrlock(&hash->lock);
     ch_hash_node_t *node = ch_hash_lookup_node(hash, data, data_len);
-    if (node==NULL) {
-        logmsg(LOGMSG_ERROR, "%s:%d Node not found. Cannot add replica for non-existing node\n",__func__, __LINE__);
+    if (node == NULL) {
+        logmsg(LOGMSG_ERROR, "%s:%d Node not found. Cannot add replica for non-existing node\n", __func__, __LINE__);
         Pthread_rwlock_unlock(&hash->lock);
         return CH_ERR_HASH;
     }
@@ -479,11 +500,12 @@ int ch_hash_add_replica(ch_hash_t *hash, uint8_t *data, size_t data_len, uint64_
     return CH_NOERR;
 }
 
-int ch_hash_add_node(ch_hash_t *ch, uint8_t *data, size_t data_len, uint64_t hashval) {
+int ch_hash_add_node(ch_hash_t *ch, uint8_t *data, size_t data_len, uint64_t hashval)
+{
     int rc = 0;
 
     if (hashval < 0 || hashval > HASH_VAL_COUNT) {
-        logmsg(LOGMSG_ERROR, "Cannot add node at %"PRIu64". Invalid hash value\n", hashval);
+        logmsg(LOGMSG_ERROR, "Cannot add node at %" PRIu64 ". Invalid hash value\n", hashval);
         return -1;
     }
     rc = validate_input(ch, data, data_len);
@@ -497,7 +519,8 @@ int ch_hash_add_node(ch_hash_t *ch, uint8_t *data, size_t data_len, uint64_t has
     return rc;
 }
 
-ch_hash_node_t *ch_hash_find_node(ch_hash_t *ch, uint8_t *data, size_t data_len) {
+ch_hash_node_t *ch_hash_find_node(ch_hash_t *ch, uint8_t *data, size_t data_len)
+{
     int rc = 0;
     ch_hash_node_t *node = NULL;
     rc = validate_input(ch, data, data_len);
@@ -511,7 +534,8 @@ ch_hash_node_t *ch_hash_find_node(ch_hash_t *ch, uint8_t *data, size_t data_len)
     return node;
 }
 
-int ch_hash_remove_node(ch_hash_t *ch, uint8_t *data, size_t data_len) {
+int ch_hash_remove_node(ch_hash_t *ch, uint8_t *data, size_t data_len)
+{
     int rc = 0;
     rc = validate_input(ch, data, data_len);
 
@@ -524,11 +548,12 @@ int ch_hash_remove_node(ch_hash_t *ch, uint8_t *data, size_t data_len) {
     return rc;
 }
 
-void ch_hash_free(ch_hash_t *ch) {
+void ch_hash_free(ch_hash_t *ch)
+{
     struct consistent_hash_node *item, *tmp;
     if (ch) {
         Pthread_rwlock_wrlock(&ch->lock);
-        for (int i=0; i<ch->num_keyhashes; i++) {
+        for (int i = 0; i < ch->num_keyhashes; i++) {
             if (ch->key_hashes[i]) {
                 free(ch->key_hashes[i]);
             }
@@ -537,7 +562,8 @@ void ch_hash_free(ch_hash_t *ch) {
             free(ch->key_hashes);
         }
 
-        LISTC_FOR_EACH_SAFE(&ch->nodes, item, tmp, lnk) {
+        LISTC_FOR_EACH_SAFE(&ch->nodes, item, tmp, lnk)
+        {
             listc_rfl(&ch->nodes, item);
             free(item->data);
             free(item);

@@ -63,7 +63,8 @@ static inline int init_bthashsize_tran(struct dbtable *newdb, tran_type *tran)
 {
     int bthashsz;
 
-    if (get_db_bthash_tran(newdb, &bthashsz, tran) != 0) bthashsz = 0;
+    if (get_db_bthash_tran(newdb, &bthashsz, tran) != 0)
+        bthashsz = 0;
 
     if (bthashsz) {
         logmsg(LOGMSG_INFO, "Init with bthash size %dkb per stripe\n",
@@ -130,10 +131,10 @@ int add_table_to_environment(char *table, const char *csc2,
     }
 
     if ((rc = get_db_handle(newdb, trans))) {
-        if (rc == BDBERR_EXCEEDED_BLOBS){
+        if (rc == BDBERR_EXCEEDED_BLOBS) {
             sc_errf(s, "Maximum number of vutf8/blob fields exceeded\n");
             reqerrstr(iq, ERR_SC, "Maximum number of vutf8/blob fields exceeded\n");
-        } else if (rc == BDBERR_EXCEEDED_INDEXES){
+        } else if (rc == BDBERR_EXCEEDED_INDEXES) {
             sc_errf(s, "Maximum number of indexes exceeded\n");
             reqerrstr(iq, ERR_SC, "Maximum number of indexes exceeded\n");
         }
@@ -165,7 +166,7 @@ int add_table_to_environment(char *table, const char *csc2,
 
     if (s)
         s->newdb = newdb;
-    
+
     if (pnewdb)
         *pnewdb = newdb;
 
@@ -180,11 +181,16 @@ err:
 
 static inline void set_empty_options(struct schema_change_type *s)
 {
-    if (s->headers == -1) s->headers = gbl_init_with_odh;
-    if (s->compress == -1) s->compress = gbl_init_with_compr;
-    if (s->compress_blobs == -1) s->compress_blobs = gbl_init_with_compr_blobs;
-    if (s->ip_updates == -1) s->ip_updates = gbl_init_with_ipu;
-    if (s->instant_sc == -1) s->instant_sc = gbl_init_with_instant_sc;
+    if (s->headers == -1)
+        s->headers = gbl_init_with_odh;
+    if (s->compress == -1)
+        s->compress = gbl_init_with_compr;
+    if (s->compress_blobs == -1)
+        s->compress_blobs = gbl_init_with_compr_blobs;
+    if (s->ip_updates == -1)
+        s->ip_updates = gbl_init_with_ipu;
+    if (s->instant_sc == -1)
+        s->instant_sc = gbl_init_with_instant_sc;
 }
 
 int do_add_table(struct ireq *iq, struct schema_change_type *s,
@@ -320,7 +326,8 @@ int finalize_add_table(struct ireq *iq, struct schema_change_type *s,
     /* Save .ONDISK as schema version 1 if instant_sc is enabled. */
     if (db->odh && db->instant_schema_change) {
         struct schema *ver_one;
-        if ((rc = prepare_table_version_one(tran, db, &ver_one))) return rc;
+        if ((rc = prepare_table_version_one(tran, db, &ver_one)))
+            return rc;
         add_tag_schema(db->tablename, ver_one);
     }
 
@@ -339,14 +346,14 @@ int finalize_add_table(struct ireq *iq, struct schema_change_type *s,
         }
         bdb_handle_dbp_add_hash(db->handle, gbl_init_with_bthash);
     }
-     
 
     /*
      * if this is the original request for a partition table add,
      * create partition here
      */
     if ((s->partition.type == PARTITION_ADD_TIMED ||
-         s->partition.type == PARTITION_ADD_MANUAL) && s->publish) {
+         s->partition.type == PARTITION_ADD_MANUAL) &&
+        s->publish) {
         struct errstat err = {0};
         assert(s->newpartition);
         rc = partition_llmeta_write(tran, s->newpartition, 0, &err);
@@ -379,26 +386,26 @@ int finalize_add_table(struct ireq *iq, struct schema_change_type *s,
             return -1;
         }
         db->numdbs = s->partition.u.genshard.numdbs;
-        db->dbnames = (char **)malloc(sizeof(char*) * db->numdbs);
+        db->dbnames = (char **)malloc(sizeof(char *) * db->numdbs);
         for (int i = 0; i < db->numdbs; i++) {
             db->dbnames[i] = strdup(s->partition.u.genshard.dbnames[i]);
         }
 
         db->numcols = s->partition.u.genshard.numcols;
-        db->columns = (char **)malloc(sizeof(char*) * db->numcols);
+        db->columns = (char **)malloc(sizeof(char *) * db->numcols);
         for (int i = 0; i < db->numcols; i++) {
             db->columns[i] = strdup(s->partition.u.genshard.columns[i]);
         }
 
-        db->shardnames = (char **)malloc(sizeof(char*) * db->numdbs);
+        db->shardnames = (char **)malloc(sizeof(char *) * db->numdbs);
         for (int i = 0; i < db->numdbs; i++) {
             db->shardnames[i] = strdup(s->partition.u.genshard.shardnames[i]);
         }
         /*write to llmeta*/
         struct errstat err = {0};
-        if (gen_shard_llmeta_add(tran, s->partition.u.genshard.tablename, s->partition.u.genshard.numdbs, 
-                    s->partition.u.genshard.dbnames, s->partition.u.genshard.numcols, s->partition.u.genshard.columns,
-                    s->partition.u.genshard.shardnames, &err)) {
+        if (gen_shard_llmeta_add(tran, s->partition.u.genshard.tablename, s->partition.u.genshard.numdbs,
+                                 s->partition.u.genshard.dbnames, s->partition.u.genshard.numcols, s->partition.u.genshard.columns,
+                                 s->partition.u.genshard.shardnames, &err)) {
             sc_errf(s, "failed to write shard info to llmeta for shard %s. rc: %d, err: %s\n", s->partition.u.genshard.tablename, rc, err.errstr);
             hash_sqlalias_db(db, NULL);
             return -1;

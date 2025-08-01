@@ -77,7 +77,6 @@ int do_fastinit(struct ireq *iq, struct schema_change_type *s, tran_type *tran)
 
     set_schemachange_options_tran(s, db, &scinfo, tran);
 
-
     Pthread_mutex_lock(&csc2_subsystem_mtx);
 
     int saved_broken_max_rec_sz = fix_broken_max_rec_sz(s->db->lrl);

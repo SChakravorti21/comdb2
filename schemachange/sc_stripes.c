@@ -20,7 +20,8 @@
 void apply_new_stripe_settings(int newdtastripe, int newblobstripe)
 {
     gbl_dtastripe = newdtastripe;
-    if (newblobstripe) gbl_blobstripe = gbl_dtastripe;
+    if (newblobstripe)
+        gbl_blobstripe = gbl_dtastripe;
     bdb_attr_set(thedb->bdb_attr, BDB_ATTR_DTASTRIPE, gbl_dtastripe);
     bdb_attr_set(thedb->bdb_attr, BDB_ATTR_BLOBSTRIPE, gbl_blobstripe);
     logmsg(LOGMSG_INFO, "Set new stripe settings in bdb OK\n");

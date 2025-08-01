@@ -34,7 +34,7 @@ typedef struct {
 } comdb2_field_type;
 
 static uint8_t *comdb2_field_type_put(const comdb2_field_type *field, uint8_t *p_buf,
-                               const uint8_t *p_buf_end)
+                                      const uint8_t *p_buf_end)
 {
     if ((p_buf = buf_no_net_put(&field->name, sizeof(field->name), p_buf,
                                 p_buf_end)) == NULL)
@@ -233,8 +233,7 @@ int local_replicant_log_add(struct ireq *iq, void *trans, void *od_dta,
                     int outdtsz;
                     struct field_conv_opts conv = {0, 0};
 
-                    memcpy(p, ((int8_t *)od_dta) +
-                                  server_schema->member[i].offset + 5,
+                    memcpy(p, ((int8_t *)od_dta) + server_schema->member[i].offset + 5,
                            server_schema->member[i].len - 5);
 
 /* kludge size */
@@ -581,15 +580,13 @@ int local_replicant_log_add_for_update(struct ireq *iq, void *trans, int rrn,
                     int outdtsz;
                     struct field_conv_opts conv = {0, 0};
 
-                    memcpy(p, ((int8_t *)server_buf) +
-                                  server_schema->member[i].offset + 5,
+                    memcpy(p, ((int8_t *)server_buf) + server_schema->member[i].offset + 5,
                            server_schema->member[i].len - 5);
 
 #ifdef _LINUX_SOURCE
                     conv.flags |= FLD_CONV_LENDIAN;
 #endif
-                    memcpy(&sz, ((int8_t *)server_buf) +
-                                    server_schema->member[i].offset,
+                    memcpy(&sz, ((int8_t *)server_buf) + server_schema->member[i].offset,
                            5);
                     rc = SERVER_UINT_to_CLIENT_UINT(sz, 5, &conv, NULL,
                                                     &inline_len, 4, &isnull,

@@ -21,7 +21,8 @@
 #define BLK_ASKARR_OFFSET 10
 #define MAXKEYS 1000000
 
-enum { SEGMAX = 256, MAXBUF = (1024 * 16 + BLK_DATA_OFFSET * sizeof(int)) };
+enum { SEGMAX = 256,
+       MAXBUF = (1024 * 16 + BLK_DATA_OFFSET * sizeof(int)) };
 enum {
     FLAG_CONTINUE = 0x80,
     FLAG_VERBOSE = 0x01,

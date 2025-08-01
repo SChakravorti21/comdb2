@@ -88,7 +88,8 @@ void register_switch(const char *name, const char *descr, switch_on_fn on_fn,
 
 void cleanup_switches()
 {
-    if (!switches) return;
+    if (!switches)
+        return;
 
     int ii;
     for (ii = 0; ii < num_switches; ii++) {

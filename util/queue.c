@@ -23,13 +23,15 @@
 #include "mem_override.h"
 
 typedef struct {
-    LISTC_T(struct queue_entry_tag) lst;
+    LISTC_T(struct queue_entry_tag)
+    lst;
     pool_t *pent;
     int max;
 } queue_type;
 
 typedef struct queue_entry_tag {
-    LINKC_T(queue_type) lnk;
+    LINKC_T(queue_type)
+    lnk;
     void *obj;
 } queue_entry_type;
 
@@ -107,7 +109,10 @@ void *queue_last(queue_type *q)
 }
 
 /*return num items on queue*/
-int queue_count(queue_type *q) { return q->lst.count; }
+int queue_count(queue_type *q)
+{
+    return q->lst.count;
+}
 
 #ifdef TESTQUEUE
 #include <stdio.h>

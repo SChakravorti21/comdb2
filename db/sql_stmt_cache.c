@@ -93,8 +93,8 @@ stmt_cache_t *stmt_cache_new(stmt_cache_t *in_stmt_cache)
     return stmt_cache;
 }
 
-#define GET_STMT_LIST(cache, stmt)                                             \
-    (sqlite3_bind_parameter_count(stmt)) ? (void *)&cache->param_stmt_list     \
+#define GET_STMT_LIST(cache, stmt)                                         \
+    (sqlite3_bind_parameter_count(stmt)) ? (void *)&cache->param_stmt_list \
                                          : (void *)&cache->noparam_stmt_list;
 
 /* Requeue a stmt that was previously removed from the queues by calling
@@ -556,7 +556,7 @@ int stmt_cache_put_int(struct sqlthdstate *thd, struct sqlclntstate *clnt,
                 query_data_func(clnt, NULL, NULL, QUERY_STMT_DATA, QUERY_DATA_SET);
             }
             if (stmt_cache_requeue_old_entry(thd->stmt_cache, rec->stmt_entry)) { /* put back in queue... */
-                stmt_cache_finalize_entry(rec->stmt_entry);                   /* ...and on error, cleanup */
+                stmt_cache_finalize_entry(rec->stmt_entry);                       /* ...and on error, cleanup */
             }
             return 0;
         }

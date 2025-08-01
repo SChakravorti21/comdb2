@@ -46,7 +46,7 @@ static int os_get_host_and_cname_by_name(char **name_ptr, struct in_addr *addr,
     }
 
     if (addr) {
-        *addr = ((struct sockaddr_in*)res->ai_addr)->sin_addr;
+        *addr = ((struct sockaddr_in *)res->ai_addr)->sin_addr;
     }
 
     if (cname != NULL)
@@ -82,19 +82,19 @@ void set_hostbyname(hostbyname *impl)
 
 void comdb2_getservbyname(const char *name, const char *proto, short *port)
 {
-#   ifndef __APPLE__
+#ifndef __APPLE__
     struct servent result_buf = {0};
     char buf[1024] = {0};
-#   endif
+#endif
     struct servent *result = NULL;
 
-#   if defined(__APPLE__) // Should be first, as _LINUX_SOURCE is also defined.
+#if defined(__APPLE__) // Should be first, as _LINUX_SOURCE is also defined.
     result = getservbyname(name, proto);
-#   elif defined(_LINUX_SOURCE)
+#elif defined(_LINUX_SOURCE)
     getservbyname_r(name, proto, &result_buf, buf, sizeof(buf), &result);
-#   elif defined(_SUN_SOURCE)
+#elif defined(_SUN_SOURCE)
     result = getservbyname_r(name, proto, &result_buf, buf, sizeof(buf));
-#   endif
+#endif
     if (result) {
         *port = result->s_port;
     }
@@ -108,7 +108,8 @@ size_t bb_dirent_size(char *path)
     return offsetof(struct dirent, d_name) + name_max + 1;
 }
 
-int bb_readdir(DIR *d, void *buf, struct dirent **dent) {
+int bb_readdir(DIR *d, void *buf, struct dirent **dent)
+{
 #ifdef _LINUX_SOURCE
     struct dirent *rv;
     *dent = rv = readdir(d);

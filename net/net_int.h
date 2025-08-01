@@ -126,7 +126,8 @@ typedef struct watchlist_node_tag {
 
     struct sockaddr_in addr;
 
-    LINKC_T(struct watchlist_node_tag) lnk;
+    LINKC_T(struct watchlist_node_tag)
+    lnk;
 } watchlist_node_type;
 
 /* lockless its just stats */
@@ -145,7 +146,7 @@ typedef struct net_send_message_header {
 } net_send_message_header;
 enum { NET_SEND_MESSAGE_HEADER_LEN = 4 + 4 + 4 + 4 };
 BB_COMPILE_TIME_ASSERT(net_send_message_header,
-        sizeof(net_send_message_header) == NET_SEND_MESSAGE_HEADER_LEN);
+                       sizeof(net_send_message_header) == NET_SEND_MESSAGE_HEADER_LEN);
 
 typedef struct net_ack_message_type {
     int seqnum;
@@ -153,7 +154,7 @@ typedef struct net_ack_message_type {
 } net_ack_message_type;
 enum { NET_ACK_MESSAGE_TYPE_LEN = 4 + 4 };
 BB_COMPILE_TIME_ASSERT(net_ack_message_type,
-        sizeof(net_ack_message_type) == NET_ACK_MESSAGE_TYPE_LEN);
+                       sizeof(net_ack_message_type) == NET_ACK_MESSAGE_TYPE_LEN);
 
 typedef struct net_ack_message_payload_type {
     int seqnum;
@@ -162,7 +163,7 @@ typedef struct net_ack_message_payload_type {
 } net_ack_message_payload_type;
 enum { NET_ACK_MESSAGE_PAYLOAD_TYPE_LEN = 4 + 4 + 4 };
 BB_COMPILE_TIME_ASSERT(net_ack_message_payload_type,
-        sizeof(net_ack_message_payload_type) == NET_ACK_MESSAGE_PAYLOAD_TYPE_LEN);
+                       sizeof(net_ack_message_payload_type) == NET_ACK_MESSAGE_PAYLOAD_TYPE_LEN);
 
 struct event_info;
 struct host_node_tag {
@@ -251,8 +252,8 @@ struct netinfo_struct {
     pthread_mutex_t watchlk;
     pthread_mutex_t sanclk;
 
-    int fake;     /* 1 if this is set, then we don't ever send or receieve */
-    void *usrptr; /* pointer to user supplied data */
+    int fake;                 /* 1 if this is set, then we don't ever send or receieve */
+    void *usrptr;             /* pointer to user supplied data */
     HOSTDOWNFP *hostdown_rtn; /* user supplied routine called when host
                                  gets disconnected */
     NEWNODEFP *new_node_rtn;
@@ -267,7 +268,8 @@ struct netinfo_struct {
     void (*start_thread_callback)(void *);
     void (*stop_thread_callback)(void *);
 
-    LISTC_T(struct watchlist_node_tag) watchlist;
+    LISTC_T(struct watchlist_node_tag)
+    watchlist;
 
     host_node_type *last_used_node_ptr;
     unsigned int last_used_node_hit_cntr;
@@ -288,7 +290,6 @@ struct netinfo_struct {
     int64_t num_accepts;
     int64_t num_accept_timeouts;
     int conntime_dump_period;
-
 
     /* An appsock routine may or may not close the connection.
        Therefore we can only reliably keep track of non-appsock connections. */
@@ -364,7 +365,6 @@ int dist_heartbeats(dist_hbeats_type *);
 
 /* Participant teardown from heartbeat */
 void dist_heartbeat_free_tran(dist_hbeats_type *);
-
 
 #if defined _SUN_SOURCE
 void wait_alive(int fd);

@@ -25,18 +25,21 @@
  */
 
 struct cron_sched {
-    pthread_t tid; /* pthread id of the thread owning this cron structure */
+    pthread_t tid;       /* pthread id of the thread owning this cron structure */
     pthread_cond_t cond; /* locking and signaling */
     pthread_mutex_t mtx;
     int running; /* marked under mtx lock, signaling a event processing if set
                   */
-    LISTC_T(struct cron_event) events; /* list of events */
-    LINKC_T(struct cron_sched) lnk;    /* link the cron schedulers */
+    LISTC_T(struct cron_event)
+    events; /* list of events */
+    LINKC_T(struct cron_sched)
+    lnk; /* link the cron schedulers */
     sched_if_t impl;
 };
 
 typedef struct cron_scheds {
-    LISTC_T(struct cron_sched) scheds; /* all global schedulers */
+    LISTC_T(struct cron_sched)
+    scheds; /* all global schedulers */
     pthread_rwlock_t rwlock;
 } cron_scheds_t;
 
@@ -149,7 +152,8 @@ static void _set_event(cron_event_t *event, int epoch, FCRON func, void *arg1,
 
 static void _insert_ordered_event(cron_sched_t *sched, cron_event_t *event)
 {
-    LISTC_T(struct cron_event) tmpsched;
+    LISTC_T(struct cron_event)
+    tmpsched;
     cron_event_t *crt;
 
     listc_init(&tmpsched, offsetof(struct cron_event, lnk));

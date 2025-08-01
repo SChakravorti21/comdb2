@@ -19,7 +19,8 @@ enum logevent_type {
     EVENT_PRINT
 };
 
-enum { MAXSTMT = 31, NUMSTMTS = 16 };
+enum { MAXSTMT = 31,
+       NUMSTMTS = 16 };
 
 struct logevent {
     struct logevent *next;
@@ -60,7 +61,6 @@ struct tablelist {
     char name[1];
 };
 
-
 struct reqlogger {
     char origin[128];
 
@@ -100,10 +100,10 @@ struct reqlogger {
     /* the bound parameters */
     cson_value *bound_param_cson;
 
-    uint32_t nwrites;   /* number of writes for this txn */
+    uint32_t nwrites;          /* number of writes for this txn */
     uint32_t cascaded_nwrites; /* number of cascaded writes for this txn */
-    int      sqlrows;
-    double   sqlcost;
+    int sqlrows;
+    double sqlcost;
 
     uint64_t startus;     /* logger start timestamp */
     uint64_t startprcsus; /* processing start timestamp */
@@ -152,7 +152,8 @@ struct list {
 };
 
 struct output {
-    LINKC_T(struct output) linkv;
+    LINKC_T(struct output)
+    linkv;
 
     int refcount;
     int fd;
@@ -202,7 +203,8 @@ struct logrule {
     struct output *out;
 
     /* Keep the rules in a linked list */
-    LINKC_T(struct logrule) linkv;
+    LINKC_T(struct logrule)
+    linkv;
 };
 
 /* per client request stats */
@@ -221,7 +223,8 @@ typedef struct nodestats {
 
     int ref;
     pthread_mutex_t mtx;
-    LINKC_T(struct nodestats) linkv;
+    LINKC_T(struct nodestats)
+    linkv;
 
     /* raw counters, totals (updated locklessly by multiple threads) */
     struct rawnodestats rawtotals;
@@ -241,7 +244,7 @@ typedef struct nodestats {
 
 void acquire_clientstats_lock(int);
 void release_clientstats_lock();
-nodestats_t *get_next_clientstats_entry(void**, unsigned int*);
+nodestats_t *get_next_clientstats_entry(void **, unsigned int *);
 
 extern int gbl_time_fdb;
 

@@ -669,8 +669,14 @@ int main(int argc, char *argv[]) {
 
 #else
 
-void memdebug_dump_callers(FILE *f, int skip_balanced) {}
-void memdebug_dump_blocks(FILE *f) {}
-void memdebug_stats() {}
+void memdebug_dump_callers(FILE *f, int skip_balanced)
+{
+}
+void memdebug_dump_blocks(FILE *f)
+{
+}
+void memdebug_stats()
+{
+}
 
 #endif

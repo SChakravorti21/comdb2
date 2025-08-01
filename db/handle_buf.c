@@ -59,25 +59,29 @@ pthread_key_t thd_info_key;
 
 void (*comdb2_ipc_sndbak)(int *, int) = 0;
 
-enum THD_EV { THD_EV_END = 0, THD_EV_START = 1 };
+enum THD_EV { THD_EV_END = 0,
+              THD_EV_START = 1 };
 
 /* request pool & queue */
 
 static pool_t *p_reqs; /* request pool */
 
 struct dbq_entry_t {
-    LINKC_T(struct dbq_entry_t) qlnk;
-    LINKC_T(struct dbq_entry_t) rqlnk;
+    LINKC_T(struct dbq_entry_t)
+    qlnk;
+    LINKC_T(struct dbq_entry_t)
+    rqlnk;
     time_t queue_time_ms;
     void *obj;
 };
 
-static pool_t *pq_reqs;  /* queue entry pool */
+static pool_t *pq_reqs; /* queue entry pool */
 
 pool_t *p_bufs;   /* buffer pool for socket requests */
 pool_t *p_slocks; /* pool of socket locks*/
 
-LISTC_T(struct dbq_entry_t) q_reqs;         /* all queued requests */
+LISTC_T(struct dbq_entry_t)
+q_reqs;                                     /* all queued requests */
 static LISTC_T(struct dbq_entry_t) rq_reqs; /* queue of read requests */
 
 /* thread pool */
@@ -87,7 +91,8 @@ struct thd {
     pthread_t tid;
     pthread_cond_t wakeup;
     struct ireq *iq;
-    LINKC_T(struct thd) lnk;
+    LINKC_T(struct thd)
+    lnk;
 
     // extensions to allow calling thd_req inline
     int do_inline;
@@ -133,19 +138,27 @@ static int iothreads = 0, waitthreads = 0;
 
 void test_the_lock(void)
 {
-    LOCK(&lock) {}
+    LOCK(&lock)
+    {
+    }
     UNLOCK(&lock)
 }
 
 static void thd_io_start(void)
 {
-    LOCK(&lock) { iothreads++; }
+    LOCK(&lock)
+    {
+        iothreads++;
+    }
     UNLOCK(&lock);
 }
 
 static void thd_io_complete(void)
 {
-    LOCK(&lock) { iothreads--; }
+    LOCK(&lock)
+    {
+        iothreads--;
+    }
     UNLOCK(&lock);
 }
 
@@ -370,7 +383,7 @@ void thd_coalesce(struct dbenv *dbenv)
             rc = pthread_cond_timedwait(&coalesce_wakeup, &lock, &ts);
             if (rc != 0 && rc != ETIMEDOUT)
                 logmsg(LOGMSG_ERROR, "%s:pthread_cond_timedwait: %d %s\n", __func__,
-                        rc, strerror(rc));
+                       rc, strerror(rc));
         }
         coalesce_waiters--;
         coalesce_reqthd_waiters -= am_req_thd;
@@ -405,7 +418,8 @@ void thd_dump(void)
         logmsg(LOGMSG_USER, "no active threads\n");
 }
 
-int get_thd_info(thd_info **data, int *npoints) {
+int get_thd_info(thd_info **data, int *npoints)
+{
     struct thd_info *tinfo;
     struct thd *thd;
     uint64_t nowus;
@@ -413,9 +427,9 @@ int get_thd_info(thd_info **data, int *npoints) {
     LOCK(&lock)
     {
         *npoints = busy.count + idle.count;
-        *data = tinfo = malloc((*npoints)*sizeof(thd_info));
+        *data = tinfo = malloc((*npoints) * sizeof(thd_info));
 
-        LISTC_FOR_EACH(&busy, thd, lnk) 
+        LISTC_FOR_EACH(&busy, thd, lnk)
         {
             tinfo->state = strdup("busy");
             tinfo->time = U2M(nowus - thd->iq->nowus);
@@ -437,9 +451,10 @@ int get_thd_info(thd_info **data, int *npoints) {
     return 0;
 }
 
-void free_thd_info(thd_info *data, int npoints) {
+void free_thd_info(thd_info *data, int npoints)
+{
     thd_info *tinfo = data;
-    for (int i=0; i<npoints; ++i) {
+    for (int i = 0; i < npoints; ++i) {
         if (!tinfo->isIdle) {
             free(tinfo->machine);
             free(tinfo->opcode);
@@ -454,14 +469,20 @@ void free_thd_info(thd_info *data, int npoints) {
 uint8_t *get_bigbuf()
 {
     uint8_t *p_buf = NULL;
-    LOCK(&buf_lock) { p_buf = pool_getablk(p_bufs); }
+    LOCK(&buf_lock)
+    {
+        p_buf = pool_getablk(p_bufs);
+    }
     UNLOCK(&buf_lock);
     return p_buf;
 }
 
 int free_bigbuf_nosignal(uint8_t *p_buf)
 {
-    LOCK(&buf_lock) { pool_relablk(p_bufs, p_buf); }
+    LOCK(&buf_lock)
+    {
+        pool_relablk(p_bufs, p_buf);
+    }
     UNLOCK(&buf_lock);
     return 0;
 }
@@ -471,7 +492,10 @@ int free_bigbuf(uint8_t *p_buf, struct buf_lock_t *p_slock)
     if (p_slock == NULL)
         return 0;
     p_slock->reply_state = REPLY_STATE_DONE;
-    LOCK(&buf_lock) { pool_relablk(p_bufs, p_buf); }
+    LOCK(&buf_lock)
+    {
+        pool_relablk(p_bufs, p_buf);
+    }
     UNLOCK(&buf_lock);
     Pthread_cond_signal(&(p_slock->wait_cond));
     return 0;
@@ -501,12 +525,10 @@ void *thd_req(void *vthd)
     if (!thd->inited) {
         if (thd->do_inline) {
             thd->thr_self = thrman_self();
-        }
-        else {
+        } else {
             thd->thr_self = thrman_register(THRTYPE_REQ);
             thread_started("request");
         }
-
 
         ENABLE_PER_THREAD_MALLOC(__func__);
 
@@ -531,25 +553,25 @@ void *thd_req(void *vthd)
         thdinfo->ct_add_table = create_constraint_table();
         if (thdinfo->ct_add_table == NULL) {
             logmsg(LOGMSG_FATAL,
-                    "**aborting: cannot allocate constraint add table thd "
-                    "%p\n",
-                    (void *)pthread_self());
+                   "**aborting: cannot allocate constraint add table thd "
+                   "%p\n",
+                   (void *)pthread_self());
             abort();
         }
         thdinfo->ct_del_table = create_constraint_table();
         if (thdinfo->ct_del_table == NULL) {
             logmsg(LOGMSG_FATAL,
-                    "**aborting: cannot allocate constraint delete table "
-                    "thd %p\n",
-                    (void *)pthread_self());
+                   "**aborting: cannot allocate constraint delete table "
+                   "thd %p\n",
+                   (void *)pthread_self());
             abort();
         }
         thdinfo->ct_add_index = create_constraint_index_table();
         if (thdinfo->ct_add_index == NULL) {
             logmsg(LOGMSG_FATAL,
-                    "**aborting: cannot allocate constraint add index table "
-                    "thd %p\n",
-                    (void *)pthread_self());
+                   "**aborting: cannot allocate constraint add index table "
+                   "thd %p\n",
+                   (void *)pthread_self());
             abort();
         }
         thdinfo->ct_add_table_genid_hash = hash_init(sizeof(unsigned long long));
@@ -560,7 +582,7 @@ void *thd_req(void *vthd)
         thdinfo->stmt_cache = stmt_cache_new(NULL);
         if (thdinfo->stmt_cache == NULL) {
             logmsg(LOGMSG_ERROR, "%s:%d failed to create sql statement cache\n",
-                    __func__, __LINE__);
+                   __func__, __LINE__);
         }
 
         Pthread_setspecific(thd_info_key, thdinfo);
@@ -595,7 +617,7 @@ void *thd_req(void *vthd)
             st = user_request_get_stats();
             if (st)
                 logmsg(LOGMSG_USER, "nreads %d (%lld bytes) nwrites %d (%lld bytes) nfsyncs "
-                       "%d nmempgets %d\n",
+                                    "%d nmempgets %d\n",
                        st->nreads, st->readbytes, st->nwrites, st->writebytes,
                        st->nfsyncs, st->mempgets);
         }
@@ -705,7 +727,7 @@ void *thd_req(void *vthd)
                 rc = clock_gettime(CLOCK_REALTIME, &ts);
                 if (rc != 0) {
                     logmsg(LOGMSG_ERROR, "thd_req:clock_gettime bad rc %d:%s\n", rc,
-                            strerror(errno));
+                           strerror(errno));
                     memset(&ts, 0, sizeof(ts)); /*force failure later*/
                 }
 
@@ -764,7 +786,8 @@ void *thd_req(void *vthd)
     } while (1);
 }
 
-void thd_req_inline(struct ireq *iq) {
+void thd_req_inline(struct ireq *iq)
+{
     struct thd inlinerq = {0};
     // TODO: reuse the constraint tables, etc
     inlinerq.do_inline = 1;
@@ -821,8 +844,7 @@ static int reterr(intptr_t curswap, struct thd *thd, struct ireq *iq, int rc)
     }
     if (iq && iq->ipc_sndbak) {
         iq->ipc_sndbak(iq, rc, iq->p_buf_out_end - iq->p_buf_out_start);
-    }
-    else if (comdb2_ipc_sndbak && curswap) {
+    } else if (comdb2_ipc_sndbak && curswap) {
         /* curswap is just a pointer to the buffer */
         int *ibuf = (int *)curswap;
         ibuf += 2;
@@ -932,7 +954,10 @@ int handle_buf(struct dbenv *dbenv, uint8_t *p_buf, const uint8_t *p_buf_end,
 
 int handled_queue;
 
-int q_reqs_len(void) { return q_reqs.count; }
+int q_reqs_len(void)
+{
+    return q_reqs.count;
+}
 
 static int init_ireq_legacy(struct dbenv *dbenv, struct ireq *iq, SBUF2 *sb,
                             uint8_t *p_buf, const uint8_t *p_buf_end, int debug,
@@ -1064,8 +1089,8 @@ int handle_buf_main2(struct dbenv *dbenv, SBUF2 *sb, const uint8_t *p_buf,
                      int frompid, char *fromtask, osql_sess_t *sorese,
                      int qtype, void *data_hndl, int luxref,
                      unsigned long long rqid, void *p_sinfo, intptr_t curswap,
-                     int comdbg_flags, void (*iq_setup_func)(struct ireq*, void *setup_data),
-                     void *setup_data, int doinline, void* authdata)
+                     int comdbg_flags, void (*iq_setup_func)(struct ireq *, void *setup_data),
+                     void *setup_data, int doinline, void *authdata)
 {
     struct ireq *iq = NULL;
     int rc, num, ndispatch, iamwriter = 0;
@@ -1091,141 +1116,139 @@ int handle_buf_main2(struct dbenv *dbenv, SBUF2 *sb, const uint8_t *p_buf,
         debug = 1;
     }
 
-
 #if 0
         fprintf(stderr, "%s:%d: THD=%p getablk iq=%p\n", __func__, __LINE__, pthread_self(), iq);
 #endif
 
-        /* allocate a request for later dispatch to available thread */
+    /* allocate a request for later dispatch to available thread */
+    LOCK(&lock)
+    {
+        iq = (struct ireq *)pool_getablk(p_reqs);
+    }
+    UNLOCK(&lock);
+    if (!iq) {
+        logmsg(LOGMSG_ERROR, "handle_buf:failed allocate req\n");
+        return reterr(curswap, 0, iq, ERR_INTERNAL);
+    }
+
+    rc = init_ireq_legacy(dbenv, iq, sb, (uint8_t *)p_buf, p_buf_end, debug,
+                          frommach, frompid, fromtask, sorese, qtype,
+                          data_hndl, luxref, rqid, p_sinfo, curswap, comdbg_flags);
+    if (rc) {
+        logmsg(LOGMSG_ERROR, "handle_buf:failed to unpack req header\n");
+        return reterr(curswap, /*thd*/ 0, iq, rc);
+    }
+    iq->sorese = sorese;
+    if (iq_setup_func)
+        iq_setup_func(iq, setup_data);
+
+    if (iq->comdbg_flags == -1)
+        iq->comdbg_flags = 0;
+
+    if (p_buf && p_buf[7] == OP_FWD_BLOCK_LE)
+        iq->comdbg_flags |= COMDBG_FLAG_FROM_LE;
+    iq->authdata = authdata;
+
+    if (doinline) {
+        thd_req_inline(iq);
         LOCK(&lock)
         {
-            iq = (struct ireq *)pool_getablk(p_reqs);
+            pool_relablk(p_reqs, iq);
         }
         UNLOCK(&lock);
-        if (!iq) {
-            logmsg(LOGMSG_ERROR, "handle_buf:failed allocate req\n");
-            return reterr(curswap, 0, iq, ERR_INTERNAL);
-        }
 
-        rc = init_ireq_legacy(dbenv, iq, sb, (uint8_t *)p_buf, p_buf_end, debug,
-                              frommach, frompid, fromtask, sorese, qtype,
-                              data_hndl, luxref, rqid, p_sinfo, curswap, comdbg_flags);
-        if (rc) {
-            logmsg(LOGMSG_ERROR, "handle_buf:failed to unpack req header\n");
-            return reterr(curswap, /*thd*/ 0, iq, rc);
-        }
-        iq->sorese = sorese;
-        if (iq_setup_func)
-            iq_setup_func(iq, setup_data);
+        return 0;
+    }
 
-        if (iq->comdbg_flags == -1)
-            iq->comdbg_flags = 0;
+    Pthread_mutex_lock(&lock);
+    {
+        ++handled_queue;
 
-        if (p_buf && p_buf[7] == OP_FWD_BLOCK_LE)
-            iq->comdbg_flags |= COMDBG_FLAG_FROM_LE;
-        iq->authdata = authdata;
+        /*count queue*/
+        num = q_reqs.count;
+        if (num >= MAXSTAT)
+            num = MAXSTAT - 1;
+        bkt_queue[num]++;
 
-        if (doinline) {
-            thd_req_inline(iq);
-            LOCK(&lock)
-            {
-                pool_relablk(p_reqs, iq);
-            }
-            UNLOCK(&lock);
-
-            return 0;
-        }
-
-
-        Pthread_mutex_lock(&lock);
-        {
-            ++handled_queue;
-
-            /*count queue*/
-            num = q_reqs.count;
-            if (num >= MAXSTAT)
-                num = MAXSTAT - 1;
-            bkt_queue[num]++;
-
-            /*while ((idle.top || busy.count < gbl_maxthreads)
+        /*while ((idle.top || busy.count < gbl_maxthreads)
              * && (iq = queue_next(q_reqs)))*/
-            newent = (struct dbq_entry_t *)pool_getablk(pq_reqs);
-            if (newent == NULL) {
-                errUNLOCK(&lock);
-                logmsg(LOGMSG_ERROR,
-                       "handle_buf:failed to alloc new queue entry, rc %d\n",
-                       rc);
-                return reterr(curswap, /*thd*/ 0, iq, ERR_REJECTED);
-            }
-            newent->obj = (void *)iq;
+        newent = (struct dbq_entry_t *)pool_getablk(pq_reqs);
+        if (newent == NULL) {
+            errUNLOCK(&lock);
+            logmsg(LOGMSG_ERROR,
+                   "handle_buf:failed to alloc new queue entry, rc %d\n",
+                   rc);
+            return reterr(curswap, /*thd*/ 0, iq, ERR_REJECTED);
+        }
+        newent->obj = (void *)iq;
+        iamwriter = is_req_write(iq->opcode) ? 1 : 0;
+        newent->queue_time_ms = comdb2_time_epochms();
+        if (!iamwriter) {
+            (void)listc_abl(&rq_reqs, newent);
+        }
+
+        /*add to global queue*/
+        (void)listc_abl(&q_reqs, newent);
+        /* dispatch work ...*/
+        iq->where = "enqueued";
+
+        while (busy.count - iothreads < gbl_maxthreads) {
+            struct dbq_entry_t *nextrq = NULL;
+            nextrq = (struct dbq_entry_t *)listc_rtl(&q_reqs);
+            if (nextrq == NULL)
+                break;
+            iq = nextrq->obj;
             iamwriter = is_req_write(iq->opcode) ? 1 : 0;
-            newent->queue_time_ms = comdb2_time_epochms();
-            if (!iamwriter) {
-                (void)listc_abl(&rq_reqs, newent);
-            }
 
-            /*add to global queue*/
-            (void)listc_abl(&q_reqs, newent);
-            /* dispatch work ...*/
-            iq->where = "enqueued";
+            numwriterthreads = gbl_maxwthreads - gbl_maxwthreadpenalty;
+            if (numwriterthreads < 1)
+                numwriterthreads = 1;
 
-            while (busy.count - iothreads < gbl_maxthreads) {
-                struct dbq_entry_t *nextrq = NULL;
-                nextrq = (struct dbq_entry_t *)listc_rtl(&q_reqs);
+            if (iamwriter &&
+                (write_thd_count - iothreads) >= numwriterthreads) {
+                /* i am invalid writer, check the read queue instead */
+                listc_atl(&q_reqs, nextrq);
+
+                nextrq = (struct dbq_entry_t *)listc_rtl(&rq_reqs);
                 if (nextrq == NULL)
                     break;
                 iq = nextrq->obj;
-                iamwriter = is_req_write(iq->opcode) ? 1 : 0;
-
-                numwriterthreads = gbl_maxwthreads - gbl_maxwthreadpenalty;
-                if (numwriterthreads < 1)
-                    numwriterthreads = 1;
-
-                if (iamwriter &&
-                    (write_thd_count - iothreads) >= numwriterthreads) {
-                    /* i am invalid writer, check the read queue instead */
-                    listc_atl(&q_reqs, nextrq);
-
-                    nextrq = (struct dbq_entry_t *)listc_rtl(&rq_reqs);
-                    if (nextrq == NULL)
-                        break;
-                    iq = nextrq->obj;
-                    /* remove from global list, and release link block of reader*/
-                    listc_rfl(&q_reqs, nextrq);
-                    if (add_latency > 0) {
-                        poll(0, 0, rand() % add_latency);
-                    }
-                    time_metric_add(thedb->handle_buf_queue_time, comdb2_time_epochms() - nextrq->queue_time_ms);
-                    time_metric_add(thedb->queue_depth,
-                                    q_reqs.count + thdpool_get_queue_depth(get_default_sql_pool(0)));
-                    pool_relablk(pq_reqs, nextrq);
-                    if (!iq)
-                        /* this should never be hit */
-                        break;
-                    /* make sure to mark the reader request accordingly */
-                    iamwriter = 0;
-                } else {
-                    /* i am reader or valid writer */
-                    if (!iamwriter) {
-                        /* remove reader from read queue */
-                        listc_rfl(&rq_reqs, nextrq);
-                    }
-                    if (add_latency > 0) {
-                        poll(0, 0, rand() % add_latency);
-                    }
-                    time_metric_add(thedb->handle_buf_queue_time, comdb2_time_epochms() - nextrq->queue_time_ms);
-                    time_metric_add(thedb->queue_depth,
-                                    q_reqs.count + thdpool_get_queue_depth(get_default_sql_pool(0)));
-                    /* release link block */
-                    pool_relablk(pq_reqs, nextrq);
-                    if (!iq) {
-                        /* this should never be hit */
-                        abort();
-                        break;
-                    }
+                /* remove from global list, and release link block of reader*/
+                listc_rfl(&q_reqs, nextrq);
+                if (add_latency > 0) {
+                    poll(0, 0, rand() % add_latency);
                 }
-                if ((thd = listc_rtl(&idle)) != NULL) /*try to find an idle thread*/
-                {
+                time_metric_add(thedb->handle_buf_queue_time, comdb2_time_epochms() - nextrq->queue_time_ms);
+                time_metric_add(thedb->queue_depth,
+                                q_reqs.count + thdpool_get_queue_depth(get_default_sql_pool(0)));
+                pool_relablk(pq_reqs, nextrq);
+                if (!iq)
+                    /* this should never be hit */
+                    break;
+                /* make sure to mark the reader request accordingly */
+                iamwriter = 0;
+            } else {
+                /* i am reader or valid writer */
+                if (!iamwriter) {
+                    /* remove reader from read queue */
+                    listc_rfl(&rq_reqs, nextrq);
+                }
+                if (add_latency > 0) {
+                    poll(0, 0, rand() % add_latency);
+                }
+                time_metric_add(thedb->handle_buf_queue_time, comdb2_time_epochms() - nextrq->queue_time_ms);
+                time_metric_add(thedb->queue_depth,
+                                q_reqs.count + thdpool_get_queue_depth(get_default_sql_pool(0)));
+                /* release link block */
+                pool_relablk(pq_reqs, nextrq);
+                if (!iq) {
+                    /* this should never be hit */
+                    abort();
+                    break;
+                }
+            }
+            if ((thd = listc_rtl(&idle)) != NULL) /*try to find an idle thread*/
+            {
 #if 0
                 printf("%s:%d: thdpool FOUND THD=%p -> newTHD=%d iq=%p\n", __func__, __LINE__, pthread_self(), thd->tid, iq);
 #endif
@@ -1249,7 +1272,7 @@ int handle_buf_main2(struct dbenv *dbenv, SBUF2 *sb, const uint8_t *p_buf,
                     rc = errno;
                     errUNLOCK(&lock);
                     logmsg(LOGMSG_ERROR, "handle_buf:failed calloc thread:%s\n",
-                            strerror(errno));
+                           strerror(errno));
                     return reterr(curswap, /*thd*/ 0, iq, ERR_INTERNAL);
                 }
                 /*add holder for this one being born...*/
@@ -1281,9 +1304,9 @@ int handle_buf_main2(struct dbenv *dbenv, SBUF2 *sb, const uint8_t *p_buf,
                      * masterness if possible. */
                     if (debug_exit_on_pthread_create_error()) {
                         bdb_transfermaster(thedb->static_table.handle);
-                        logmsg(LOGMSG_FATAL, 
-                                "%s:Exiting due to thread create errors\n",
-                                __func__);
+                        logmsg(LOGMSG_FATAL,
+                               "%s:Exiting due to thread create errors\n",
+                               __func__);
                         exit(1);
                     }
                     return reterr(curswap, thd, iq, ERR_INTERNAL);
@@ -1355,7 +1378,7 @@ int handle_buf_main2(struct dbenv *dbenv, SBUF2 *sb, const uint8_t *p_buf,
 int handle_buf_main(struct dbenv *dbenv, SBUF2 *sb, const uint8_t *p_buf,
                     const uint8_t *p_buf_end, int debug, char *frommach,
                     int frompid, char *fromtask, osql_sess_t *sorese, int qtype,
-                    void *data_hndl, int luxref, unsigned long long rqid, 
+                    void *data_hndl, int luxref, unsigned long long rqid,
                     void (*iq_setup_func)(struct ireq *, void *setup_data))
 {
     return handle_buf_main2(dbenv, sb, p_buf, p_buf_end, debug, frommach,
@@ -1365,7 +1388,10 @@ int handle_buf_main(struct dbenv *dbenv, SBUF2 *sb, const uint8_t *p_buf,
 
 void destroy_ireq(struct dbenv *dbenv, struct ireq *iq)
 {
-    LOCK(&lock) { pool_relablk(p_reqs, iq); }
+    LOCK(&lock)
+    {
+        pool_relablk(p_reqs, iq);
+    }
     UNLOCK(&lock);
 }
 

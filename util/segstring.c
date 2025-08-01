@@ -397,7 +397,8 @@ char *tokcpy0(const char *tok, size_t ltok, char *dest, size_t ldest)
 static int test_segtok_exp(void)
 {
     static const char *line = "ABC| DE|1234|\n\000???";
-    enum { MAX_FIELDS = 10, MAX_STR_LEN = 128 };
+    enum { MAX_FIELDS = 10,
+           MAX_STR_LEN = 128 };
     char *tok[MAX_FIELDS];
     int ltok[MAX_FIELDS];
     int expected_ltok[MAX_FIELDS] = {3, 2, 4, 1, 0};
@@ -426,7 +427,8 @@ static int test_segtok_exp(void)
 static int test_segtokx(void)
 {
     static const char *line = "ABC| DE|1234|A\000???";
-    enum { MAX_FIELDS = 10, MAX_STR_LEN = 128 };
+    enum { MAX_FIELDS = 10,
+           MAX_STR_LEN = 128 };
     char *tok[MAX_FIELDS];
     int ltok[MAX_FIELDS];
     int expected_ltok[MAX_FIELDS] = {3, 2, 4, 1, 0};

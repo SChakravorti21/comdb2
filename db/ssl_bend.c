@@ -40,10 +40,10 @@
 /******************
  Helpers.
  ******************/
-#define my_ssl_printf(fmt, ...)     \
+#define my_ssl_printf(fmt, ...) \
     ssl_println("Backend", fmt, ##__VA_ARGS__)
 
-#define my_ssl_eprintln(fmt, ...)    \
+#define my_ssl_eprintln(fmt, ...) \
     ssl_eprintln("Backend", "%s: " fmt, __func__, ##__VA_ARGS__)
 
 /*****************************
@@ -159,7 +159,7 @@ int ssl_process_lrl(char *line, size_t len)
         gbl_cert_dir = tokdup(tok, ltok);
         if (gbl_cert_dir == NULL) {
             my_ssl_eprintln("Failed to duplicate string: %s.",
-                           strerror(errno));
+                            strerror(errno));
             return errno;
         }
     } else if (tokcmp(line, ltok, SSL_CERT_OPT) == 0) {
@@ -174,7 +174,7 @@ int ssl_process_lrl(char *line, size_t len)
         gbl_cert_file = tokdup(tok, ltok);
         if (gbl_cert_file == NULL) {
             my_ssl_eprintln("Failed to duplicate string: %s.",
-                           strerror(errno));
+                            strerror(errno));
             return errno;
         }
     } else if (tokcmp(line, ltok, SSL_KEY_OPT) == 0) {
@@ -189,7 +189,7 @@ int ssl_process_lrl(char *line, size_t len)
         gbl_key_file = tokdup(tok, ltok);
         if (gbl_key_file == NULL) {
             my_ssl_eprintln("Failed to duplicate string: %s.",
-                           strerror(errno));
+                            strerror(errno));
             return errno;
         }
     } else if (tokcmp(line, ltok, SSL_CA_OPT) == 0) {
@@ -197,14 +197,15 @@ int ssl_process_lrl(char *line, size_t len)
         tok = segtok(line, len, &st, &ltok);
         if (ltok <= 0) {
             my_ssl_eprintln("Expected trusted certificate "
-                            "authorities for `%s`.", SSL_CA_OPT);
+                            "authorities for `%s`.",
+                            SSL_CA_OPT);
             return EINVAL;
         }
 
         gbl_ca_file = tokdup(tok, ltok);
         if (gbl_ca_file == NULL) {
             my_ssl_eprintln("Failed to duplicate string: %s.",
-                           strerror(errno));
+                            strerror(errno));
             return errno;
         }
 #if HAVE_CRL
@@ -235,8 +236,8 @@ int ssl_process_lrl(char *line, size_t len)
         tok = segtok(line, len, &st, &ltok);
         gbl_ssl_allow_remsql = (ltok <= 0) ? 1 : toknum(tok, ltok);
         logmsg(LOGMSG_WARN, "POTENTIAL SECURITY ISSUE: "
-               "Plaintext remote SQL is permitted. Please make sure that "
-               "the databases are in a secure environment.\n");
+                            "Plaintext remote SQL is permitted. Please make sure that "
+                            "the databases are in a secure environment.\n");
     } else if (tokcmp(line, ltok, "ssl_cipher_suites") == 0) {
         /* Get cipher suites. */
         tok = segtok(line, len, &st, &ltok);
@@ -425,11 +426,10 @@ void ssl_stats(void)
 
     logmsg(LOGMSG_USER, "SSL/TLS protocols:\n");
 
-    #define XMACRO_SSL_NO_PROTOCOLS(a, b, c) {a,b,c},
+#define XMACRO_SSL_NO_PROTOCOLS(a, b, c) {a, b, c},
     struct ssl_no_protocols ssl_no_protocols[] = {
-        SSL_NO_PROTOCOLS
-    };
-    #undef XMACRO_SSL_NO_PROTOCOLS
+        SSL_NO_PROTOCOLS};
+#undef XMACRO_SSL_NO_PROTOCOLS
     for (int ii = 0;
          ii != sizeof(ssl_no_protocols) / sizeof(ssl_no_protocols[0]); ++ii) {
         int enabled = (ssl_no_protocols[ii].tlsver >= gbl_min_tls_ver);

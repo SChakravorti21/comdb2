@@ -32,11 +32,11 @@
 #include <intern_strings.h>
 
 #ifndef HOST_NAME_MAX
-#   ifdef MAXHOSTNAMELEN
-#       define HOST_NAME_MAX MAXHOSTNAMELEN
-#   else
-#       define HOST_NAME_MAX 64
-#   endif
+#ifdef MAXHOSTNAMELEN
+#define HOST_NAME_MAX MAXHOSTNAMELEN
+#else
+#define HOST_NAME_MAX 64
+#endif
 #endif
 
 extern int gbl_libevent_rte_only;
@@ -74,7 +74,7 @@ typedef void QSTATFREEFP(struct netinfo_struct *netinfo, void *netstat);
 
 struct net_get_records;
 struct net_queue_stat;
-typedef void QSTATITERFP(struct net_get_records *, struct net_queue_stat*);
+typedef void QSTATITERFP(struct net_get_records *, struct net_queue_stat *);
 
 typedef void QSTATDUMPFP(struct netinfo_struct *netinfo, void *netstat,
                          FILE *f);
@@ -124,8 +124,8 @@ int net_send_message(netinfo_type *netinfo,
 
 /* Returns an ack payload */
 int net_send_message_payload_ack(netinfo_type *netinfo_ptr, const char *to_host,
-                     int usertype, void *data, int datalen, uint8_t **payloadptr, 
-                     int *payloadlen, int waitforack, int waitms);
+                                 int usertype, void *data, int datalen, uint8_t **payloadptr,
+                                 int *payloadlen, int waitforack, int waitms);
 
 int net_send_flags(netinfo_type *netinfo,
                    const char *to_host, /* send to this node number */
@@ -180,8 +180,8 @@ void netinfo_lock(netinfo_type *netinfo_ptr, int seconds);
   return codes <0 are reserved by system.
 */
 int net_ack_message(void *ack_handle, int outrc);
-int net_ack_message_payload(void *ack_handle, int outrc, void *payload, 
-        int payloadlen);
+int net_ack_message_payload(void *ack_handle, int outrc, void *payload,
+                            int payloadlen);
 
 netinfo_type *create_netinfo(char myhostname[], int myportnum, int myfd,
                              char app[], char service[], char instance[],
@@ -224,7 +224,7 @@ int net_get_all_nodes(netinfo_type *netinfo_ptr, const char *hostlist[REPMAX]);
 int net_get_all_nodes_interned(netinfo_type *netinfo_ptr, struct interned_string *hostlist[REPMAX]);
 
 /* "all" (registered) nodes, minus the decomissioned nodes */
-int net_get_all_commissioned_nodes(netinfo_type *netinfo_ptr, const char* hostlist[REPMAX]);
+int net_get_all_commissioned_nodes(netinfo_type *netinfo_ptr, const char *hostlist[REPMAX]);
 
 /* "all" (registered) nodes, minus the decomissioned nodes */
 int net_get_all_commissioned_nodes_interned(netinfo_type *netinfo_ptr, struct interned_string *hostlist[REPMAX]);
@@ -258,13 +258,13 @@ int net_get_sanctioned_node_list(netinfo_type *netinfo_ptr, int max_nodes,
                                  const char *nodes[REPMAX]);
 
 int net_get_sanctioned_replicants(netinfo_type *netinfo_ptr, int max_nodes,
-                                 const char *nodes[REPMAX]);
+                                  const char *nodes[REPMAX]);
 
 int net_get_sanctioned_node_list_interned(netinfo_type *netinfo_ptr, int max_nodes,
-                                 struct interned_string *nodes[REPMAX]);
+                                          struct interned_string *nodes[REPMAX]);
 
 int net_get_sanctioned_replicants_interned(netinfo_type *netinfo_ptr, int max_nodes,
-                                 struct interned_string *nodes[REPMAX]);
+                                           struct interned_string *nodes[REPMAX]);
 
 /* return the list of sanc nodes that are connected */
 int net_sanctioned_and_connected_nodes(netinfo_type *netinfo_ptr, int max_nodes,
@@ -272,7 +272,7 @@ int net_sanctioned_and_connected_nodes(netinfo_type *netinfo_ptr, int max_nodes,
 
 /* return the list of sanc nodes that are connected */
 int net_sanctioned_and_connected_nodes_intern(netinfo_type *netinfo_ptr, int max_nodes,
-                                       struct interned_string *nodes[REPMAX]);
+                                              struct interned_string *nodes[REPMAX]);
 
 /* Remove a node from the sanctioned list.  Returns 0 on success, -1 if
  * node was not in sanctioned list. */
@@ -348,7 +348,9 @@ int net_get_network_usage(netinfo_type *netinfo_ptr,
 int net_get_queue_size(netinfo_type *netinfo_type, const char *host, int *limit,
                        int *usage);
 
-enum { NET_TEST_NONE = 0, NET_TEST_QUEUE_FULL = 1, NET_TEST_MAX = 2 };
+enum { NET_TEST_NONE = 0,
+       NET_TEST_QUEUE_FULL = 1,
+       NET_TEST_MAX = 2 };
 
 /* simple way to enable/disable testing of net logic for cdb2tcm */
 void net_enable_test(netinfo_type *netinfo_ptr, int testno);
@@ -358,7 +360,6 @@ void net_disable_test(netinfo_type *netinfo_ptr);
 int net_add_nondedicated_subnet(void *, void *);
 int net_add_to_subnets(const char *suffix, const char *lrlname);
 void net_cleanup();
-
 
 int get_host_port(netinfo_type *);
 
@@ -406,7 +407,7 @@ int sync_state_to_protobuf(int);
 struct fdb_hbeats;
 struct dist_hbeats;
 void increase_net_buf(void);
-int enable_fdb_heartbeats(struct fdb_hbeats*);
+int enable_fdb_heartbeats(struct fdb_hbeats *);
 int disable_fdb_heartbeats_and_free(struct fdb_hbeats *);
 int enable_dist_heartbeats(struct dist_hbeats *);
 int disable_dist_heartbeats(struct dist_hbeats *);

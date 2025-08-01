@@ -26,16 +26,17 @@ struct common_members {
     int64_t ndeadlocks;
     int64_t nlockwaits;
     uint32_t lkcountercheck_lasttime; // used for checking lockwaints
-    uint32_t thrcount;           // number of threads currently available
-    uint32_t maxthreads;         // maximum number of SC threads allowed
-    int is_decrease_thrds;       // is feature on to backoff and decrease threads
-    uint32_t total_lasttime;     // last time we computed total stats
+    uint32_t thrcount;                // number of threads currently available
+    uint32_t maxthreads;              // maximum number of SC threads allowed
+    int is_decrease_thrds;            // is feature on to backoff and decrease threads
+    uint32_t total_lasttime;          // last time we computed total stats
 };
 
 struct redo_genid_lsns {
     unsigned long long genid;
     DB_LSN lsn;
-    LINKC_T(struct redo_genid_lsns) linkv;
+    LINKC_T(struct redo_genid_lsns)
+    linkv;
 };
 
 /* for passing state data to schema change threads/functions */
@@ -78,12 +79,13 @@ struct convert_record_data {
     hash_t *blob_hash;
     struct odh odh;
     struct odh oldodh;
-    DB_LSN cv_wait_lsn; /* for logical_livesc, wait for redo thread to catup at
+    DB_LSN cv_wait_lsn;          /* for logical_livesc, wait for redo thread to catup at
                            this LSN if we get constraint violations when
                            converting the records */
     unsigned long long cv_genid; /* the genid of the record that we get
                                     constraint violation on */
-    LISTC_T(struct redo_genid_lsns) redo_lsns;
+    LISTC_T(struct redo_genid_lsns)
+    redo_lsns;
     hash_t *redo_genids;
 };
 

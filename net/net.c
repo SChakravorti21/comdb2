@@ -351,7 +351,8 @@ net_ack_message_type_get(net_ack_message_type *p_net_ack_message_type,
     return p_buf;
 }
 
-void update_host_net_queue_stats(host_node_type *host_node_ptr, size_t count, size_t bytes) {
+void update_host_net_queue_stats(host_node_type *host_node_ptr, size_t count, size_t bytes)
+{
     host_node_ptr->enque_count += count;
     if (host_node_ptr->enque_count > host_node_ptr->peak_enque_count) {
         host_node_ptr->peak_enque_count = host_node_ptr->enque_count;
@@ -493,7 +494,6 @@ int write_connect_message(netinfo_type *netinfo_ptr,
     uint8_t conndata[NET_CONNECT_MESSAGE_TYPE_LEN] = {0}, *p_buf, *p_buf_end;
     char type = 0;
     int append_to = 0, append_from = 0;
-
 
     memset(&connect_message, 0, sizeof(connect_message_type));
 
@@ -642,8 +642,8 @@ int write_heartbeat(netinfo_type *netinfo_ptr, host_node_type *host_node_ptr)
     return write_message_int(netinfo_ptr, host_node_ptr, WIRE_HEADER_HEARTBEAT, NULL, 0, flags);
 }
 
-typedef int (hello_func)(netinfo_type *, host_node_type *, int type,
-                          const void *, size_t);
+typedef int(hello_func)(netinfo_type *, host_node_type *, int type,
+                        const void *, size_t);
 
 /*
   this is the protocol where each node advertises all the other nodes
@@ -668,7 +668,7 @@ static int write_hello_int(netinfo_type *netinfo_ptr, host_node_type *host_node_
 
     datasz = sizeof(int) + sizeof(int) + /* int numhosts */
              (HOSTNAME_LEN * numhosts) + /* char host[16]... ( 1 per host ) */
-             (sizeof(int) * numhosts)  + /* int port...      ( 1 per host ) */
+             (sizeof(int) * numhosts) +  /* int port...      ( 1 per host ) */
              (sizeof(int) * numhosts);   /* int node...      ( 1 per host ) */
 
     /* write long hostnames */
@@ -821,7 +821,6 @@ static int remove_seqnum_from_waitlist(host_node_type *host_node_ptr,
     return outrc;
 }
 
-
 int net_send_message_payload_ack(netinfo_type *netinfo_ptr, const char *to_host,
                                  int usertype, void *data, int datalen,
                                  uint8_t **payloadptr, int *payloadlen,
@@ -893,7 +892,7 @@ int net_send_message_payload_ack(netinfo_type *netinfo_ptr, const char *to_host,
 
     if (rc != 0) {
         if (seq_ptr)
-            remove_seqnum_from_waitlist(host_node_ptr, (void**) payloadptr, 
+            remove_seqnum_from_waitlist(host_node_ptr, (void **)payloadptr,
                                         payloadlen, seq_ptr->seqnum);
         Pthread_mutex_unlock(&(host_node_ptr->wait_mutex));
 
@@ -922,7 +921,7 @@ int net_send_message_payload_ack(netinfo_type *netinfo_ptr, const char *to_host,
     rc = gettimeofday(&tv, NULL);
     if (rc != 0) {
         logmsg(LOGMSG_ERROR, "gettimeofday failed\n");
-        remove_seqnum_from_waitlist(host_node_ptr, (void**) payloadptr, payloadlen, 
+        remove_seqnum_from_waitlist(host_node_ptr, (void **)payloadptr, payloadlen,
                                     seq_ptr->seqnum);
         Pthread_mutex_unlock(&(host_node_ptr->wait_mutex));
 
@@ -938,7 +937,7 @@ int net_send_message_payload_ack(netinfo_type *netinfo_ptr, const char *to_host,
     rc = 0;
     while (1) {
         if (seq_ptr->ack == 1) {
-            rc = remove_seqnum_from_waitlist(host_node_ptr, (void**) payloadptr,
+            rc = remove_seqnum_from_waitlist(host_node_ptr, (void **)payloadptr,
                                              payloadlen, seq_ptr->seqnum);
             /* user is only allowed to return >=0 */
             if (rc < 0)
@@ -953,17 +952,17 @@ int net_send_message_payload_ack(netinfo_type *netinfo_ptr, const char *to_host,
         }
 
         if (rc == ETIMEDOUT) {
-            remove_seqnum_from_waitlist(host_node_ptr, (void**) payloadptr,
+            remove_seqnum_from_waitlist(host_node_ptr, (void **)payloadptr,
                                         payloadlen, seq_ptr->seqnum);
             logmsg(LOGMSG_ERROR, "net_send_message: timeout to %s\n",
-                    host_node_ptr->host);
+                   host_node_ptr->host);
 
             Pthread_mutex_unlock(&(host_node_ptr->wait_mutex));
 
             rc = NET_SEND_FAIL_TIMEOUT;
             goto end;
         } else if (rc != 0) {
-            remove_seqnum_from_waitlist(host_node_ptr, (void**) payloadptr,
+            remove_seqnum_from_waitlist(host_node_ptr, (void **)payloadptr,
                                         payloadlen, seq_ptr->seqnum);
             Pthread_mutex_unlock(&(host_node_ptr->wait_mutex));
             logmsg(LOGMSG_ERROR,
@@ -977,7 +976,8 @@ int net_send_message_payload_ack(netinfo_type *netinfo_ptr, const char *to_host,
 
         Pthread_rwlock_unlock(&(netinfo_ptr->lock));
         rc = pthread_cond_timedwait(&(host_node_ptr->ack_wakeup), &(host_node_ptr->wait_mutex), &waittime);
-        if (rc == EINVAL) return rc;
+        if (rc == EINVAL)
+            return rc;
         Pthread_rwlock_rdlock(&(netinfo_ptr->lock));
     }
 
@@ -1001,8 +1001,10 @@ static int net_send_int(netinfo_type *netinfo_ptr, const char *host,
                         int inorder, int trace)
 {
     int f = 0;
-    if (nodelay) f |= NET_SEND_NODELAY;
-    if (nodrop) f |= NET_SEND_NODROP;
+    if (nodelay)
+        f |= NET_SEND_NODELAY;
+    if (nodrop)
+        f |= NET_SEND_NODROP;
     return net_send_evbuffer(netinfo_ptr, host, usertype, data, datalen, numtails, tails, taillens, f);
 }
 
@@ -1125,8 +1127,6 @@ int net_get_all_nodes_interned(netinfo_type *netinfo_ptr, struct interned_string
 
     return count;
 }
-
-
 
 int net_get_all_commissioned_nodes_interned(netinfo_type *netinfo_ptr, struct interned_string *hostlist[REPMAX])
 {
@@ -1339,7 +1339,6 @@ static inline host_node_type *get_host_node_cache_ll(netinfo_type *netinfo_ptr,
     return host_node_ptr;
 }
 
-
 void net_inc_recv_cnt_from(netinfo_type *netinfo_ptr, char *host)
 {
     Pthread_rwlock_rdlock(&(netinfo_ptr->lock));
@@ -1371,7 +1370,8 @@ void net_reset_udp_stat(netinfo_type *netinfo_ptr)
 
 void print_all_udp_stat(netinfo_type *netinfo_ptr)
 {
-    if (!netinfo_ptr) return;
+    if (!netinfo_ptr)
+        return;
     Pthread_rwlock_rdlock(&(netinfo_ptr->lock));
 
     for (host_node_type *ptr = netinfo_ptr->head; ptr != NULL;
@@ -1478,7 +1478,7 @@ host_node_type *add_to_netinfo_ll(netinfo_type *netinfo_ptr, const char hostname
         return ptr;
     }
 
-    if (count==REPMAX) {
+    if (count == REPMAX) {
         logmsg(LOGMSG_ERROR, "Cannot add more than REPMAX(%d) number of nodes\n", REPMAX);
         return NULL;
     }
@@ -1571,7 +1571,7 @@ sanc_node_type *net_add_to_sanctioned(netinfo_type *netinfo_ptr,
     if (netinfo_ptr->allow_rtn &&
         !netinfo_ptr->allow_rtn(netinfo_ptr, hostname)) {
         logmsg(LOGMSG_ERROR, "net_add_to_sanctioned: not allowed to add %s\n",
-                hostname);
+               hostname);
         return NULL;
     }
 
@@ -1588,7 +1588,7 @@ sanc_node_type *net_add_to_sanctioned(netinfo_type *netinfo_ptr,
 
 int net_is_single_sanctioned_node(netinfo_type *netinfo_ptr)
 {
-    int single_node = 0 ;
+    int single_node = 0;
     sanc_node_type *ptr;
 
     Pthread_mutex_lock(&(netinfo_ptr->sanclk));
@@ -1603,9 +1603,8 @@ int net_is_single_sanctioned_node(netinfo_type *netinfo_ptr)
     return single_node;
 }
 
-
 static int net_get_sanctioned_interned_int(netinfo_type *netinfo_ptr, int max_nodes,
-                                 struct interned_string *hosts[REPMAX], int include_self)
+                                           struct interned_string *hosts[REPMAX], int include_self)
 {
     int count = 0;
     sanc_node_type *ptr;
@@ -1627,7 +1626,7 @@ static int net_get_sanctioned_interned_int(netinfo_type *netinfo_ptr, int max_no
 }
 
 static int net_get_sanctioned_int(netinfo_type *netinfo_ptr, int max_nodes,
-                                 const char *hosts[REPMAX], int include_self)
+                                  const char *hosts[REPMAX], int include_self)
 {
     int count = 0;
     sanc_node_type *ptr;
@@ -1667,13 +1666,13 @@ int net_get_sanctioned_node_list(netinfo_type *netinfo_ptr, int max_nodes,
 }
 
 int net_get_sanctioned_replicants(netinfo_type *netinfo_ptr, int max_nodes,
-                                 const char *hosts[REPMAX])
+                                  const char *hosts[REPMAX])
 {
     return net_get_sanctioned_int(netinfo_ptr, max_nodes, hosts, 0);
 }
 
 int net_sanctioned_and_connected_nodes_intern(netinfo_type *netinfo_ptr, int max_nodes,
-                                       struct interned_string *hosts[REPMAX])
+                                              struct interned_string *hosts[REPMAX])
 {
     host_node_type *ptr;
     sanc_node_type *ptr_sanc;
@@ -1797,13 +1796,14 @@ int net_del_from_sanctioned(netinfo_type *netinfo_ptr, char *host)
         return 0;
     } else {
         logmsg(LOGMSG_INFO, "net_del_from_sanctioned %s - not in sanc list\n",
-                host);
+               host);
         return -1;
     }
 }
 
 typedef struct netinfo_node {
-    LINKC_T(struct netinfo_node) lnk;
+    LINKC_T(struct netinfo_node)
+    lnk;
     netinfo_type *netinfo_ptr;
 } netinfo_node_t;
 static LISTC_T(netinfo_node_t) nets_list;
@@ -1826,7 +1826,6 @@ netinfo_type *create_netinfo(char myhostname[], int myportnum, int myfd,
 
     listc_init(&(netinfo_ptr->watchlist), offsetof(watchlist_node_type, lnk));
 
-
     netinfo_ptr->heartbeat_check_time = gbl_heartbeat_check;
     netinfo_ptr->ischild = ischild;
     netinfo_ptr->use_getservbyname = use_getservbyname;
@@ -1847,7 +1846,7 @@ netinfo_type *create_netinfo(char myhostname[], int myportnum, int myfd,
                 exit(1);
             }
             logmsg(LOGMSG_INFO, "i registered port %d for %s\n", myportnum,
-                    service);
+                   service);
         } else {
             portmux_use(app, service, instance, myportnum);
         }
@@ -1879,7 +1878,7 @@ netinfo_type *create_netinfo(char myhostname[], int myportnum, int myfd,
     netinfo_node = malloc(sizeof(netinfo_node_t));
     if (netinfo_node == NULL) {
         logmsg(LOGMSG_ERROR, "create_netinfo: malloc failed. memstat on this "
-                        "netinfo will not be tracked\n");
+                             "netinfo will not be tracked\n");
     } else {
         netinfo_node->netinfo_ptr = netinfo_ptr;
         Pthread_mutex_lock(&nets_list_lk);
@@ -1928,7 +1927,8 @@ void net_count_nodes_ex(netinfo_type *netinfo_ptr, int *total_ptr,
 
 inline int net_count_nodes(netinfo_type *netinfo_ptr)
 {
-    if (!netinfo_ptr) return 0;
+    if (!netinfo_ptr)
+        return 0;
     int total;
     net_count_nodes_ex(netinfo_ptr, &total, NULL);
     return total;
@@ -1950,7 +1950,7 @@ void print_netinfo(netinfo_type *netinfo_ptr)
 
     for (ptr = netinfo_ptr->head; ptr != NULL; ptr = ptr->next) {
         logmsg(LOGMSG_USER, "%s:%d fd=%d host=%s\n", ptr->host, ptr->port, ptr->fd,
-                ptr->host);
+               ptr->host);
     }
 
     Pthread_rwlock_unlock(&(netinfo_ptr->lock));
@@ -2106,7 +2106,6 @@ int write_decom(netinfo_type *netinfo_ptr, host_node_type *host_node_ptr,
                             decom_hostlen, to_host);
 }
 
-
 /* send a decom message about node "decom_host" to node "to_host" */
 static int net_send_decom(netinfo_type *netinfo_ptr, const char *decom_host,
                           const char *to_host)
@@ -2134,7 +2133,7 @@ static int net_send_decom(netinfo_type *netinfo_ptr, const char *decom_host,
     }
 
     int decom_hostlen = strlen(decom_host) + 1;
-    int rc = write_decom(netinfo_ptr, host_node_ptr, decom_host, 
+    int rc = write_decom(netinfo_ptr, host_node_ptr, decom_host,
                          decom_hostlen, to_host);
     Pthread_rwlock_unlock(&(netinfo_ptr->lock));
 
@@ -2160,7 +2159,6 @@ int net_send_decom_all(netinfo_type *netinfo_ptr, char *decom_host)
     return outrc;
 }
 
-
 int net_is_connected(netinfo_type *netinfo_ptr, const char *host)
 {
     host_node_type *host_node_ptr;
@@ -2180,7 +2178,6 @@ int net_is_connected(netinfo_type *netinfo_ptr, const char *host)
 
     return rc;
 }
-
 
 int net_send_hello(netinfo_type *netinfo_ptr, const char *tohost)
 {
@@ -2397,7 +2394,6 @@ int net_add_to_subnets(const char *suffix, const char *lrlname)
     return 0;
 }
 
-
 void net_cleanup()
 {
     Pthread_mutex_lock(&subnet_mtx);
@@ -2467,7 +2463,7 @@ int get_dedicated_conhost(host_node_type *host_node_ptr, struct in_addr *addr)
         rc = comdb2_gethostbyname(&rephostname, addr);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%d) %s(): ERROR gethostbyname '%s' FAILED\n",
-                    ii, __func__, rephostname);
+                   ii, __func__, rephostname);
         } else {
             if (gbl_verbose_net) {
                 host_node_printf(LOGMSG_USER, host_node_ptr,
@@ -2575,7 +2571,6 @@ int findpeer(int fd, char *addr, int len)
     return 0;
 }
 
-
 void net_register_child_net(netinfo_type *netinfo_ptr,
                             netinfo_type *netinfo_child, int netnum, int accept)
 {
@@ -2603,7 +2598,8 @@ void net_register_child_net(netinfo_type *netinfo_ptr,
 int gbl_forbid_remote_admin = 1;
 
 extern char *gbl_myhostname;
-int is_connection_local(SBUF2 *sb) {
+int is_connection_local(SBUF2 *sb)
+{
     struct sockaddr_in peeraddr;
     socklen_t pl = sizeof(struct sockaddr_in);
 
@@ -2642,7 +2638,7 @@ int is_connection_local(SBUF2 *sb) {
 }
 
 int do_appsock(netinfo_type *netinfo_ptr, struct sockaddr_in *cliaddr,
-                SBUF2 *sb, uint8_t firstbyte)
+               SBUF2 *sb, uint8_t firstbyte)
 {
     watchlist_node_type *watchlist_node;
     int new_fd = sbuf2fileno(sb);
@@ -2666,7 +2662,6 @@ int do_appsock(netinfo_type *netinfo_ptr, struct sockaddr_in *cliaddr,
         sbuf2close(sb);
         return -1;
     }
-
 
     if (gbl_server_admin_mode && !admin) {
         sbuf2close(sb);
@@ -2713,7 +2708,7 @@ static watchlist_node_type *get_watchlist_node(SBUF2 *sb, const char *funcname)
         return NULL;
     } else if (memcmp(watchlist_node->magic, "WLST", 4) != 0) {
         logmsg(LOGMSG_ERROR, "%s: sbuf2 %p user pointer is not a watch list node\n",
-                funcname, sb);
+               funcname, sb);
         return NULL;
     } else {
         return watchlist_node;
@@ -2888,7 +2883,7 @@ static sanc_node_type *add_to_sanctioned_nolock(netinfo_type *netinfo_ptr,
         return ptr;
     }
 
-    if (count==REPMAX) {
+    if (count == REPMAX) {
         logmsg(LOGMSG_ERROR, "%s : Cannot add to more than REPMAX(%d) number of nodes\n", __func__, REPMAX);
         return NULL;
     }
@@ -2947,7 +2942,6 @@ int net_init(netinfo_type *netinfo_ptr)
     }
     return 0;
 }
-
 
 int net_register_admin_appsock(netinfo_type *netinfo_ptr, APPSOCKFP func)
 {
@@ -3056,7 +3050,10 @@ struct interned_string *net_get_mynode_interned(netinfo_type *netinfo_ptr)
     return netinfo_ptr->myhost_interned;
 }
 
-void *net_get_usrptr(netinfo_type *netinfo_ptr) { return netinfo_ptr->usrptr; }
+void *net_get_usrptr(netinfo_type *netinfo_ptr)
+{
+    return netinfo_ptr->usrptr;
+}
 
 void net_set_usrptr(netinfo_type *netinfo_ptr, void *usrptr)
 {
@@ -3174,7 +3171,7 @@ int net_listen(int port)
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
     if (listenfd < 0) {
         logmsg(LOGMSG_ERROR, "%s: socket rc %d %s\n", __func__, errno,
-                strerror(errno));
+               strerror(errno));
         return -1;
     }
 
@@ -3188,7 +3185,7 @@ int net_listen(int port)
     rc = setsockopt(listenfd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, len);
     if (rc != 0) {
         logmsg(LOGMSG_ERROR, "%s: couldnt turn off nagel on listenfd %d: %d %s\n",
-                __func__, listenfd, errno, strerror(errno));
+               __func__, listenfd, errno, strerror(errno));
         return -1;
     }
 #endif
@@ -3198,9 +3195,9 @@ int net_listen(int port)
     len = sizeof(tcpbfsz);
     rc = setsockopt(listenfd, SOL_SOCKET, SO_SNDBUF, &tcpbfsz, len);
     if (rc < 0) {
-        logmsg(LOGMSG_ERROR, 
-                "%s: couldnt set tcp sndbuf size on listenfd %d: %d %s\n",
-                __func__, listenfd, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "%s: couldnt set tcp sndbuf size on listenfd %d: %d %s\n",
+               __func__, listenfd, errno, strerror(errno));
         return -1;
     }
 
@@ -3208,9 +3205,9 @@ int net_listen(int port)
     len = sizeof(tcpbfsz);
     rc = setsockopt(listenfd, SOL_SOCKET, SO_RCVBUF, &tcpbfsz, len);
     if (rc < 0) {
-        logmsg(LOGMSG_ERROR, 
-                "%s: couldnt set tcp rcvbuf size on listenfd %d: %d %s\n",
-                __func__, listenfd, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "%s: couldnt set tcp rcvbuf size on listenfd %d: %d %s\n",
+               __func__, listenfd, errno, strerror(errno));
         return -1;
     }
 #endif
@@ -3221,7 +3218,7 @@ int net_listen(int port)
     if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse_addr,
                    len) != 0) {
         logmsg(LOGMSG_ERROR, "%s: coun't set reuseaddr %d %s\n", __func__, errno,
-                strerror(errno));
+               strerror(errno));
         return -1;
     }
 
@@ -3232,7 +3229,7 @@ int net_listen(int port)
     if (setsockopt(listenfd, SOL_SOCKET, SO_LINGER, (char *)&linger_data,
                    len) != 0) {
         logmsg(LOGMSG_ERROR, "%s: coun't set keepalive %d %s\n", __func__, errno,
-                strerror(errno));
+               strerror(errno));
         return -1;
     }
 #endif
@@ -3242,32 +3239,34 @@ int net_listen(int port)
     len = sizeof(on);
     if (setsockopt(listenfd, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, len) != 0) {
         logmsg(LOGMSG_ERROR, "%s: coun't set keepalive %d %s\n", __func__, errno,
-                strerror(errno));
+               strerror(errno));
         return -1;
     }
 
     /* bind an address to the socket */
     if (bind(listenfd, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
         logmsg(LOGMSG_ERROR, "%s: FAILED TO BIND to port %d: %d %s\n", __func__,
-                port, errno, strerror(errno));
+               port, errno, strerror(errno));
         return -1;
     }
 
     /* listen for connections on socket */
     if (listen(listenfd, gbl_net_maxconn ? gbl_net_maxconn : SOMAXCONN) < 0) {
         logmsg(LOGMSG_ERROR, "%s: listen rc %d %s\n", __func__, errno,
-                strerror(errno));
+               strerror(errno));
         return -1;
     }
 
     return listenfd;
 }
 
-void net_set_conntime_dump_period(netinfo_type *netinfo_ptr, int value)  {
+void net_set_conntime_dump_period(netinfo_type *netinfo_ptr, int value)
+{
     netinfo_ptr->conntime_dump_period = value;
 }
 
-int net_get_conntime_dump_period(netinfo_type *netinfo_ptr) {
+int net_get_conntime_dump_period(netinfo_type *netinfo_ptr)
+{
     return netinfo_ptr->conntime_dump_period;
 }
 

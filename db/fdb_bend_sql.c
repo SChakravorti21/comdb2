@@ -42,7 +42,6 @@
 extern int gbl_fdb_track;
 extern int blockproc2sql_error(int rc, const char *func, int line);
 
-
 int fdb_appsock_work(const char *cid, sqlclntstate *clnt, int version,
                      enum run_sql_flags flags, char *sql, int sqllen,
                      char *trim_key, int trim_keylen, SBUF2 *sb)
@@ -178,7 +177,7 @@ int fdb_svc_alter_schema(sqlclntstate *clnt, sqlite3_stmt *stmt, UnpackedRecord 
     pMem = &upr->aMem[4];
     if (unlikely((pMem->flags & MEM_Str) == 0)) {
         logmsg(LOGMSG_ERROR, "%s: wrong type sql string %x\n", __func__,
-                pMem->flags);
+               pMem->flags);
         return -1;
     }
     sql = pMem->z;
@@ -351,9 +350,9 @@ int fdb_svc_trans_begin(char *tid, enum transaction_level lvl, int flags, int se
 
     if (osql_register_sqlthr(clnt, OSQL_SOCK_REQ /* not needed actually*/)) {
         uuidstr_t us;
-        comdb2uuidstr((unsigned char*)tid, us);
+        comdb2uuidstr((unsigned char *)tid, us);
         logmsg(LOGMSG_ERROR, "%s: unable to register blocksql thread %s\n",
-                __func__, us);
+               __func__, us);
     }
 
     if ((rc = initialize_shadow_trans(clnt)) != 0)
@@ -375,7 +374,7 @@ int fdb_svc_trans_commit(char *tid, enum transaction_level lvl,
     int rc = 0, irc = 0;
     int bdberr = 0;
     uuidstr_t us;
-    comdb2uuidstr((unsigned char*)tid, us);
+    comdb2uuidstr((unsigned char *)tid, us);
 
     /* we have to wait for any potential cursor to go away */
     Pthread_mutex_lock(&clnt->dtran_mtx);
@@ -420,7 +419,7 @@ int fdb_svc_trans_commit(char *tid, enum transaction_level lvl,
             }
             if (irc) {
                 logmsg(LOGMSG_ERROR, "%s: failed %s rc=%d bdberr=%d\n", __func__,
-                        (rc == SQLITE_OK) ? "commit" : "abort", irc, bdberr);
+                       (rc == SQLITE_OK) ? "commit" : "abort", irc, bdberr);
             }
             clnt->dbtran.shadow_tran = NULL;
         }
@@ -458,7 +457,7 @@ int fdb_svc_trans_commit(char *tid, enum transaction_level lvl,
     //#if 0
     if (osql_unregister_sqlthr(clnt)) {
         logmsg(LOGMSG_ERROR, "%s: unable to unregister blocksql thread %s\n",
-                __func__, us);
+               __func__, us);
     }
     //#endif
 
@@ -478,7 +477,7 @@ int fdb_svc_trans_rollback(char *tid, enum transaction_level lvl,
     int rc;
     uuidstr_t us;
 
-    comdb2uuidstr((unsigned char*)tid, us);
+    comdb2uuidstr((unsigned char *)tid, us);
 
     if (unlikely(!clnt)) /* extra protection against malicious packets and bugs */
         return -1;
@@ -562,7 +561,7 @@ _fdb_svc_cursor_start(BtCursor *pCur, sqlclntstate *clnt, char *tblname,
             bdb_get_cursortran(thedb->bdb_env, 0, &bdberr);
         if (!clnt->dbtran.cursor_tran) {
             logmsg(LOGMSG_ERROR, "%s: failed to open a curtran bdberr=%d\n",
-                    __func__, bdberr);
+                   __func__, bdberr);
             return NULL;
         }
         *standalone = 1;
@@ -623,9 +622,9 @@ _fdb_svc_cursor_start(BtCursor *pCur, sqlclntstate *clnt, char *tblname,
             rc = bdb_put_cursortran(thedb->bdb_env, clnt->dbtran.cursor_tran, 0,
                                     &bdberr);
             if (rc || bdberr) {
-                logmsg(LOGMSG_ERROR, 
-                        "%s: failed releasing the curstran rc=%d bdberr=%d\n",
-                        __func__, rc, bdberr);
+                logmsg(LOGMSG_ERROR,
+                       "%s: failed releasing the curstran rc=%d bdberr=%d\n",
+                       __func__, rc, bdberr);
             }
             clnt->dbtran.cursor_tran = NULL;
 
@@ -646,7 +645,7 @@ static int _fdb_svc_cursor_end(BtCursor *pCur, sqlclntstate *clnt,
         rc = pCur->bdbcur->close(pCur->bdbcur, &bdberr);
         if (rc || bdberr) {
             logmsg(LOGMSG_ERROR, "%s: cursor close fail rc=%d bdberr=%d\n", __func__,
-                    rc, bdberr);
+                   rc, bdberr);
         }
         pCur->bdbcur = NULL;
     }
@@ -669,9 +668,9 @@ static int _fdb_svc_cursor_end(BtCursor *pCur, sqlclntstate *clnt,
             rc = bdb_put_cursortran(thedb->bdb_env, clnt->dbtran.cursor_tran, 0,
                                     &bdberr);
             if (rc || bdberr) {
-                logmsg(LOGMSG_ERROR, 
-                        "%s: failed releasing the curstran rc=%d bdberr=%d\n",
-                        __func__, rc, bdberr);
+                logmsg(LOGMSG_ERROR,
+                       "%s: failed releasing the curstran rc=%d bdberr=%d\n",
+                       __func__, rc, bdberr);
             }
             clnt->dbtran.cursor_tran = NULL;
         } else {
@@ -711,7 +710,7 @@ static int _fdb_svc_indexes_to_ondisk(unsigned char **pIndexes, struct dbtable *
         ix = malloc(getkeysize(db, i));
         if (ix == NULL) {
             logmsg(LOGMSG_ERROR, "%s:%d failed to malloc %d\n", __func__, __LINE__,
-                    getkeysize(db, i));
+                   getkeysize(db, i));
             return -1;
         }
         rc = sqlite_to_ondisk(db->ixschema[i],
@@ -769,7 +768,7 @@ int fdb_svc_cursor_insert(sqlclntstate *clnt, char *tblname,
                                     &bCur);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s:%d failed to convert sqlite indexes\n", __func__,
-                __LINE__);
+               __LINE__);
         free(row);
         return -1;
     }
@@ -837,7 +836,7 @@ int fdb_svc_cursor_delete(sqlclntstate *clnt, char *tblname,
                                     &clnt->fail_reason, &bCur);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s:%d failed to convert sqlite indexes\n", __func__,
-                __LINE__);
+               __LINE__);
         return -1;
     }
 
@@ -899,7 +898,7 @@ int fdb_svc_cursor_update(sqlclntstate *clnt, char *tblname,
                                     &bCur);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s:%d failed to convert sqlite indexes\n", __func__,
-                __LINE__);
+               __LINE__);
         free(row);
         return -1;
     }
@@ -907,7 +906,7 @@ int fdb_svc_cursor_update(sqlclntstate *clnt, char *tblname,
                                     &bCur);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s:%d failed to convert sqlite indexes\n", __func__,
-                __LINE__);
+               __LINE__);
         free(row);
         return -1;
     }
@@ -967,14 +966,13 @@ sqlclntstate *fdb_svc_trans_get(char *tid)
     if (wait > 0)
         deadline = wait + comdb2_time_epochms();
 
-
     /* this returns a dtran_mtx locked structure */
     do {
         rc = osql_chkboard_get_clnt((unsigned char *)tid, &clnt);
         if (rc && rc == -1) {
             if (deadline && comdb2_time_epochms() > deadline) {
                 logmsg(LOGMSG_ERROR, "%s: timeout waiting for transaction %d waited %u\n",
-                        __func__, deadline, wait);
+                       __func__, deadline, wait);
 
                 break;
             }
@@ -988,7 +986,7 @@ sqlclntstate *fdb_svc_trans_get(char *tid)
 
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: osql_chkboard_get_clnt returned rc=%d\n", __func__,
-                rc);
+               rc);
         return NULL;
     }
 

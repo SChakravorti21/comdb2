@@ -98,7 +98,8 @@ typedef struct cached_blob {
     size_t bloboffs[MAXBLOBS];
     char *blobptrs[MAXBLOBS];
 
-    LINKC_T(struct cached_blob) linkv;
+    LINKC_T(struct cached_blob)
+    linkv;
 } cached_blob_t;
 
 typedef struct {
@@ -150,11 +151,11 @@ static unsigned dyntag_next_extra = 1;
 
 static void blobmem_init(void);
 
-#define LOCK_BLOB_MUTEX()                                                      \
-    Pthread_mutex_lock(&blobmutex);                                            \
+#define LOCK_BLOB_MUTEX()           \
+    Pthread_mutex_lock(&blobmutex); \
     comdb2bma_mark_locked(blobmem);
-#define UNLOCK_BLOB_MUTEX()                                                    \
-    comdb2bma_mark_unlocked(blobmem);                                          \
+#define UNLOCK_BLOB_MUTEX()           \
+    comdb2bma_mark_unlocked(blobmem); \
     Pthread_mutex_unlock(&blobmutex);
 
 void blob_print_stats(void)
@@ -265,7 +266,7 @@ void *cache_blob_data_int(struct ireq *iq, int rrn, unsigned long long genid,
 
     if (numblobs > MAXBLOBS) {
         logmsg(LOGMSG_ERROR, "cache_blob_data: numblobs too large at %d\n",
-                numblobs);
+               numblobs);
         goto err;
     }
 
@@ -368,14 +369,14 @@ void purge_old_cached_blobs(void)
             while (bloblist.top &&
                    now - bloblist.top->cache_time > gbl_blob_maxage) {
                 if (gbl_blob_vb > 0) {
-                    logmsg(LOGMSG_USER, 
-                        "purged %u:%s:%s:%d:%llu+%u:%u with %d blobs\n",
-                        bloblist.top->key.total_length,
-                        bloblist.top->key.tablename, bloblist.top->key.tagname,
-                        bloblist.top->key.rrn, bloblist.top->key.genid,
-                        bloblist.top->key.dyntag_extra1,
-                        bloblist.top->key.dyntag_extra2,
-                        bloblist.top->numblobs);
+                    logmsg(LOGMSG_USER,
+                           "purged %u:%s:%s:%d:%llu+%u:%u with %d blobs\n",
+                           bloblist.top->key.total_length,
+                           bloblist.top->key.tablename, bloblist.top->key.tagname,
+                           bloblist.top->key.rrn, bloblist.top->key.genid,
+                           bloblist.top->key.dyntag_extra1,
+                           bloblist.top->key.dyntag_extra2,
+                           bloblist.top->numblobs);
                 }
                 free_cached_blob(bloblist.top);
                 stats.purged++;
@@ -400,11 +401,11 @@ struct blobask_req {
     unsigned int total_length; /* for sanity checking */
     int rrn;
     unsigned long long genid;
-    unsigned int fetch_off;  /* offset to start fetching from */
-    unsigned int tblnamelen; /* length of table name string */
-    unsigned int taglen;     /* length of tag name */
-    unsigned int extra1;     /* dyntag extra */
-    unsigned int extra2;     /* dyntag extra */
+    unsigned int fetch_off;                   /* offset to start fetching from */
+    unsigned int tblnamelen;                  /* length of table name string */
+    unsigned int taglen;                      /* length of tag name */
+    unsigned int extra1;                      /* dyntag extra */
+    unsigned int extra2;                      /* dyntag extra */
     unsigned int reserved; /* must be zero */ /*char data[1];*/
     char data[1];
 };
@@ -832,7 +833,8 @@ int gather_blob_data(struct ireq *iq, const char *tag, blob_status_t *b,
  * to convert index of blob in full table schema
  * to index in partial datacopy schema
  */
-static int convert_idx_partial_datacopy(int blob_idx, struct schema *pd) {
+static int convert_idx_partial_datacopy(int blob_idx, struct schema *pd)
+{
     for (int piece = 0; piece < pd->nmembers; piece++) {
         if (pd->member[piece].idx == blob_idx) {
             return piece;
@@ -859,8 +861,8 @@ int gather_blob_data_byname(struct dbtable *table, const char *tag,
         }
         if (diskblob < 0 || blob_idx < 0) {
             logmsg(LOGMSG_ERROR, "BLOB LOOKUP ERR SORTING CLIENT BLOB %d DISKBLOB "
-                            "%d SCHEMA IDX %d",
-                    cblob, diskblob, blob_idx);
+                                 "%d SCHEMA IDX %d",
+                   cblob, diskblob, blob_idx);
             return -1;
         }
         b->cblob_disk_ixs[cblob] = diskblob;
@@ -961,10 +963,10 @@ static int check_one_blob(struct ireq *iq, int isondisk, const char *tag,
                 (schema->member[bfldno].type != CLIENT_VUTF8 ||
                  ntohl(blob->length) > schema->member[bfldno].len))
                 logmsg(LOGMSG_ERROR, "bfldno=%d schema->member[bfldno].type=%d "
-                                "ntohl(blob->length)=%d "
-                                "schema->member[[bfldno].len=%d\n",
-                        bfldno, schema->member[bfldno].type,
-                        ntohl(blob->length), schema->member[bfldno].len);
+                                     "ntohl(blob->length)=%d "
+                                     "schema->member[[bfldno].len=%d\n",
+                       bfldno, schema->member[bfldno].type,
+                       ntohl(blob->length), schema->member[bfldno].len);
 
             if (blob->notnull && b->bloblens[cblob] != ntohl(blob->length))
                 logmsg(LOGMSG_ERROR, "b->bloblens[cblob]=%zu ntohl(blob->length)=%d diff=%d\n", b->bloblens[cblob],
@@ -1088,8 +1090,8 @@ static int check_blob_consistency_int(struct ireq *iq, struct dbtable *table,
 
     if (isondisk < 0) {
         logmsg(LOGMSG_ERROR, "check_blob_consistency: is_tag_ondisk_sc table %s tag %s "
-                        "error\n",
-                table->tablename, tag);
+                             "error\n",
+               table->tablename, tag);
         return -1;
     }
 
@@ -1121,8 +1123,8 @@ int check_one_blob_consistency(struct ireq *iq, struct dbtable *table,
 
     if (isondisk < 0) {
         logmsg(LOGMSG_ERROR, "check_blob_consistency: is_tag_ondisk_sc table %s tag %s "
-                        "error\n",
-                table->tablename, tag);
+                             "error\n",
+               table->tablename, tag);
         return -1;
     }
 
@@ -1153,7 +1155,7 @@ static void blobmem_init(void)
     blobmem = comdb2bma_create(0, gbl_blobmem_cap, "lblk+blob", &blobmutex);
     if (blobmem == NULL) {
         logmsg(LOGMSG_ERROR, "%s %d: failed to create blobmem\n", __FILE__,
-                __LINE__);
+               __LINE__);
         abort();
     }
 }

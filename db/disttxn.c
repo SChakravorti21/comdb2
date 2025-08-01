@@ -31,8 +31,8 @@
  * 3 either commit or abort
  */
 
-#define DISTRIBUTED_TRANSACTIONS_SCHEMA                                                                                \
-    "{ tag ondisk { cstring dist_txnid[129] datetime timestamp dbstore=\"CURRENT_TIMESTAMP\" null=yes } keys{ "        \
+#define DISTRIBUTED_TRANSACTIONS_SCHEMA                                                                         \
+    "{ tag ondisk { cstring dist_txnid[129] datetime timestamp dbstore=\"CURRENT_TIMESTAMP\" null=yes } keys{ " \
     "\"ix0\" = dist_txnid dup \"ix1\" = timestamp }}"
 #define COORDINATOR_LOCAL "_coordinator_local"
 
@@ -63,7 +63,9 @@ enum participant_states {
 };
 
 /* States for each participant as tracked by participant */
-enum { I_AM_PREPARED = 1, I_AM_ABORTED = 2, I_AM_COMMITTED = 3 };
+enum { I_AM_PREPARED = 1,
+       I_AM_ABORTED = 2,
+       I_AM_COMMITTED = 3 };
 
 /* Coordinator tracking structure for a distributed transaction */
 typedef struct distributed_transaction {
@@ -87,7 +89,8 @@ typedef struct distributed_transaction {
     pthread_mutex_t lk;
     pthread_cond_t cd;
     pthread_cond_t send_cd;
-    LINKC_T(struct distributed_transaction) linkv;
+    LINKC_T(struct distributed_transaction)
+    linkv;
 
     int sending;
     int failrc;
@@ -123,13 +126,15 @@ typedef struct sanctioned {
 typedef struct hndlnode {
     int donate_time;
     cdb2_hndl_tp *hndl;
-    LINKC_T(struct hndlnode) linkv;
+    LINKC_T(struct hndlnode)
+    linkv;
 } hndlnode_t;
 
 typedef struct hndlcache {
     char *dbname;
     char *machine;
-    LISTC_T(struct hndlnode) handles;
+    LISTC_T(struct hndlnode)
+    handles;
 } hndlcache_t;
 
 typedef struct allowed_coordinators {
@@ -1557,7 +1562,8 @@ static void disttxn_purge_handles(int purgeall)
     }
 
     /* Collect old handles */
-    LISTC_T(struct hndlnode) oldhandles;
+    LISTC_T(struct hndlnode)
+    oldhandles;
     listc_init(&oldhandles, offsetof(hndlnode_t, linkv));
     hash_for(handle_hash, purgeall ? collect_all_handles : collect_handles, &oldhandles);
     Pthread_mutex_unlock(&hndl_lk);

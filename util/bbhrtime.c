@@ -50,7 +50,7 @@ int getbbhrvtime(bbhrtime_t *t)
 #elif defined(_LINUX_SOURCE)
     return getbbhrtime(t);
 #else
-    #error "getbbhrvtime: not defined for platform"
+#error "getbbhrvtime: not defined for platform"
 #endif
 }
 
@@ -99,7 +99,10 @@ double bbhrtime(const bbhrtime_t *t_)
     return t * ONENS_S;
 }
 
-int getbbtime(bbtime_t *t) { return gettimeofday(t, NULL); }
+int getbbtime(bbtime_t *t)
+{
+    return gettimeofday(t, NULL);
+}
 
 bbint64_t diff_bbtime(bbtime_t *end, bbtime_t *start)
 {

@@ -32,7 +32,8 @@
 struct tick {
     int value;
     int time_added;
-    LINKC_T(struct tick) lnk;
+    LINKC_T(struct tick)
+    lnk;
 };
 
 struct averager {
@@ -40,7 +41,8 @@ struct averager {
     int64_t sum;
     pool_t *pool;
     int maxpoints;
-    LISTC_T(struct tick) ticks;
+    LISTC_T(struct tick)
+    ticks;
 };
 
 struct averager *averager_new(int limit, int maxpoints)
@@ -106,7 +108,8 @@ int averager_max(struct averager *avg)
     int max = 0;
     struct tick *t;
 
-    LISTC_FOR_EACH(&avg->ticks, t, lnk) {
+    LISTC_FOR_EACH(&avg->ticks, t, lnk)
+    {
         if (t->value > max)
             max = t->value;
     }
@@ -124,12 +127,13 @@ double averager_delta_avg(struct averager *avg)
 
     val = avg->ticks.top->value;
 
-    LISTC_FOR_EACH(&avg->ticks, t, lnk) {
+    LISTC_FOR_EACH(&avg->ticks, t, lnk)
+    {
         sum += t->value - val;
         val = t->value;
     }
 
-    return sum/avg->ticks.count;
+    return sum / avg->ticks.count;
 }
 
 int averager_min(struct averager *avg)
@@ -137,7 +141,8 @@ int averager_min(struct averager *avg)
     int min = INT_MAX;
     struct tick *t;
 
-    LISTC_FOR_EACH(&avg->ticks, t, lnk) {
+    LISTC_FOR_EACH(&avg->ticks, t, lnk)
+    {
         if (t->value < min)
             min = t->value;
     }
@@ -152,16 +157,21 @@ void averager_destroy(struct averager *avg)
     free(avg);
 }
 
-int averager_depth(struct averager *avg) { return avg->ticks.count; }
+int averager_depth(struct averager *avg)
+{
+    return avg->ticks.count;
+}
 
-int averager_get_points(struct averager *avg, struct point **values, int *nvalues) {
+int averager_get_points(struct averager *avg, struct point **values, int *nvalues)
+{
     struct point *points;
     points = malloc(sizeof(struct point) * avg->ticks.count);
     if (points == NULL)
         return -1;
     int pt = 0;
     struct tick *t;
-    LISTC_FOR_EACH(&avg->ticks, t, lnk) {
+    LISTC_FOR_EACH(&avg->ticks, t, lnk)
+    {
         points[pt].time_added = t->time_added;
         points[pt++].value = t->value;
     }
@@ -169,8 +179,6 @@ int averager_get_points(struct averager *avg, struct point **values, int *nvalue
     *values = points;
     return 0;
 }
-
-
 
 #ifdef TEST_AVERAGER
 int main(int argc, char *argv[])

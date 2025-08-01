@@ -20,7 +20,9 @@
 
 #define SOCKPOOL_SOCKET_NAME "/tmp/sockpool.socket"
 
-enum { SOCKPOOL_DONATE = 0, SOCKPOOL_REQUEST = 1, SOCKPOOL_FORGET_PORT = 2 };
+enum { SOCKPOOL_DONATE = 0,
+       SOCKPOOL_REQUEST = 1,
+       SOCKPOOL_FORGET_PORT = 2 };
 
 /* Clients should send one of these to the sql proxy after making a new
  * unix domain socket connection.  If the sqlproxy doesn't like what it gets

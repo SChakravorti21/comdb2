@@ -373,7 +373,7 @@ int verify_table(const char *table, int progress_report_seconds,
     bdb_verify_enqueue(&info, gbl_verify_thdpool);
 
     while (par.threads_spawned > par.threads_completed) {
-        if (!par.client_dropped_connection && par.peer_check(par.arg)){
+        if (!par.client_dropped_connection && par.peer_check(par.arg)) {
             logmsg(LOGMSG_WARN, "%s: client connection closed, stopped verify\n", __func__);
             par.client_dropped_connection = 1;
         }

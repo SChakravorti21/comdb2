@@ -51,7 +51,7 @@ extern int64_t comdb2_time_epochus(void);
 static int gbl_print_cnonce_as_hex = 1;
 static char *gbl_eventlog_fname = NULL;
 static char *eventlog_fname(const char *dbname);
-int eventlog_nkeep = 2; // keep only last 2 event log files
+int eventlog_nkeep = 2;                              // keep only last 2 event log files
 static uint64_t eventlog_rollat = 100 * 1024 * 1024; // 100MB to begin
 static int eventlog_enabled = 1;
 static int eventlog_detailed = 0;
@@ -68,10 +68,12 @@ static void eventlog_roll(void);
 
 struct sqltrack {
     char fingerprint[FINGERPRINTSZ];
-    LINKC_T(struct sqltrack) lnk;
+    LINKC_T(struct sqltrack)
+    lnk;
 };
 
-LISTC_T(struct sqltrack) sql_statements;
+LISTC_T(struct sqltrack)
+sql_statements;
 
 static hash_t *seen_sql;
 
@@ -83,8 +85,9 @@ static inline void free_gbl_eventlog_fname()
     gbl_eventlog_fname = NULL;
 }
 
-static int strptrcmp(const void *p1, const void *p2) {
-      return strcmp(*(char *const *)p1, *(char *const *)p2);
+static int strptrcmp(const void *p1, const void *p2)
+{
+    return strcmp(*(char *const *)p1, *(char *const *)p2);
 }
 
 static void eventlog_roll_cleanup()
@@ -126,18 +129,18 @@ static void eventlog_roll_cleanup()
 
         if (num >= cnt) {
             cnt *= 2;
-            arr = realloc(arr, cnt * sizeof(char*));
+            arr = realloc(arr, cnt * sizeof(char *));
         }
 
         arr[num++] = strdup(de->d_name);
     }
     qsort(arr, num, sizeof(char *), strptrcmp); // files sorted by time
-    
+
     int dfd = dirfd(d);
-    for(int i = 0; i < num; i++) {
+    for (int i = 0; i < num; i++) {
         if (i < num - eventlog_nkeep) {
             int rc = unlinkat(dfd, arr[i], 0);
-            if (rc) 
+            if (rc)
                 logmsg(LOGMSG_ERROR,
                        "eventlog_roll_cleanup: Error while deleting eventlog file %s, rc=%d\n",
                        arr[i], rc);
@@ -165,7 +168,8 @@ static gzFile eventlog_open(char *fname, int append)
 
 static void eventlog_close(void)
 {
-    if (eventlog == NULL) return;
+    if (eventlog == NULL)
+        return;
     gzclose(eventlog);
     eventlog = NULL;
     bytes_written = 0;
@@ -183,9 +187,9 @@ void eventlog_init()
     seen_sql = hash_init_o(offsetof(struct sqltrack, fingerprint), FINGERPRINTSZ);
     listc_init(&sql_statements, offsetof(struct sqltrack, lnk));
     char *fname = eventlog_fname(thedb->envname);
-    if (eventlog_enabled) eventlog = eventlog_open(fname, 0);
+    if (eventlog_enabled)
+        eventlog = eventlog_open(fname, 0);
 }
-
 
 static char *eventlog_fname(const char *dbname)
 {
@@ -228,10 +232,17 @@ void eventlog_bind_int64(cson_array *arr, const char *name, int64_t val,
         return;
     const char *type;
     switch (dlen) {
-    case 2: type = "smallint"; break;
-    case 4: type = "int"; break;
-    case 8: type = "largeint"; break;
-    default: return;
+    case 2:
+        type = "smallint";
+        break;
+    case 4:
+        type = "int";
+        break;
+    case 8:
+        type = "largeint";
+        break;
+    default:
+        return;
     }
     eventlog_append_value(arr, name, type, cson_value_new_integer(val));
 }
@@ -251,9 +262,14 @@ void eventlog_bind_double(cson_array *arr, const char *name, double val,
         return;
     const char *type;
     switch (dlen) {
-    case 4: type = "float"; break;
-    case 8: type = "doublefloat"; break;
-    default: return;
+    case 4:
+        type = "float";
+        break;
+    case 8:
+        type = "doublefloat";
+        break;
+    default:
+        return;
     }
     eventlog_append_value(arr, name, type, cson_value_new_double(val, 0));
 }
@@ -263,7 +279,7 @@ static void eventlog_bind_blob_int(cson_array *arr, const char *name,
 {
     if (!arr)
         return;
-    int datalen = min(dlen, 1024);         /* cap the datalen logged */
+    int datalen = min(dlen, 1024); /* cap the datalen logged */
     eventlog_append_value(arr, name, type, cson_value_new_blob((char *)val, datalen));
 }
 
@@ -296,10 +312,17 @@ void eventlog_bind_interval(cson_array *arr, const char *name, intv_t *tv)
         return;
     const char *type;
     switch (tv->type) {
-    case INTV_YM_TYPE: type = "interval month"; break;
-    case INTV_DS_TYPE: type = "interval sec"; break;
-    case INTV_DSUS_TYPE: type = "interval usec"; break;
-    default: return;
+    case INTV_YM_TYPE:
+        type = "interval month";
+        break;
+    case INTV_DS_TYPE:
+        type = "interval sec";
+        break;
+    case INTV_DSUS_TYPE:
+        type = "interval usec";
+        break;
+    default:
+        return;
     }
     char str[256];
     int n;
@@ -309,9 +332,10 @@ void eventlog_bind_interval(cson_array *arr, const char *name, intv_t *tv)
 
 void eventlog_bind_array(cson_array *arr, const char *name, void *p, int n, int type)
 {
-    if (!arr) return;
+    if (!arr)
+        return;
     char *typestr;
-    cson_value *val= cson_value_new_array();
+    cson_value *val = cson_value_new_array();
     cson_array *carray = cson_value_get_array(val);
     switch (type) {
     case CARRAY_INT32:
@@ -358,7 +382,8 @@ void eventlog_bind_array(cson_array *arr, const char *name, void *p, int n, int 
 
 void eventlog_tables(cson_object *obj, const struct reqlogger *logger)
 {
-    if (logger->ntables == 0) return;
+    if (logger->ntables == 0)
+        return;
 
     cson_value *tables = cson_value_new_array();
     cson_array *arr = cson_value_get_array(tables);
@@ -439,7 +464,8 @@ static void eventlog_path(cson_object *obj, const struct reqlogger *logger)
     if (eventlog == NULL || !eventlog_enabled)
         return;
 
-    if (!logger->path || logger->path->n_components == 0) return;
+    if (!logger->path || logger->path->n_components == 0)
+        return;
 
     cson_value *components = cson_value_new_array();
     cson_array *arr = cson_value_get_array(components);
@@ -482,26 +508,26 @@ static void eventlog_add_newsql(const struct reqlogger *logger)
 
     cson_object_set(newobj, "time", cson_new_int(logger->startus));
     cson_object_set(newobj, "type",
-            cson_value_new_string("newsql", strlen("newsql")));
+                    cson_value_new_string("newsql", strlen("newsql")));
 
     if (logger->sql_ref != NULL) {
-        cson_object_set(newobj, "sql", cson_value_new_string(string_ref_cstr(logger->sql_ref),
-                                                             string_ref_len(logger->sql_ref)));
+        cson_object_set(newobj, "sql", cson_value_new_string(string_ref_cstr(logger->sql_ref), string_ref_len(logger->sql_ref)));
     }
 
     char expanded_fp[2 * FINGERPRINTSZ + 1];
     util_tohex(expanded_fp, logger->fingerprint, FINGERPRINTSZ);
     cson_object_set(newobj, "fingerprint",
-            cson_value_new_string(expanded_fp, FINGERPRINTSZ * 2));
+                    cson_value_new_string(expanded_fp, FINGERPRINTSZ * 2));
 
     /* yes, this can spill the file to beyond the configured size - we need
        this event to be in the same file as the event its being logged for */
     cson_output(newval, write_json, eventlog);
-    if (eventlog_verbose) cson_output_FILE(newval, stdout);
+    if (eventlog_verbose)
+        cson_output_FILE(newval, stdout);
     cson_value_free(newval);
 }
 
-static const char *ev_str[] = { "unset", "txn", "sql", "sp" };
+static const char *ev_str[] = {"unset", "txn", "sql", "sp"};
 
 static inline void cson_snap_info_key(cson_object *obj, snap_uid_t *snap_info)
 {
@@ -520,7 +546,6 @@ static inline void cson_snap_info_key(cson_object *obj, snap_uid_t *snap_info)
     }
 }
 
-
 static void populate_obj(cson_object *obj, const struct reqlogger *logger)
 {
     cson_object_set(obj, "time", cson_new_int(logger->startus));
@@ -530,8 +555,7 @@ static void populate_obj(cson_object *obj, const struct reqlogger *logger)
     }
 
     if (logger->sql_ref && eventlog_detailed) {
-        cson_object_set(obj, "sql", cson_value_new_string(string_ref_cstr(logger->sql_ref),
-                                                          string_ref_len(logger->sql_ref)));
+        cson_object_set(obj, "sql", cson_value_new_string(string_ref_cstr(logger->sql_ref), string_ref_len(logger->sql_ref)));
         cson_object_set(obj, "bound_parameters", logger->bound_param_cson);
     }
 
@@ -590,7 +614,7 @@ static void populate_obj(cson_object *obj, const struct reqlogger *logger)
     if (logger->cascaded_nwrites > 0) {
         cson_object_set(obj, "casc_nwrites", cson_new_int(logger->cascaded_nwrites));
     }
-   
+
     eventlog_context(obj, logger);
     eventlog_perfdata(obj, logger);
     eventlog_tables(obj, logger);
@@ -670,7 +694,7 @@ static void eventlog_usefile(const char *fname)
 
     char *d = strdup(fname);
     eventlog = eventlog_open(d, 1); // passes responsibility to free d
-    if (!eventlog)                     // failed to open fname, so open from default location
+    if (!eventlog)                  // failed to open fname, so open from default location
         eventlog_roll();
 }
 
@@ -693,7 +717,7 @@ void eventlog_stop(void)
     Pthread_mutex_unlock(&eventlog_lk);
 }
 
-static inline void eventlog_set_rollat(uint64_t rollat_bytes) 
+static inline void eventlog_set_rollat(uint64_t rollat_bytes)
 {
     eventlog_rollat = rollat_bytes;
 }
@@ -790,7 +814,7 @@ static void eventlog_process_message_locked(char *line, int lline, int *toff, in
         } else {
             logmsg(LOGMSG_USER, "Rolling logs after %d MB\n", rollat);
         }
-        eventlog_set_rollat(rollat * 1024 * 1024);  // we perform check in bytes
+        eventlog_set_rollat(rollat * 1024 * 1024); // we perform check in bytes
     } else if (tokcmp(tok, ltok, "every") == 0) {
         int every;
         tok = segtok(line, lline, toff, &ltok);
@@ -833,10 +857,10 @@ static void eventlog_process_message_locked(char *line, int lline, int *toff, in
     } else if (tokcmp(tok, ltok, "dir") == 0) {
         // set directory for event file logging
         tok = segtok(line, lline, toff, &ltok);
-        DIR *pd = opendir (tok);
+        DIR *pd = opendir(tok);
         if (pd == NULL) {
             logmsg(LOGMSG_ERROR, "Cannot open directory '%s'\n", tok);
-        } else { 
+        } else {
             closedir(pd);
             update_file_location("eventlog", tok);
         }
@@ -869,7 +893,8 @@ void eventlog_process_message(char *line, int lline, int *toff)
     }
 }
 
-void eventlog_debug(char *fmt, ...) {
+void eventlog_debug(char *fmt, ...)
+{
     va_list args;
     char *s = NULL;
     if (!(eventlog_enabled && eventlog != NULL && eventlog_debug_events))
@@ -877,7 +902,6 @@ void eventlog_debug(char *fmt, ...) {
 
     cson_value *vobj = cson_value_new_object();
     cson_object *obj = cson_value_get_object(vobj);
-
 
     va_start(args, fmt);
     if (vasprintf(&s, fmt, args) < 0 || s == NULL)
@@ -895,7 +919,8 @@ void eventlog_debug(char *fmt, ...) {
     cson_value_free(vobj);
 }
 
-int eventlog_debug_enabled(void) {
+int eventlog_debug_enabled(void)
+{
     return eventlog_debug_events;
 }
 

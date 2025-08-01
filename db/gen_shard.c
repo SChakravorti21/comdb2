@@ -10,104 +10,106 @@
 #define LLMETA_GENERIC_SHARD "gen_shard"
 int gbl_gen_shard_verbose = 0;
 const char *cson_extract_str(cson_object *cson_obj, const char *param,
-                                     struct errstat *err);
-int cson_extract_int(cson_object *cson_obj, const char *param,
                              struct errstat *err);
+int cson_extract_int(cson_object *cson_obj, const char *param,
+                     struct errstat *err);
 cson_array *cson_extract_array(cson_object *cson_obj, const char *param,
-                                       struct errstat *err);
+                               struct errstat *err);
 int gen_shard_serialize_shard(const char *tablename, uint32_t numdbs, char **dbnames, uint32_t numcols,
-									char **columns, char **shardnames, uint32_t *outLen, char **out)
+                              char **columns, char **shardnames, uint32_t *outLen, char **out)
 {
-	cson_value *rootVal = NULL, *arrVal = NULL;
-	cson_object *rootObj = NULL;
-	int rc;
-	rootVal = cson_value_new_object();
-	rootObj = cson_value_get_object(rootVal);
+    cson_value *rootVal = NULL, *arrVal = NULL;
+    cson_object *rootObj = NULL;
+    int rc;
+    rootVal = cson_value_new_object();
+    rootObj = cson_value_get_object(rootVal);
 
-	rc = cson_object_set(rootObj, "TABLENAME", cson_value_new_string(tablename, strlen(tablename)));
-	if (rc) {
-		goto err;
-	}
-	rc = cson_object_set(rootObj, "NUMDBS", cson_value_new_integer(numdbs));
-	if (rc) {
-		goto err;
-	}
-	arrVal = cson_value_new_array();
-	for (int i = 0; i < numdbs; i++) {
-		rc = cson_array_append(cson_value_get_array(arrVal), cson_value_new_string(dbnames[i], strlen(dbnames[i])));
-		if (rc) {
-			goto err;
-		}
-	}
-	rc = cson_object_set(rootObj, "DBNAMES", arrVal);
-	if (rc) {
-		goto err;
-	}
+    rc = cson_object_set(rootObj, "TABLENAME", cson_value_new_string(tablename, strlen(tablename)));
+    if (rc) {
+        goto err;
+    }
+    rc = cson_object_set(rootObj, "NUMDBS", cson_value_new_integer(numdbs));
+    if (rc) {
+        goto err;
+    }
+    arrVal = cson_value_new_array();
+    for (int i = 0; i < numdbs; i++) {
+        rc = cson_array_append(cson_value_get_array(arrVal), cson_value_new_string(dbnames[i], strlen(dbnames[i])));
+        if (rc) {
+            goto err;
+        }
+    }
+    rc = cson_object_set(rootObj, "DBNAMES", arrVal);
+    if (rc) {
+        goto err;
+    }
 
-	rc = cson_object_set(rootObj, "NUMCOLS", cson_value_new_integer(numcols));
-	if (rc) {
-		goto err;
-	}
+    rc = cson_object_set(rootObj, "NUMCOLS", cson_value_new_integer(numcols));
+    if (rc) {
+        goto err;
+    }
 
-	arrVal = cson_value_new_array();
-	for (int i = 0; i < numcols; i++) {
-		rc = cson_array_append(cson_value_get_array(arrVal), cson_value_new_string(columns[i], strlen(columns[i])));
-		if (rc) {
-			goto err;
-		}
-	}
-	rc = cson_object_set(rootObj, "COLUMNS", arrVal);
-	if (rc) {
-		goto err;
-	}
+    arrVal = cson_value_new_array();
+    for (int i = 0; i < numcols; i++) {
+        rc = cson_array_append(cson_value_get_array(arrVal), cson_value_new_string(columns[i], strlen(columns[i])));
+        if (rc) {
+            goto err;
+        }
+    }
+    rc = cson_object_set(rootObj, "COLUMNS", arrVal);
+    if (rc) {
+        goto err;
+    }
 
-	arrVal = cson_value_new_array();
-	for (int i = 0; i < numdbs; i++) {
-		rc = cson_array_append(cson_value_get_array(arrVal), cson_value_new_string(shardnames[i], strlen(shardnames[i])));
-		if (rc) {
-			goto err;
-		}
-	}
+    arrVal = cson_value_new_array();
+    for (int i = 0; i < numdbs; i++) {
+        rc = cson_array_append(cson_value_get_array(arrVal), cson_value_new_string(shardnames[i], strlen(shardnames[i])));
+        if (rc) {
+            goto err;
+        }
+    }
 
-	rc = cson_object_set(rootObj, "SHARDNAMES", arrVal);
-	if (rc) {
-		goto err;
-	}
-	cson_buffer buf;
-	rc = cson_output_buffer(rootVal, &buf);
-	if (rc != 0) {
-		logmsg(LOGMSG_ERROR, "%s cson_output_buffer error. rc: %d\n", __func__, rc);
-		goto err;
-	} else {
-		*out = strndup((char *)buf.mem, buf.used);
-		*outLen = strlen(*out);
+    rc = cson_object_set(rootObj, "SHARDNAMES", arrVal);
+    if (rc) {
+        goto err;
+    }
+    cson_buffer buf;
+    rc = cson_output_buffer(rootVal, &buf);
+    if (rc != 0) {
+        logmsg(LOGMSG_ERROR, "%s cson_output_buffer error. rc: %d\n", __func__, rc);
+        goto err;
+    } else {
+        *out = strndup((char *)buf.mem, buf.used);
+        *outLen = strlen(*out);
         if (gbl_gen_shard_verbose) {
             logmsg(LOGMSG_USER, "The serialized CSON string is %s\n", *out);
         }
-	}
-	cson_value_free(rootVal);
-	return 0;
+    }
+    cson_value_free(rootVal);
+    return 0;
 
 err:
-	return -1;
+    return -1;
 }
 
-int gen_shard_llmeta_write_serialized_str(tran_type *tran, const char *tablename, const char *str) {
-	int rc;
-	if (str){
-		rc = bdb_set_table_parameter(tran, LLMETA_GENERIC_SHARD, tablename, str);
-	} else {
-		/* this is a partition drop */
-		rc = bdb_clear_table_parameter(tran, LLMETA_GENERIC_SHARD, tablename);
-	}
+int gen_shard_llmeta_write_serialized_str(tran_type *tran, const char *tablename, const char *str)
+{
+    int rc;
+    if (str) {
+        rc = bdb_set_table_parameter(tran, LLMETA_GENERIC_SHARD, tablename, str);
+    } else {
+        /* this is a partition drop */
+        rc = bdb_clear_table_parameter(tran, LLMETA_GENERIC_SHARD, tablename);
+    }
 
-	if (rc) {
-		logmsg(LOGMSG_ERROR, "FAILED TO WRITE SHARD STRING TO LLMETA. RC: %d\n", rc);
-	}
-	return rc;
+    if (rc) {
+        logmsg(LOGMSG_ERROR, "FAILED TO WRITE SHARD STRING TO LLMETA. RC: %d\n", rc);
+    }
+    return rc;
 }
 
-int gen_shard_llmeta_remove(tran_type *tran, char *tablename, struct errstat *err) {
+int gen_shard_llmeta_remove(tran_type *tran, char *tablename, struct errstat *err)
+{
     int rc = 0;
     rc = gen_shard_llmeta_write_serialized_str(tran, tablename, NULL);
     if (rc) {
@@ -116,29 +118,30 @@ int gen_shard_llmeta_remove(tran_type *tran, char *tablename, struct errstat *er
     return rc;
 }
 
-int gen_shard_llmeta_add(tran_type *tran, char *tablename, uint32_t numdbs, char **dbnames, 
-		uint32_t numcols, char **columns, char **shardnames, struct errstat *err) {
-	char *serializedStr = NULL;
-	uint32_t serializedStrLen = 0;
-	int rc = 0;
+int gen_shard_llmeta_add(tran_type *tran, char *tablename, uint32_t numdbs, char **dbnames,
+                         uint32_t numcols, char **columns, char **shardnames, struct errstat *err)
+{
+    char *serializedStr = NULL;
+    uint32_t serializedStrLen = 0;
+    int rc = 0;
 
-	rc = gen_shard_serialize_shard(tablename, numdbs, dbnames, numcols, columns, shardnames,
-										&serializedStrLen, &serializedStr);
-	if (rc) {
-		logmsg(LOGMSG_ERROR, "Failed to serialize partition. %d\n", rc);
-		goto done;
-	}
+    rc = gen_shard_serialize_shard(tablename, numdbs, dbnames, numcols, columns, shardnames,
+                                   &serializedStrLen, &serializedStr);
+    if (rc) {
+        logmsg(LOGMSG_ERROR, "Failed to serialize partition. %d\n", rc);
+        goto done;
+    }
 
     if (gbl_gen_shard_verbose) {
         logmsg(LOGMSG_USER, "THE SERIALIZED STRING IS  %s\n", serializedStr);
         logmsg(LOGMSG_USER, "WRITING TO LLMETA FOR GENERIC SHARD %s\n", tablename);
     }
-	rc = gen_shard_llmeta_write_serialized_str(tran, tablename, serializedStr);
+    rc = gen_shard_llmeta_write_serialized_str(tran, tablename, serializedStr);
 done:
-	if (serializedStr){
-		free(serializedStr);
-	}
-	return rc;
+    if (serializedStr) {
+        free(serializedStr);
+    }
+    return rc;
 }
 
 int gen_shard_llmeta_read(void *tran, const char *name, char **pstr)
@@ -154,7 +157,8 @@ int gen_shard_llmeta_read(void *tran, const char *name, char **pstr)
     return rc;
 }
 
-int gen_shard_deserialize_shard(uint32_t *numdbs, char ***dbnames, uint32_t *numcols, char ***columns, char ***shardnames, char *serializedStr) {
+int gen_shard_deserialize_shard(uint32_t *numdbs, char ***dbnames, uint32_t *numcols, char ***columns, char ***shardnames, char *serializedStr)
+{
     cson_object *rootObj = NULL;
     cson_value *rootVal = NULL, *arrVal = NULL;
     cson_array *dbs_arr = NULL, *cols_arr = NULL, *shards_arr = NULL;
@@ -193,7 +197,7 @@ int gen_shard_deserialize_shard(uint32_t *numdbs, char ***dbnames, uint32_t *num
         goto error;
     }
 
-    dbs = (char**)malloc(sizeof(char*) * num_dbs);
+    dbs = (char **)malloc(sizeof(char *) * num_dbs);
     if (!dbs) {
         err_str = "OOM. Couldn't allocate dbnames";
         goto error;
@@ -219,7 +223,7 @@ int gen_shard_deserialize_shard(uint32_t *numdbs, char ***dbnames, uint32_t *num
         goto error;
     }
 
-    cols = (char**)malloc(sizeof(char*) * num_cols);
+    cols = (char **)malloc(sizeof(char *) * num_cols);
     if (!cols) {
         err_str = "OOM. Couldn't allocate columns";
         goto error;
@@ -238,7 +242,7 @@ int gen_shard_deserialize_shard(uint32_t *numdbs, char ***dbnames, uint32_t *num
         err_str = "INVALID CSON. couldn't find 'SHARDNAMES' key";
         goto error;
     }
-    shards = (char**)malloc(sizeof(char*) * num_dbs);
+    shards = (char **)malloc(sizeof(char *) * num_dbs);
     if (!shards) {
         err_str = "OOM. Couldn't allocate shards";
         goto error;
@@ -265,7 +269,7 @@ error:
     }
 
     if (dbs) {
-        for(int i=0;i<num_dbs;i++){
+        for (int i = 0; i < num_dbs; i++) {
             if (dbs[i])
                 free(dbs[i]);
         }
@@ -273,7 +277,7 @@ error:
     }
 
     if (cols) {
-        for(int i=0;i<num_cols;i++) {
+        for (int i = 0; i < num_cols; i++) {
             if (cols[i])
                 free(cols[i]);
         }
@@ -281,7 +285,7 @@ error:
     }
 
     if (shards) {
-        for(int i=0;i<num_dbs;i++){
+        for (int i = 0; i < num_dbs; i++) {
             if (shards[i])
                 free(shards[i]);
         }
@@ -291,15 +295,15 @@ error:
         cson_value_free(rootVal);
     }
     return -1;
-
 }
 
-int gen_shard_update_inmem_db(void *tran, struct dbtable *db, const char *name) {
+int gen_shard_update_inmem_db(void *tran, struct dbtable *db, const char *name)
+{
     char *serializedStr = NULL;
     uint32_t numdbs = 0, numcols = 0;
     char **dbnames = NULL, **columns = NULL, **shardnames = NULL;
     int rc = 0;
-    rc = gen_shard_llmeta_read(tran, name, &serializedStr); 
+    rc = gen_shard_llmeta_read(tran, name, &serializedStr);
     if (rc) {
         logmsg(LOGMSG_ERROR, "Failed to read from llmeta for table %s\n", name);
         goto done;
@@ -323,5 +327,3 @@ done:
     }
     return rc;
 }
-
-

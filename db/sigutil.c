@@ -32,41 +32,69 @@ struct signal_name {
     const char *name;
 };
 
-#define defsig(name)                                                           \
-    {                                                                          \
-        SIG##name, #name                                                       \
-    }
+#define defsig(name) \
+    {                \
+        SIG##name, #name}
 const struct signal_name unix_signals[] = {
-    defsig(HUP),    defsig(INT),     defsig(QUIT),     defsig(ILL),
-    defsig(TRAP),   defsig(ABRT),    defsig(FPE),      defsig(KILL),
-    defsig(BUS),    defsig(SEGV),    defsig(SYS),      defsig(PIPE),
-    defsig(ALRM),   defsig(TERM),    defsig(URG),      defsig(STOP),
-    defsig(TSTP),   defsig(CONT),    defsig(CHLD),     defsig(TTIN),
-    defsig(TTOU),   defsig(IO),      defsig(XCPU),     defsig(XFSZ),
-    defsig(VTALRM), defsig(USR1),    defsig(USR2),     defsig(WINCH),
+    defsig(HUP),
+    defsig(INT),
+    defsig(QUIT),
+    defsig(ILL),
+    defsig(TRAP),
+    defsig(ABRT),
+    defsig(FPE),
+    defsig(KILL),
+    defsig(BUS),
+    defsig(SEGV),
+    defsig(SYS),
+    defsig(PIPE),
+    defsig(ALRM),
+    defsig(TERM),
+    defsig(URG),
+    defsig(STOP),
+    defsig(TSTP),
+    defsig(CONT),
+    defsig(CHLD),
+    defsig(TTIN),
+    defsig(TTOU),
+    defsig(IO),
+    defsig(XCPU),
+    defsig(XFSZ),
+    defsig(VTALRM),
+    defsig(USR1),
+    defsig(USR2),
+    defsig(WINCH),
 #if !defined(__APPLE__)
     defsig(PWR),
 #endif
 #if defined(_SUN_SOURCE)
-    defsig(EMT),    defsig(WAITING),
+    defsig(EMT),
+    defsig(WAITING),
 #endif /* _SUN_SOURCE */
 #if defined(_LINUX_SOURCE)
     defsig(PROF),
 #endif /* _LINUX_SOURCE */
 #if defined(_SUN_SOURCE) || defined(_LINUX_SOURCE)
-#   if !defined(__APPLE__)
+#if !defined(__APPLE__)
     defsig(CLD),
-#   endif
+#endif
 #endif /* _SUN_SOURCE || _LINUX_SOURCE */
 #ifdef _SUN_SOURCE
-    defsig(LWP),    defsig(FREEZE),  defsig(THAW),     defsig(CANCEL),
-    defsig(LOST),   defsig(XRES),
+    defsig(LWP),
+    defsig(FREEZE),
+    defsig(THAW),
+    defsig(CANCEL),
+    defsig(LOST),
+    defsig(XRES),
 #endif /*_SUN_SOURCE*/
 #ifdef _LINUX_SOURCE
-    defsig(ABRT),   defsig(ALRM),    defsig(IOT),
-#   if !defined(__APPLE__)
-    defsig(POLL),   defsig(STKFLT),
-#   endif
+    defsig(ABRT),
+    defsig(ALRM),
+    defsig(IOT),
+#if !defined(__APPLE__)
+    defsig(POLL),
+    defsig(STKFLT),
+#endif
 #endif /*_LINUX_SOURCE*/
 };
 
@@ -83,11 +111,11 @@ const char *signum2a(int signum)
 
 void sprintsigact(char *buf, size_t buflen, const struct sigaction *act)
 {
-    const static int flags[] = {SA_ONSTACK,  SA_RESETHAND, SA_NODEFER,
-                                SA_RESTART,  SA_SIGINFO,   SA_NOCLDWAIT,
+    const static int flags[] = {SA_ONSTACK, SA_RESETHAND, SA_NODEFER,
+                                SA_RESTART, SA_SIGINFO, SA_NOCLDWAIT,
                                 SA_NOCLDSTOP};
     const static char *flagstrs[] = {
-        "SA_ONSTACK", "SA_RESETHAND", "SA_NODEFER",  "SA_RESTART",
+        "SA_ONSTACK", "SA_RESETHAND", "SA_NODEFER", "SA_RESTART",
         "SA_SIGINFO", "SA_NOCLDWAIT", "SA_NOCLDSTOP"};
     int ii;
     char fstr[128] = "";
@@ -130,7 +158,7 @@ void dumpsignalsetupf(FILE *out)
         int signo = unix_signals[ii].signum;
         if (sigaction(signo, NULL, &act) == -1)
             logmsg(LOGMSG_ERROR, "dumpsignalsetup: sigaction(%d/%s) failed: %d %s\n",
-                    signo, unix_signals[ii].name, errno, strerror(errno));
+                   signo, unix_signals[ii].name, errno, strerror(errno));
         else {
             char buf[2048];
             sprintsigact(buf, sizeof(buf), &act);
@@ -148,7 +176,7 @@ void ctracesignalsetup(void)
         int signo = unix_signals[ii].signum;
         if (sigaction(signo, NULL, &act) == -1)
             logmsg(LOGMSG_ERROR, "dumpsignalsetup: sigaction(%d/%s) failed: %d %s\n",
-                    signo, unix_signals[ii].name, errno, strerror(errno));
+                   signo, unix_signals[ii].name, errno, strerror(errno));
         else {
             char buf[2048];
             sprintsigact(buf, sizeof(buf), &act);

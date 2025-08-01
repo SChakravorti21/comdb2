@@ -127,7 +127,7 @@ static int install_plugin_int(comdb2_plugin_t *new_plugin)
     }
     case COMDB2_PLUGIN_QUEUE_CONSUMER: {
         comdb2_queue_consumer_t *consumer_info;
-        consumer_info = (comdb2_queue_consumer_t*)new_plugin->data;
+        consumer_info = (comdb2_queue_consumer_t *)new_plugin->data;
         if (consumer_info->type > CONSUMER_TYPE_LAST) {
             logmsg(LOGMSG_ERROR, "Out of range consumer type: %d\n", consumer_info->type);
             return 1;
@@ -337,19 +337,18 @@ int run_init_plugins(int phase)
             initer = gbl_plugins[i]->data;
             rc = 0;
             switch (phase) {
-                case COMDB2_PLUGIN_INITIALIZER_PRE:
-                    if (initer->pre_recovery)
-                        rc = initer->pre_recovery();
-                    break;
-                case COMDB2_PLUGIN_INITIALIZER_LRL:
-                    if (initer->post_lrl)
-                        rc = initer->post_lrl();
-                    break;
-                case COMDB2_PLUGIN_INITIALIZER_POST:
-                    if (initer->post_recovery)
-                        rc = initer->post_recovery();
-                    break;
-
+            case COMDB2_PLUGIN_INITIALIZER_PRE:
+                if (initer->pre_recovery)
+                    rc = initer->pre_recovery();
+                break;
+            case COMDB2_PLUGIN_INITIALIZER_LRL:
+                if (initer->post_lrl)
+                    rc = initer->post_lrl();
+                break;
+            case COMDB2_PLUGIN_INITIALIZER_POST:
+                if (initer->post_recovery)
+                    rc = initer->post_recovery();
+                break;
             }
             if (rc) {
                 return 1;
@@ -362,7 +361,8 @@ int run_init_plugins(int phase)
 static LISTC_T(struct lrl_handler) lrl_handlers;
 static LISTC_T(struct message_handler) message_handlers;
 
-void plugin_register_lrl_handler(struct dbenv *dbenv, int (*callback)(struct dbenv*, const char *line)) {
+void plugin_register_lrl_handler(struct dbenv *dbenv, int (*callback)(struct dbenv *, const char *line))
+{
     struct lrl_handler *l = malloc(sizeof(struct lrl_handler));
     static int once = 1;
     if (once) {
@@ -376,7 +376,8 @@ void plugin_register_lrl_handler(struct dbenv *dbenv, int (*callback)(struct dbe
         listc_abl(&lrl_handlers, l);
 }
 
-void plugin_register_message_handler(struct dbenv *dbenv, int (*callback)(struct dbenv*, const char *line)) {
+void plugin_register_message_handler(struct dbenv *dbenv, int (*callback)(struct dbenv *, const char *line))
+{
     struct message_handler *msg = malloc(sizeof(struct message_handler));
     static int once = 1;
     if (once) {
@@ -390,7 +391,8 @@ void plugin_register_message_handler(struct dbenv *dbenv, int (*callback)(struct
         listc_abl(&message_handlers, msg);
 }
 
-void plugin_post_dbenv_hook(struct dbenv *dbenv) {
+void plugin_post_dbenv_hook(struct dbenv *dbenv)
+{
     struct lrl_handler *l;
     struct message_handler *m;
 

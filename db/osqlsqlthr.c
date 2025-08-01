@@ -90,11 +90,11 @@ static int osql_sock_restart(struct sqlclntstate *clnt, int maxretries,
                              int keep_session);
 
 #ifdef DEBUG_REORDER
-#define DEBUG_PRINT_NUMOPS()                                                   \
-    do {                                                                       \
-        uuidstr_t us;                                                          \
-        DEBUGMSG("uuid=%s, replicant_numops=%d\n",                             \
-                 comdb2uuidstr(osql->uuid, us), osql->replicant_numops);       \
+#define DEBUG_PRINT_NUMOPS()                                             \
+    do {                                                                 \
+        uuidstr_t us;                                                    \
+        DEBUGMSG("uuid=%s, replicant_numops=%d\n",                       \
+                 comdb2uuidstr(osql->uuid, us), osql->replicant_numops); \
     } while (0)
 #else
 #define DEBUG_PRINT_NUMOPS()
@@ -139,8 +139,7 @@ static inline int osql_should_restart(struct sqlclntstate *clnt, int rc,
 
     if (rc == OSQL_SEND_ERROR_WRONGMASTER &&
         (clnt->dbtran.mode == TRANLEVEL_SOSQL ||
-         clnt->dbtran.mode == TRANLEVEL_RECOM
-         )) {
+         clnt->dbtran.mode == TRANLEVEL_RECOM)) {
         return 1;
     }
 
@@ -185,24 +184,24 @@ static inline int osql_should_restart(struct sqlclntstate *clnt, int rc,
 
 #define RESTART_SOCKSQL RESTART_SOCKSQL_KEEP_RQID(0)
 
-#define START_SOCKSQL                                                          \
-    do {                                                                       \
-        if (!clnt->osql.sock_started) {                                        \
-            rc = osql_sock_start(clnt, OSQL_SOCK_REQ, 0);                      \
-            if (rc) {                                                          \
-                logmsg(LOGMSG_ERROR,                                           \
-                       "%s: failed to start socksql transaction rc=%d\n",      \
-                       __func__, rc);                                          \
-                if (rc != SQLITE_ABORT)                                        \
-                    rc = SQLITE_CLIENT_CHANGENODE;                             \
-                return rc;                                                     \
-            }                                                                  \
-            uuidstr_t us;                                                      \
-            sql_debug_logf(clnt, __func__, __LINE__,                           \
-                           "osql_sock_start returns rqid %llu uuid %s\n",      \
-                           clnt->osql.rqid,                                    \
-                           comdb2uuidstr(clnt->osql.uuid, us), rc);            \
-        }                                                                      \
+#define START_SOCKSQL                                                     \
+    do {                                                                  \
+        if (!clnt->osql.sock_started) {                                   \
+            rc = osql_sock_start(clnt, OSQL_SOCK_REQ, 0);                 \
+            if (rc) {                                                     \
+                logmsg(LOGMSG_ERROR,                                      \
+                       "%s: failed to start socksql transaction rc=%d\n", \
+                       __func__, rc);                                     \
+                if (rc != SQLITE_ABORT)                                   \
+                    rc = SQLITE_CLIENT_CHANGENODE;                        \
+                return rc;                                                \
+            }                                                             \
+            uuidstr_t us;                                                 \
+            sql_debug_logf(clnt, __func__, __LINE__,                      \
+                           "osql_sock_start returns rqid %llu uuid %s\n", \
+                           clnt->osql.rqid,                               \
+                           comdb2uuidstr(clnt->osql.uuid, us), rc);       \
+        }                                                                 \
     } while (0)
 
 /* see below */
@@ -917,7 +916,7 @@ static int osql_sock_restart(struct sqlclntstate *clnt, int maxretries,
             if (gbl_master_swing_osql_verbose)
                 logmsg(LOGMSG_USER,
                        "0x%p Starting new session rqid=%llx, uuid=%s\n",
-                       (void*)pthread_self(), clnt->osql.rqid,
+                       (void *)pthread_self(), clnt->osql.rqid,
                        comdb2uuidstr(clnt->osql.uuid, us));
             rc = osql_end(clnt);
             if (rc) {
@@ -929,7 +928,7 @@ static int osql_sock_restart(struct sqlclntstate *clnt, int maxretries,
             snap_uid_t snap = {{0}};
             get_cnonce(clnt, &snap);
             logmsg(LOGMSG_USER, "0x%p Restarting rqid=%llx uuid=%s against %s\n",
-                   (void*)pthread_self(), clnt->osql.rqid,
+                   (void *)pthread_self(), clnt->osql.rqid,
                    comdb2uuidstr(clnt->osql.uuid, us), thedb->master);
         }
 
@@ -1027,8 +1026,7 @@ int osql_sock_commit(struct sqlclntstate *clnt, int type, enum trans_clntcomm si
 
     /* temp hook for sql transactions */
     /* is it distributed? */
-    if (clnt->dbtran.mode == TRANLEVEL_SOSQL && clnt->dbtran.dtran)
-    {
+    if (clnt->dbtran.mode == TRANLEVEL_SOSQL && clnt->dbtran.dtran) {
         rc = fdb_trans_commit(clnt, sideeffects);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s distributed failure rc=%d\n", __func__, rc);
@@ -1037,7 +1035,7 @@ int osql_sock_commit(struct sqlclntstate *clnt, int type, enum trans_clntcomm si
 
             if (rc2) {
                 logmsg(LOGMSG_ERROR, "%s osql_sock_abort failed with rc=%d\n",
-                        __func__, rc2);
+                       __func__, rc2);
             }
 
             return SQLITE_ABORT;
@@ -1072,7 +1070,7 @@ retry:
     rc = osql_send_commit_logic(clnt, retries, req2netrpl(type));
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s:%d: failed to send commit to master rc was %d\n", __FILE__,
-                __LINE__, rc);
+               __LINE__, rc);
         rcout = SQLITE_CLIENT_CHANGENODE;
         goto err;
     }
@@ -1089,8 +1087,8 @@ retry:
         rc = osql_wait(clnt);
         if (rc) {
             rcout = SQLITE_CLIENT_CHANGENODE;
-            logmsg(LOGMSG_ERROR, "%s line %d setting rcout to (%d) from %d\n", 
-                    __func__, __LINE__, rcout, rc);
+            logmsg(LOGMSG_ERROR, "%s line %d setting rcout to (%d) from %d\n",
+                   __func__, __LINE__, rcout, rc);
         } else {
 
             if (gbl_random_blkseq_replays && ((rand() % 50) == 0)) {
@@ -1203,8 +1201,8 @@ err:
     /* unregister this osql thread from checkboard */
     rc = osql_end(clnt);
     if (rc && !rcout) {
-        logmsg(LOGMSG_ERROR, "%s line %d setting rout to SQLITE_INTERNAL (%d) rc is %d\n", 
-                __func__, __LINE__, SQLITE_INTERNAL, rc);
+        logmsg(LOGMSG_ERROR, "%s line %d setting rout to SQLITE_INTERNAL (%d) rc is %d\n",
+               __func__, __LINE__, SQLITE_INTERNAL, rc);
         rcout = SQLITE_INTERNAL;
     }
 
@@ -1222,9 +1220,9 @@ done:
         if (iirc != 0) /* if error or has selectv rows */
         {
             if (iirc < 0) {
-                logmsg(LOGMSG_ERROR, 
-                        "%s: osql_shadtbl_has_selectv failed rc=%d bdberr=%d\n",
-                        __func__, rc, bdberr);
+                logmsg(LOGMSG_ERROR,
+                       "%s: osql_shadtbl_has_selectv failed rc=%d bdberr=%d\n",
+                       __func__, rc, bdberr);
             }
             osql_set_replay(__FILE__, __LINE__, clnt, OSQL_RETRY_LAST);
         }
@@ -1232,9 +1230,9 @@ done:
 
     /* DDLs are also non-retriable */
     if (osql->xerr.errval == (ERR_BLOCK_FAILED + ERR_VERIFY) &&
-            osql->running_ddl) {
+        osql->running_ddl) {
         logmsg(LOGMSG_DEBUG, "%s: marking DDL transaction as non-retriable\n",
-                __func__);
+               __func__);
         osql_set_replay(__FILE__, __LINE__, clnt, OSQL_RETRY_LAST);
     }
 
@@ -1244,9 +1242,9 @@ done:
         /* we also need to free the tran object */
         rc = trans_abort_shadow((void **)&clnt->dbtran.shadow_tran, &bdberr);
         if (rc)
-            logmsg(LOGMSG_ERROR, 
-                    "%s:%d failed to abort shadow tran for socksql rc=%d\n",
-                    __FILE__, __LINE__, rc);
+            logmsg(LOGMSG_ERROR,
+                   "%s:%d failed to abort shadow tran for socksql rc=%d\n",
+                   __FILE__, __LINE__, rc);
     }
 
     osql->sock_started = 0;
@@ -1300,8 +1298,8 @@ int osql_sock_abort(struct sqlclntstate *clnt, int type)
         clnt->osql.sock_started = 0;
     }
 
-    clnt->osql.sentops = 0;  /* reset statement size counter*/
-    clnt->osql.tran_ops = 0; /* reset transaction size counter*/
+    clnt->osql.sentops = 0;          /* reset statement size counter*/
+    clnt->osql.tran_ops = 0;         /* reset transaction size counter*/
     clnt->osql.replicant_numops = 0; /* reset replicant numops counter*/
 
     osql_shadtbl_close(clnt);
@@ -1312,9 +1310,9 @@ int osql_sock_abort(struct sqlclntstate *clnt, int type)
      */
     rc = trans_abort_shadow((void **)&clnt->dbtran.shadow_tran, &bdberr);
     if (rc) {
-        logmsg(LOGMSG_ERROR, 
-                "%s:%d failed to abort shadow tran for socksql rc=%d\n",
-                __FILE__, __LINE__, rc);
+        logmsg(LOGMSG_ERROR,
+               "%s:%d failed to abort shadow tran for socksql rc=%d\n",
+               __FILE__, __LINE__, rc);
     }
 
     if (clnt->osql.tablename) {
@@ -1786,7 +1784,6 @@ int osql_dbq_consume_logic(struct sqlclntstate *clnt, const char *spname,
     return rc;
 }
 
-
 /**
 *
 * Process a schema change request
@@ -1820,7 +1817,7 @@ int osql_schemachange_logic(struct schema_change_type *sc, int usedb)
         /* this is a distributed create for a partition, creating individual shard here, info passed from
          * SET OPTIONS through clnt struct
          */
-        if (sc->kind == SC_ADDTABLE) { 
+        if (sc->kind == SC_ADDTABLE) {
             sc->partition.type = PARTITION_ADD_GENSHARD;
         } else {
             sc->partition.type = PARTITION_REM_GENSHARD;
@@ -1828,17 +1825,17 @@ int osql_schemachange_logic(struct schema_change_type *sc, int usedb)
         snprintf(sc->partition.u.genshard.tablename, sizeof(sc->partition.u.genshard.tablename),
                  "%s", clnt->remsql_set.tablename);
         sc->partition.u.genshard.numdbs = clnt->remsql_set.numdbs;
-        sc->partition.u.genshard.dbnames = malloc(sizeof(char*) * clnt->remsql_set.numdbs);
+        sc->partition.u.genshard.dbnames = malloc(sizeof(char *) * clnt->remsql_set.numdbs);
         for (int i = 0; i < clnt->remsql_set.numdbs; i++) {
             sc->partition.u.genshard.dbnames[i] = strdup(clnt->remsql_set.dbnames[i]);
         }
 
         sc->partition.u.genshard.numcols = clnt->remsql_set.numcols;
-        sc->partition.u.genshard.columns = malloc(sizeof(char*) * clnt->remsql_set.numcols);
-        for(int i=0;i<clnt->remsql_set.numcols;i++) {
+        sc->partition.u.genshard.columns = malloc(sizeof(char *) * clnt->remsql_set.numcols);
+        for (int i = 0; i < clnt->remsql_set.numcols; i++) {
             sc->partition.u.genshard.columns[i] = strdup(clnt->remsql_set.columns[i]);
         }
-        sc->partition.u.genshard.shardnames = malloc(sizeof(char*) * clnt->remsql_set.numdbs);
+        sc->partition.u.genshard.shardnames = malloc(sizeof(char *) * clnt->remsql_set.numdbs);
         for (int i = 0; i < clnt->remsql_set.numdbs; i++) {
             sc->partition.u.genshard.shardnames[i] = strdup(clnt->remsql_set.shardnames[i]);
         }

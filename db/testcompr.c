@@ -52,7 +52,6 @@
 #define LZ4_compress_default LZ4_compress_limitedOutput
 #endif
 
-
 int gbl_testcompr_percent = 10;
 int gbl_testcompr_max = 300000;
 
@@ -150,7 +149,7 @@ static int blob_compress(CompStruct *comp)
 
         /* LZ4 */
         if ((rc = LZ4_compress_default(comp->blob_ptrs[i], lz4dta, len,
-                                             comp->blob_len[i])) <= 0) {
+                                       comp->blob_len[i])) <= 0) {
             comp->lz4.blobsz += comp->blob_len[i];
         } else {
             comp->lz4.blobsz += rc;
@@ -223,7 +222,7 @@ static int test_compress(CompStruct *comp)
 
     /* LZ4 */
     if ((rc = LZ4_compress_default(comp->fnddta, buf, comp->fndlen,
-                                         comp->fndlen)) <= 0) {
+                                   comp->fndlen)) <= 0) {
         comp->lz4.dtasz += comp->fndlen;
     } else {
         comp->lz4.dtasz += rc;
@@ -431,4 +430,3 @@ void handle_testcompr(SBUF2 *sb, const char *table)
         sbuf2printf(sb, "FAILED\n");
     }
 }
-

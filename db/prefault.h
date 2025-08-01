@@ -27,7 +27,7 @@ enum pfrq_type {
     PFRQ_OLDKEY = 5,  /* given a table, key   : fault the ix record  */
     PFRQ_NEWKEY = 6,  /* given a table, key   : fault the ix record  */
 
-    PFRQ_OLDDATA_OLDKEYS = 3, /* given a table, genid : 1) fault the dta record.
+    PFRQ_OLDDATA_OLDKEYS = 3,         /* given a table, genid : 1) fault the dta record.
                                                   2) then form all keys, and
                                                      enque PRFQ_OLDKEY for each
                         */
@@ -111,7 +111,8 @@ typedef struct pfrq {
     unsigned int seqnum;
 } pfrq_t;
 
-enum { PREFAULT_TOBLOCK = 1, PREFAULT_READAHEAD = 2 };
+enum { PREFAULT_TOBLOCK = 1,
+       PREFAULT_READAHEAD = 2 };
 
 typedef struct {
     int type;

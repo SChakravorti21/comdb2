@@ -16,7 +16,10 @@
 
 #include <uuid/uuid.h>
 
-void comdb2uuid(uuid_t u) { uuid_generate(u); }
+void comdb2uuid(uuid_t u)
+{
+    uuid_generate(u);
+}
 
 char *comdb2uuidstr(uuid_t u, char out[37]);
 inline char *comdb2uuidstr(uuid_t u, char out[37])
@@ -25,11 +28,20 @@ inline char *comdb2uuidstr(uuid_t u, char out[37])
     return out;
 }
 
-void comdb2uuid_clear(uuid_t u) { uuid_clear(u); }
+void comdb2uuid_clear(uuid_t u)
+{
+    uuid_clear(u);
+}
 
-int comdb2uuidcmp(uuid_t u1, uuid_t u2) { return uuid_compare(u1, u2); }
+int comdb2uuidcmp(uuid_t u1, uuid_t u2)
+{
+    return uuid_compare(u1, u2);
+}
 
-void comdb2uuidcpy(uuid_t dst, uuid_t src) { uuid_copy(dst, src); }
+void comdb2uuidcpy(uuid_t dst, uuid_t src)
+{
+    uuid_copy(dst, src);
+}
 
 int comdb2uuid_is_zero(uuid_t u)
 {

@@ -52,7 +52,8 @@ static int prepare_sc_plan(struct schema_change_type *s, int old_changed,
         } else {
             sc_printf(s, "Using plan.\n");
             newdb->plan = theplan;
-            if (newdb->plan->dta_plan) changed = SC_TAG_CHANGE;
+            if (newdb->plan->dta_plan)
+                changed = SC_TAG_CHANGE;
         }
         s->retry_bad_genids = 0;
     }
@@ -196,7 +197,8 @@ static int prepare_version_for_dbs_without_instant_sc(tran_type *tran,
          * as version 1 */
 
         struct schema *ver_one;
-        if ((rc = prepare_table_version_one(tran, db, &ver_one))) return rc;
+        if ((rc = prepare_table_version_one(tran, db, &ver_one)))
+            return rc;
         replace_tag_schema(newdb, ver_one);
     }
 
@@ -214,7 +216,8 @@ static int switch_versions_with_plan(void *tran, struct dbtable *db,
         /*set main data metapointer to new data file*/
         rc = bdb_commit_temp_file_version_data(newdb->handle, tran,
                                                0 /*dtanum*/, &bdberr);
-        if (rc) return SC_BDB_ERROR;
+        if (rc)
+            return SC_BDB_ERROR;
     } else {
         /* no changes to dta. stick with the old data version */
         bdb_replace_cached_data_version(newdb->handle, db->handle);
@@ -242,13 +245,15 @@ static int switch_versions_with_plan(void *tran, struct dbtable *db,
                 file_versions[newdb->plan->blob_plan[blobno] + 1], &bdberr);
 
             /* we're reusing the old blob */
-            if (rc) return SC_BDB_ERROR;
+            if (rc)
+                return SC_BDB_ERROR;
             bdb_replace_cached_blob_version(newdb->handle, blobno, db->handle, newdb->plan->blob_plan[blobno]);
         } else if (newdb->plan->blob_plan[blobno] == -1) {
             /* we made a new blob */
             rc = bdb_commit_temp_file_version_data(newdb->handle, tran,
                                                    blobno + 1, &bdberr);
-            if (rc) return SC_BDB_ERROR;
+            if (rc)
+                return SC_BDB_ERROR;
         }
     }
 
@@ -276,13 +281,15 @@ static int switch_versions_with_plan(void *tran, struct dbtable *db,
                 file_versions[newdb->plan->ix_plan[ixnum]], &bdberr);
 
             /* we're re-using the old index */
-            if (rc) return SC_BDB_ERROR;
+            if (rc)
+                return SC_BDB_ERROR;
             bdb_replace_cached_index_version(newdb->handle, ixnum, db->handle, newdb->plan->ix_plan[ixnum]);
         } else if (newdb->plan->ix_plan[ixnum] == -1) {
             /* we rebuilt this index */
             rc = bdb_commit_temp_file_version_index(newdb->handle, tran, ixnum,
                                                     &bdberr);
-            if (rc) return SC_BDB_ERROR;
+            if (rc)
+                return SC_BDB_ERROR;
         }
     }
 
@@ -366,13 +373,14 @@ static void check_for_idx_rename(struct dbtable *newdb, struct dbtable *olddb)
 
 static int do_merge_table(struct ireq *iq, struct schema_change_type *s,
                           tran_type *tran);
-static int optionsChanged(struct schema_change_type *sc, struct scinfo *scinfo){
-    if(sc->headers != scinfo->olddb_odh || 
+static int optionsChanged(struct schema_change_type *sc, struct scinfo *scinfo)
+{
+    if (sc->headers != scinfo->olddb_odh ||
         sc->ip_updates != scinfo->olddb_inplace_updates ||
         sc->instant_sc != scinfo->olddb_instant_sc ||
         sc->compress_blobs != scinfo->olddb_compress_blobs ||
         sc->compress != scinfo->olddb_compress) {
-            return 1;
+        return 1;
     }
     return 0;
 }
@@ -409,7 +417,6 @@ int do_alter_table(struct ireq *iq, struct schema_change_type *s,
         return SC_TABLE_DOESNOT_EXIST;
     }
 
-
     /* note for a partition merge, if we reuse the first shard (i.e. it is aliased),
      * we need to alter it here instead of running do_merge_table
      */
@@ -430,25 +437,26 @@ int do_alter_table(struct ireq *iq, struct schema_change_type *s,
     }
 
     set_schemachange_options_tran(s, db, &scinfo, tran);
-    if (optionsChanged(s,&scinfo)) {
+    if (optionsChanged(s, &scinfo)) {
         sc_printf(s, "table option(s) have changed. Forcing a rebuild\n");
-        sc_printf(s," new options -> \n");
-        sc_printf(s," headers: %d\n", s->headers);
-        sc_printf(s," ip_updates: %d\n", s->ip_updates);
-        sc_printf(s," instant_sc: %d\n", s->instant_sc);
-        sc_printf(s," compress: %d\n", s->compress);
-        sc_printf(s," compress_blobs: %d\n", s->compress_blobs);
-        sc_printf(s," --------------------------------------------------\n"); 
-        sc_printf(s," old options -> \n");
-        sc_printf(s," headers: %d\n", scinfo.olddb_odh);
-        sc_printf(s," ip_updates: %d\n", scinfo.olddb_inplace_updates);
-        sc_printf(s," instant_sc: %d\n", scinfo.olddb_instant_sc);
-        sc_printf(s," compress: %d\n", scinfo.olddb_compress);
-        sc_printf(s," compress_blobs: %d\n", scinfo.olddb_compress_blobs);
+        sc_printf(s, " new options -> \n");
+        sc_printf(s, " headers: %d\n", s->headers);
+        sc_printf(s, " ip_updates: %d\n", s->ip_updates);
+        sc_printf(s, " instant_sc: %d\n", s->instant_sc);
+        sc_printf(s, " compress: %d\n", s->compress);
+        sc_printf(s, " compress_blobs: %d\n", s->compress_blobs);
+        sc_printf(s, " --------------------------------------------------\n");
+        sc_printf(s, " old options -> \n");
+        sc_printf(s, " headers: %d\n", scinfo.olddb_odh);
+        sc_printf(s, " ip_updates: %d\n", scinfo.olddb_inplace_updates);
+        sc_printf(s, " instant_sc: %d\n", scinfo.olddb_instant_sc);
+        sc_printf(s, " compress: %d\n", scinfo.olddb_compress);
+        sc_printf(s, " compress_blobs: %d\n", scinfo.olddb_compress_blobs);
         s->force_rebuild = 1;
     }
 
-    if ((rc = check_option_coherency(s, db, &scinfo))) return rc;
+    if ((rc = check_option_coherency(s, db, &scinfo)))
+        return rc;
 
     sc_printf(s, "starting schema update with seed %0#16llx\n",
               flibc_ntohll(iq->sc_seed));
@@ -655,7 +663,8 @@ convert_records:
         if (!s->live)
             gbl_readonly_sc = 1;
         rc = convert_all_records(db, newdb, newdb->sc_genids, s);
-        if (rc == 1) rc = 0;
+        if (rc == 1)
+            rc = 0;
     } else
         rc = 0;
 
@@ -746,7 +755,6 @@ static int do_merge_table(struct ireq *iq, struct schema_change_type *s,
         return SC_TABLE_DOESNOT_EXIST;
     }
 
-
     if (s->resume == SC_PREEMPT_RESUME) {
         newdb = db->sc_to;
         goto convert_records;
@@ -756,7 +764,8 @@ static int do_merge_table(struct ireq *iq, struct schema_change_type *s,
 
     set_schemachange_options_tran(s, db, &scinfo, tran);
 
-    if ((rc = check_option_coherency(s, db, &scinfo))) return rc;
+    if ((rc = check_option_coherency(s, db, &scinfo)))
+        return rc;
 
     sc_printf(s, "starting table merge with seed %0#16llx\n",
               flibc_ntohll(iq->sc_seed));
@@ -828,7 +837,8 @@ convert_records:
     /* skip converting records for fastinit and planned schema change
      * that doesn't require rebuilding anything. */
     rc = convert_all_records(db, newdb, newdb->sc_genids, s);
-    if (rc == 1) rc = 0;
+    if (rc == 1)
+        rc = 0;
 
     remove_ongoing_alter(s);
 
@@ -890,10 +900,10 @@ convert_records:
 
 static int finalize_merge_table(struct ireq *iq, struct schema_change_type *s,
                                 tran_type *transac);
-#define BACKOUT                                                                \
-    do {                                                                       \
-        sc_errf(s, "%s:%d backing out\n", __func__, __LINE__);                 \
-        goto backout;                                                          \
+#define BACKOUT                                                \
+    do {                                                       \
+        sc_errf(s, "%s:%d backing out\n", __func__, __LINE__); \
+        goto backout;                                          \
     } while (0);
 
 int finalize_alter_table(struct ireq *iq, struct schema_change_type *s,
@@ -1065,7 +1075,8 @@ int finalize_alter_table(struct ireq *iq, struct schema_change_type *s,
 
     MEMORY_SYNC;
 
-    if (!have_all_schemas()) sc_errf(s, "Missing schemas (internal error)\n");
+    if (!have_all_schemas())
+        sc_errf(s, "Missing schemas (internal error)\n");
 
     live_sc_off(db);
 
@@ -1139,7 +1150,8 @@ int finalize_alter_table(struct ireq *iq, struct schema_change_type *s,
 
     /* if this is an alter to partition an existing table */
     if ((s->partition.type == PARTITION_ADD_TIMED ||
-         s->partition.type == PARTITION_ADD_MANUAL) && s->publish) {
+         s->partition.type == PARTITION_ADD_MANUAL) &&
+        s->publish) {
         struct errstat err = {0};
         assert(s->newpartition);
         rc = partition_llmeta_write(transac, s->newpartition, 0, &err);
@@ -1168,7 +1180,6 @@ int finalize_alter_table(struct ireq *iq, struct schema_change_type *s,
         }
         db->timepartition_name = NULL;
     }
-
 
     /* deletion of btree files we don't need is handled in
      * osql_scdone_commit_callback and osql_scdone_abort_callback */
@@ -1209,7 +1220,7 @@ extern int finalize_drop_table(struct ireq *iq, struct schema_change_type *s,
 static int finalize_merge_table(struct ireq *iq, struct schema_change_type *s,
                                 tran_type *transac)
 {
-    s->newdb = NULL; /* we not really own it*/
+    s->newdb = NULL;     /* we not really own it*/
     s->done_type = drop; /* we need to drop the merged table */
     return finalize_drop_table(iq, s, transac);
 }
@@ -1223,15 +1234,18 @@ int do_upgrade_table_int(struct schema_change_type *s)
     struct scinfo scinfo;
 
     db = get_dbtable_by_name(s->tablename);
-    if (db == NULL) return SC_TABLE_DOESNOT_EXIST;
+    if (db == NULL)
+        return SC_TABLE_DOESNOT_EXIST;
 
     s->db = db;
 
-    if (s->start_genid != 0) s->scanmode = SCAN_DUMP;
+    if (s->start_genid != 0)
+        s->scanmode = SCAN_DUMP;
 
     // check whether table is ready for upgrade
     set_schemachange_options(s, db, &scinfo);
-    if ((rc = check_option_coherency(s, db, &scinfo))) return rc;
+    if ((rc = check_option_coherency(s, db, &scinfo)))
+        return rc;
 
     if (s->kind == SC_FULLUPRECS) {
         print_schemachange_info(s, db, db);
@@ -1287,10 +1301,12 @@ int finalize_upgrade_table(struct schema_change_type *s)
         }
 
         rc = trans_start_sc(&iq, NULL, &tran);
-        if (rc != 0) continue;
+        if (rc != 0)
+            continue;
 
         rc = mark_schemachange_over_tran(s->db->tablename, tran);
-        if (rc != 0) continue;
+        if (rc != 0)
+            continue;
 
         rc = trans_commit(&iq, tran, gbl_myhostname);
         tran = NULL;

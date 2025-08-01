@@ -43,16 +43,25 @@ static pthread_mutex_t fastseedlk = PTHREAD_MUTEX_INITIALIZER;
 static int fastseed_last_epoch = 0;
 static int fastseed_dup = 0;
 
-static inline int fastseed_get_lastepoch(void) { return fastseed_last_epoch; }
+static inline int fastseed_get_lastepoch(void)
+{
+    return fastseed_last_epoch;
+}
 
 static inline void fastseed_set_lastepoch(int epoch)
 {
     fastseed_last_epoch = epoch;
 }
 
-static inline int fastseed_get_dup(void) { return fastseed_dup; }
+static inline int fastseed_get_dup(void)
+{
+    return fastseed_dup;
+}
 
-static inline void fastseed_set_dup(int dup) { fastseed_dup = dup; }
+static inline void fastseed_set_dup(int dup)
+{
+    fastseed_dup = dup;
+}
 
 extern int gbl_mynodeid;
 
@@ -76,9 +85,9 @@ uint64_t comdb2fastseed(int srcid)
 
     node = gbl_mynodeid;
     if (node < 1 || node > MAXNODE) {
-        logmsg(LOGMSG_ERROR, 
-                "err:fastseed:bad machine number %d, must be 1<=x<=%d\n", node,
-                MAXNODE);
+        logmsg(LOGMSG_ERROR,
+               "err:fastseed:bad machine number %d, must be 1<=x<=%d\n", node,
+               MAXNODE);
         seed[0] = seed[1] = 0;
         return -1;
     }
@@ -115,21 +124,21 @@ uint64_t comdb2fastseed(int srcid)
 
         if (retries > 8 && firstepoch == epoch) {
             logmsg(LOGMSG_ERROR, "fastseed():ERROR! EPOCH IS NOT UPDATING!!! "
-                            "original %d now %d\n",
-                    firstepoch, epoch);
+                                 "original %d now %d\n",
+                   firstepoch, epoch);
             seed[0] = seed[1] = 0;
             return -99;
         }
         if (retries > 20) {
-            logmsg(LOGMSG_ERROR, 
-                "fastseed():ERROR! HIGH CONTENTION, CANNOT GET A SEED!\n");
+            logmsg(LOGMSG_ERROR,
+                   "fastseed():ERROR! HIGH CONTENTION, CANNOT GET A SEED!\n");
             seed[0] = seed[1] = 0;
             return -98;
         }
 
         logmsg(LOGMSG_ERROR, "warn:fastseed():reached dupe limit, waiting for next "
-                        "second, retries %d epoch %d.\n",
-                retries, epoch);
+                             "second, retries %d epoch %d.\n",
+               retries, epoch);
         poll(NULL, 0, 250);
         ++retries;
     } while (1);

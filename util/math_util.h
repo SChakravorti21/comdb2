@@ -17,8 +17,8 @@
 #ifndef __MATH_UTIL_H__
 #define __MATH_UTIL_H__
 
- #define min(a,b) \
-   ({ __typeof__ (a) _a = (a); \
+#define min(a, b) \
+    ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
      _a < _b ? _a : _b; })
 

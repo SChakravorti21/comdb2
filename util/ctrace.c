@@ -79,7 +79,10 @@ static int g_mutex_enabled = 1;
 /* Safe version of time_epoch().  If we've pekludged then this will use our
  * shmem style of time_epoch(); otherwise this falls back to time() (which
  * I suspect is not all that slow, as it is usually a fast system call). */
-static int ctrace_time_epoch(void) { return time(NULL); }
+static int ctrace_time_epoch(void)
+{
+    return time(NULL);
+}
 
 static int __logmsg(loglvl lvl, const char *fmt, ...)
 {
@@ -103,27 +106,27 @@ static int __logmsgf(loglvl lvl, FILE *f, const char *fmt, ...)
 #define logmsg __logmsg
 #define logmsgf __logmsgf
 
-#define CTRACE_TIMER_START(THRESHOLD)                                          \
-    do {                                                                       \
-        bbhrtime_t timer_start;                                                \
-        const int timer_thresh = (THRESHOLD);                                  \
-        if (timer_thresh != 0)                                                 \
+#define CTRACE_TIMER_START(THRESHOLD)         \
+    do {                                      \
+        bbhrtime_t timer_start;               \
+        const int timer_thresh = (THRESHOLD); \
+        if (timer_thresh != 0)                \
             getbbhrtime(&timer_start);
 
-#define CTRACE_TIMER_END(opname)                                               \
-    if (timer_thresh != 0) {                                                   \
-        bbhrtime_t timer_end;                                                  \
-        getbbhrtime(&timer_end);                                               \
-        bbint64_t elapsed_ns = diff_bbhrtime(&timer_end, &timer_start);        \
-        int elapsed_ms = (elapsed_ns / 1000000LL);                             \
-        if (elapsed_ms > timer_thresh) {                                       \
-            logmsg(LOGMSG_USER,                                                \
-                    ":%s():%d:LONG I/O %dms above %dms - %s: %s\n",            \
-                    __func__, __LINE__, elapsed_ms, timer_thresh, opname,      \
-                    logfilename);                                              \
-        }                                                                      \
-    }                                                                          \
-    }                                                                          \
+#define CTRACE_TIMER_END(opname)                                         \
+    if (timer_thresh != 0) {                                             \
+        bbhrtime_t timer_end;                                            \
+        getbbhrtime(&timer_end);                                         \
+        bbint64_t elapsed_ns = diff_bbhrtime(&timer_end, &timer_start);  \
+        int elapsed_ms = (elapsed_ns / 1000000LL);                       \
+        if (elapsed_ms > timer_thresh) {                                 \
+            logmsg(LOGMSG_USER,                                          \
+                   ":%s():%d:LONG I/O %dms above %dms - %s: %s\n",       \
+                   __func__, __LINE__, elapsed_ms, timer_thresh, opname, \
+                   logfilename);                                         \
+        }                                                                \
+    }                                                                    \
+    }                                                                    \
     while (0)
 
 /* caller MUST hold g_mutex */
@@ -135,7 +138,7 @@ static void init_filesz_lk(void)
     {
         if (fstat(fileno(logf), &st) == -1) {
             logmsg(LOGMSG_ERROR, "Error %d in fstat on %s: %s\n", errno, logfilename,
-                    strerror(errno));
+                   strerror(errno));
             filesz = 0;
         } else {
             filesz = st.st_size;
@@ -166,8 +169,8 @@ static void chkwarnsz_lk(void)
     init_filesz_lk();
     if (warnat > 0 && filesz >= warnat) {
         logmsg(LOGMSG_WARN, "WARNING: ctrace log file '%s' is now %llu bytes; this "
-                        "log needs to be rolled\n",
-                logfilename, (unsigned long long)filesz);
+                            "log needs to be rolled\n",
+               logfilename, (unsigned long long)filesz);
 
         /* Warn again at 10% interval */
         warnat = 1.10 * filesz;
@@ -230,14 +233,14 @@ static void ctrace_openlog_taskname_lk(const char *directory,
         logf = fopen(logfilename, "a");
         if (logf == 0) {
             logmsg(LOGMSG_ERROR, "%s:failed to create task log %s: %s\n", __func__,
-                    logfilename, strerror(errno));
+                   logfilename, strerror(errno));
         } else {
             logmsg(LOGMSG_INFO, "%s:open ctrace file %s\n", __func__, logfilename);
             chkwarnsz_lk();
 
             /* without timestamp - eases searching for this simple header */
             logmsg(LOGMSG_INFO, "### start ctrace file %s by task %s ###\n",
-                    logfilename, savetaskname);
+                   logfilename, savetaskname);
         }
     }
     CTRACE_TIMER_END("fopen()+fprintf()");
@@ -284,7 +287,10 @@ void ctrace_closelog(void)
 {
     int mutex_enabled = g_mutex_enabled;
 
-    LOCKIFNZ(&g_mutex, mutex_enabled) { ctrace_closelog_lk(); }
+    LOCKIFNZ(&g_mutex, mutex_enabled)
+    {
+        ctrace_closelog_lk();
+    }
     UNLOCKIFNZ(&g_mutex, mutex_enabled);
 }
 
@@ -306,7 +312,7 @@ void ctrace_roll_lk(void)
 
     if (logf == 0) {
         logmsg(LOGMSG_ERROR, "%s:failed to create task log %s: %s\n", __func__,
-                logfilename, strerror(errno));
+               logfilename, strerror(errno));
     }
 }
 
@@ -314,7 +320,10 @@ void ctrace_roll(void)
 {
     int mutex_enabled = g_mutex_enabled;
 
-    LOCKIFNZ(&g_mutex, mutex_enabled) { ctrace_roll_lk(); }
+    LOCKIFNZ(&g_mutex, mutex_enabled)
+    {
+        ctrace_roll_lk();
+    }
     UNLOCKIFNZ(&g_mutex, mutex_enabled);
 }
 
@@ -383,13 +392,19 @@ int ctrace_set_rollat(void *unused, void *value)
     return 0;
 }
 
-void ctrace_set_nlogs(int n) { nlogs = n; }
+void ctrace_set_nlogs(int n)
+{
+    nlogs = n;
+}
 
 void ctrace_rollover_register_callback(ctrace_rollover_callback_t *func)
 {
     int mutex_enabled = g_mutex_enabled;
 
-    LOCKIFNZ(&g_mutex, mutex_enabled) { callback_func = func; }
+    LOCKIFNZ(&g_mutex, mutex_enabled)
+    {
+        callback_func = func;
+    }
     UNLOCKIFNZ(&g_mutex, mutex_enabled);
 }
 
@@ -522,7 +537,8 @@ int ctracev(const char *format, va_list ap)
             chkwarnsz_lk();
     }
     UNLOCKIFNZ(&g_mutex, mutex_enabled);
-    if (a < 0 || b < 0) return -1;
+    if (a < 0 || b < 0)
+        return -1;
     return a + b;
 }
 
@@ -716,7 +732,10 @@ FILE *ctrace_get_stream(void)
     int mutex_enabled = g_mutex_enabled;
     FILE *logf_local;
 
-    LOCKIFNZ(&g_mutex, mutex_enabled) { logf_local = logf; }
+    LOCKIFNZ(&g_mutex, mutex_enabled)
+    {
+        logf_local = logf;
+    }
     UNLOCKIFNZ(&g_mutex, mutex_enabled);
 
     return logf_local;

@@ -128,21 +128,20 @@ enum {
     OSQL_BPLOG_RECREATEDTRANS = 2
 };
 
-
 int gbl_sc_close_txn = 1;
 
 #if 0
-#define GOTOBACKOUT                                                            \
-    do {                                                                       \
-        printf("***BACKOUT*** from %d rc %d\n", __LINE__, rc);                 \
-        if (1)                                                                 \
-            goto backout;                                                      \
+#define GOTOBACKOUT                                            \
+    do {                                                       \
+        printf("***BACKOUT*** from %d rc %d\n", __LINE__, rc); \
+        if (1)                                                 \
+            goto backout;                                      \
     } while (0)
 #else
-#define GOTOBACKOUT                                                            \
-    do {                                                                       \
-        fromline = __LINE__;                                                   \
-        goto backout;                                                          \
+#define GOTOBACKOUT          \
+    do {                     \
+        fromline = __LINE__; \
+        goto backout;        \
     } while (0);
 #endif
 
@@ -294,8 +293,8 @@ void toblock_init(void)
     int ii;
     for (ii = 0; ii < NUM_BLOCKOP_OPCODES; ii++)
         gbl_blockop_name_xrefs[ii] = "???";
-#define add_blockop(x)                                                         \
-    gbl_blockop_name_xrefs[index] = breq2a((x));                               \
+#define add_blockop(x)                           \
+    gbl_blockop_name_xrefs[index] = breq2a((x)); \
     gbl_blockop_count_xrefs[(x)] = index++;
 
     add_blockop(BLOCK_ADDSL);
@@ -347,7 +346,7 @@ void toblock_init(void)
     if (index >= NUM_BLOCKOP_OPCODES) {
         logmsg(LOGMSG_FATAL, "%s: too many blockops defined!\n", __func__);
         logmsg(LOGMSG_FATAL, "%s: you need to increase NUM_BLOCKOP_OPCODES to %d\n",
-                __func__, index);
+               __func__, index);
         exit(1);
     }
 }
@@ -486,7 +485,8 @@ static int forward_longblock_to_master(struct ireq *iq,
     /*have a valid master to pass this off to. */
     if (iq->debug)
         reqprintf(iq, "forwarded req from %s to master node %s db %d rqlen "
-                "%zu\n", getorigin(iq), mstr, iq->origdb->dbnum, req_len);
+                      "%zu\n",
+                  getorigin(iq), mstr, iq->origdb->dbnum, req_len);
     if (iq->is_socketrequest || iq->ipc_sndbak) {
         if (iq->sb == NULL && iq->is_socketrequest) {
             // what case is this?
@@ -531,10 +531,9 @@ static int forward_block_to_master(struct ireq *iq, block_state_t *p_blkstate,
         return ERR_NOMASTER;
     }
 
-
     /*modify request to indicate forwarded and send off to remote */
     if (req_hdr_get(&req_hdr, iq->p_buf_out_start,
-                    p_blkstate->p_buf_req_start,iq->comdbg_flags) != p_blkstate->p_buf_req_start)
+                    p_blkstate->p_buf_req_start, iq->comdbg_flags) != p_blkstate->p_buf_req_start)
         return ERR_INTERNAL;
     req_hdr.opcode = OP_FWD_BLOCK;
     if (iq->comdbg_flags & COMDBG_FLAG_FROM_LE) {
@@ -918,8 +917,8 @@ static int do_replay_case(struct ireq *iq, void *fstseqnum, int seqlen,
     if (!replay_data) {
 
         if (!IQ_HAS_SNAPINFO(iq)) {
-            assert( (seqlen == (sizeof(fstblkseq_t))) || 
-                    (seqlen == (sizeof(uuid_t))));
+            assert((seqlen == (sizeof(fstblkseq_t))) ||
+                   (seqlen == (sizeof(uuid_t))));
         }
 
         rc = bdb_blkseq_find(thedb->bdb_env, NULL, fstseqnum, seqlen,
@@ -943,15 +942,15 @@ static int do_replay_case(struct ireq *iq, void *fstseqnum, int seqlen,
     {
         int *seq = (int *)fstseqnum;
         if (!check_long_trn)
-            logmsg(LOGMSG_ERROR, 
-                    "%s: %08x:%08x:%08x fstblk replay deleted under us\n",
-                    __func__, seq[0], seq[1], seq[2]);
+            logmsg(LOGMSG_ERROR,
+                   "%s: %08x:%08x:%08x fstblk replay deleted under us\n",
+                   __func__, seq[0], seq[1], seq[2]);
         blkseq_line = __LINE__;
         goto replay_error;
     } else if (rc != 0) {
         int *seq = (int *)fstseqnum;
         logmsg(LOGMSG_ERROR, "%s: %08x:%08x:%08x unexpected fstblk find error %d\n",
-                __func__, seq[0], seq[1], seq[2], rc);
+               __func__, seq[0], seq[1], seq[2], rc);
         blkseq_line = __LINE__;
         goto replay_error;
     } else if (datalen < sizeof(struct fstblk_header)) {
@@ -1058,8 +1057,7 @@ static int do_replay_case(struct ireq *iq, void *fstseqnum, int seqlen,
         case FSTBLK_SNAP_INFO:
             snapinfo = 1; /* fallthrough */
 
-        case FSTBLK_RSPKL: 
-        {
+        case FSTBLK_RSPKL: {
             /* fluff */
             if (!(p_fstblk_buf = (uint8_t *)fstblk_pre_rspkl_get(
                       &fstblk_pre_rspkl, p_fstblk_buf, p_fstblk_buf_end))) {
@@ -1068,8 +1066,8 @@ static int do_replay_case(struct ireq *iq, void *fstseqnum, int seqlen,
             }
 
             if (snapinfo) {
-                if (!(p_fstblk_buf = (uint8_t *)buf_get(&(snapinfo_outrc), sizeof(snapinfo_outrc), 
-                        p_fstblk_buf, p_fstblk_buf_end)))  {
+                if (!(p_fstblk_buf = (uint8_t *)buf_get(&(snapinfo_outrc), sizeof(snapinfo_outrc),
+                                                        p_fstblk_buf, p_fstblk_buf_end))) {
                     flush_db();
                     abort();
                 }
@@ -1178,7 +1176,7 @@ static int do_replay_case(struct ireq *iq, void *fstseqnum, int seqlen,
 
         default:
             logmsg(LOGMSG_ERROR, "%s: bad fstblk replay type %d\n", __func__,
-                    fstblk_header.type);
+                   fstblk_header.type);
             blkseq_line = __LINE__;
             goto replay_error;
         }
@@ -1191,9 +1189,8 @@ static int do_replay_case(struct ireq *iq, void *fstseqnum, int seqlen,
         assert(IQ_HAS_SNAPINFO(iq));
         printkey = (char *)malloc(seqlen + 1);
         memcpy(printkey, fstseqnum, seqlen);
-        printkey[seqlen]='\0';
-    }
-    else {
+        printkey[seqlen] = '\0';
+    } else {
         printkey = (char *)malloc((seqlen * 2) + 1);
         printkey[0] = '\0';
         util_tohex(printkey, fstseqnum, seqlen);
@@ -1846,9 +1843,9 @@ int tolongblock(struct ireq *iq)
                 poll(0, 0, (rand() % 25 + 1));
                 goto retrysingle;
             } else {
-                logmsg(LOGMSG_ERROR, 
-                        "*ERROR* [%d] tolongblock too much contention %d\n",
-                        __LINE__, retries);
+                logmsg(LOGMSG_ERROR,
+                       "*ERROR* [%d] tolongblock too much contention %d\n",
+                       __LINE__, retries);
                 thd_dump();
             }
         }
@@ -2131,7 +2128,6 @@ static int create_child_transaction(struct ireq *iq, tran_type *parent_trans,
     }
     return irc;
 }
-
 
 static int
 osql_create_transaction(struct javasp_trans_state *javasp_trans_handle,
@@ -2493,13 +2489,11 @@ static int extract_blkseq2(struct ireq *iq, block_state_t *p_blkstate,
 
 static pthread_rwlock_t commit_lock = PTHREAD_RWLOCK_INITIALIZER;
 
-
 void handle_postcommit_bpfunc(struct ireq *iq)
 {
     bpfunc_lstnode_t *cur_bpfunc = NULL;
 
-    while((cur_bpfunc = listc_rtl(&iq->bpfunc_lst)))
-    {
+    while ((cur_bpfunc = listc_rtl(&iq->bpfunc_lst))) {
         assert(cur_bpfunc->func->success != NULL);
         cur_bpfunc->func->success(NULL /*not used*/, cur_bpfunc->func,
                                   &iq->errstat);
@@ -2510,8 +2504,7 @@ void handle_postcommit_bpfunc(struct ireq *iq)
 void handle_postabort_bpfunc(struct ireq *iq)
 {
     bpfunc_lstnode_t *cur_bpfunc = NULL;
-    while((cur_bpfunc = listc_rtl(&iq->bpfunc_lst)))
-    {
+    while ((cur_bpfunc = listc_rtl(&iq->bpfunc_lst))) {
         assert(cur_bpfunc->func->fail != NULL);
         cur_bpfunc->func->fail(NULL /*not used*/, cur_bpfunc->func,
                                &iq->errstat);
@@ -2733,27 +2726,27 @@ static int localrep_seqno(tran_type *trans, block_state_t *p_blkstate)
     return rc;
 }
 
-#define MIXED_SQL_DYNTAGS(trans, parent_trans) \
-    { \
-        if (!trans) { \
-            if (osql_needtransaction == OSQL_BPLOG_NOTRANS) { \
-                assert(is_block2sqlmode != 0); \
+#define MIXED_SQL_DYNTAGS(trans, parent_trans)                                            \
+    {                                                                                     \
+        if (!trans) {                                                                     \
+            if (osql_needtransaction == OSQL_BPLOG_NOTRANS) {                             \
+                assert(is_block2sqlmode != 0);                                            \
                 logmsg(LOGMSG_ERROR, "%s:%d INCORRECT TRANSACTION MIX, SQL AND DYNTAG\n", \
-                        __FILE__, __LINE__); \
-                rc = osql_create_transaction( \
-                        javasp_trans_handle, iq, &trans, \
-                        have_blkseq ? &parent_trans : NULL, \
-                        &osql_needtransaction, __LINE__); \
-                if (rc) { \
-                    numerrs = 1; \
-                    GOTOBACKOUT; \
-                } \
-            } else { \
-                logmsg(LOGMSG_FATAL, "%s:%d NULL TRANSACTION!\n", __FILE__, \
-                            __LINE__); \
-                abort(); \
-            } \
-        } \
+                       __FILE__, __LINE__);                                               \
+                rc = osql_create_transaction(                                             \
+                    javasp_trans_handle, iq, &trans,                                      \
+                    have_blkseq ? &parent_trans : NULL,                                   \
+                    &osql_needtransaction, __LINE__);                                     \
+                if (rc) {                                                                 \
+                    numerrs = 1;                                                          \
+                    GOTOBACKOUT;                                                          \
+                }                                                                         \
+            } else {                                                                      \
+                logmsg(LOGMSG_FATAL, "%s:%d NULL TRANSACTION!\n", __FILE__,               \
+                       __LINE__);                                                         \
+                abort();                                                                  \
+            }                                                                             \
+        }                                                                                 \
     }
 
 int gbl_random_prepare_commit = 0;
@@ -2862,13 +2855,13 @@ void abort_disttxn(struct ireq *iq, int rc, int outrc)
     }
 }
 
-#define LOG_LEGACY_REQUEST() \
-    do { \
-        if (!have_legacy_requests) { \
+#define LOG_LEGACY_REQUEST()              \
+    do {                                  \
+        if (!have_legacy_requests) {      \
             log_legacy_request(iq, NULL); \
-            have_legacy_requests = 1; \
-        } \
-    } while(0)
+            have_legacy_requests = 1;     \
+        }                                 \
+    } while (0)
 
 __thread int64_t *txn_logbytes = NULL;
 
@@ -2886,7 +2879,7 @@ static int toblock_main_int(struct javasp_trans_state *javasp_trans_handle, stru
     char saved_fndkey[MAXKEYLEN];
     int saved_rrn = 0;
     int addrrn;
-    int outrc=-1;
+    int outrc = -1;
     unsigned char nulls[MAXNULLBITS] = {0};
     unsigned long long genid = 0;
     int have_blkseq = 0;
@@ -4577,7 +4570,7 @@ static int toblock_main_int(struct javasp_trans_state *javasp_trans_handle, stru
 
             if (is_mixed_sqldyn) {
                 logmsg(LOGMSG_ERROR, "%s:%d INCORRECT TRANSACTION MIX, SQL AND DYNTAG %d\n",
-                        __FILE__, __LINE__, hdr.opcode);
+                       __FILE__, __LINE__, hdr.opcode);
             } else {
                 if (osql_needtransaction == OSQL_BPLOG_NONE) {
                     rc = osql_destroy_transaction(
@@ -4777,7 +4770,7 @@ static int toblock_main_int(struct javasp_trans_state *javasp_trans_handle, stru
         }
 
         default:
-unknown_request:
+        unknown_request:
             /*unknown operation */
             if (iq->debug)
                 reqprintf(iq, "BAD OPCODE %d", hdr.opcode);
@@ -4785,7 +4778,7 @@ unknown_request:
             rc = ERR_BADREQ;
             GOTOBACKOUT;
         } /*switch opcode */
-    }     /* BLOCK PROCESSOR FOR LOOP */
+    } /* BLOCK PROCESSOR FOR LOOP */
 
     /* if this a blocksql transaction, we need to actually execute the ops */
     if (is_block2sqlmode) {
@@ -4795,8 +4788,7 @@ unknown_request:
         if (iq->tranddl) {
             int iirc;
             if (trans) {
-                iirc = osql_destroy_transaction(iq, have_blkseq ? &parent_trans
-                                                                : NULL,
+                iirc = osql_destroy_transaction(iq, have_blkseq ? &parent_trans : NULL,
                                                 &trans, &osql_needtransaction);
                 if (iirc) {
                     numerrs = 1;
@@ -4939,8 +4931,8 @@ unknown_request:
                 reqerrstr(iq, COMDB2_CSTRT_RC_DUP, "Transaction is uncommittable: "
                                                    "Duplicate insert on key '%s' "
                                                    "in table '%s' index %d",
-                      get_keynm_from_db_idx(iq->usedb, ixout),
-                      iq->usedb->tablename, ixout);
+                          get_keynm_from_db_idx(iq->usedb, ixout),
+                          iq->usedb->tablename, ixout);
             } else {
                 check_serializability = 1;
             }
@@ -5232,7 +5224,7 @@ unknown_request:
 
     goto add_blkseq;
 
-/*------ERROR CONDITION------*/
+    /*------ERROR CONDITION------*/
 
 backout:
     /* wait-die deadlock on distributed txn -> verify-error */
@@ -5267,9 +5259,9 @@ backout:
         /* Check serial and selectv readsets independently, serial first to
          * eliminate the race: selectv-error should override serial error */
         if (iq->arr && (force_serial_error ||
-                               bdb_osql_serial_check(thedb->bdb_env, iq->arr,
-                                                     &(iq->arr->file),
-                                                     &(iq->arr->offset), 0))) {
+                        bdb_osql_serial_check(thedb->bdb_env, iq->arr,
+                                              &(iq->arr->file),
+                                              &(iq->arr->offset), 0))) {
             numerrs = 1;
             rc = ERR_NOTSERIAL;
             reqerrstr(iq, ERR_NOTSERIAL, "transaction is not serializable");
@@ -5286,7 +5278,7 @@ backout:
 
             rc = ERR_CONSTR;
             reqerrstr(iq, COMDB2_CSTRT_RC_INVL_REC, "selectv constraints");
-        } 
+        }
     }
 
     /* Cursor ranges need freeing on error, too. */
@@ -5638,9 +5630,9 @@ add_blkseq:
             }
 
             if (IQ_HAS_SNAPINFO(iq)) {
-                if (!(p_buf_fstblk = buf_put(&(outrc), sizeof(outrc), p_buf_fstblk, 
-                                p_buf_fstblk_end))) {
-                            return ERR_INTERNAL;
+                if (!(p_buf_fstblk = buf_put(&(outrc), sizeof(outrc), p_buf_fstblk,
+                                             p_buf_fstblk_end))) {
+                    return ERR_INTERNAL;
                 }
                 if (outrc != 0) {
                     if (!(p_buf_fstblk = osqlcomm_errstat_type_put(
@@ -5933,7 +5925,8 @@ add_blkseq:
                         rc = ERR_NOT_DURABLE;
                     }
                     logmsg(LOGMSG_DEBUG, "trans_commit_adaptive irc=%d, "
-                            "rc=%d\n", irc, rc);
+                                         "rc=%d\n",
+                           irc, rc);
                 }
 
                 if (hascommitlock) {
@@ -6253,8 +6246,8 @@ add_blkseq:
         if (iq->__limits.maxcost_warn &&
             (iq->cost > iq->__limits.maxcost_warn)) {
             logmsg(LOGMSG_WARN, "[%s] warning: transaction exceeded cost threshold "
-                            "(%f >= %f)\n",
-                    iq->corigin, iq->cost, iq->__limits.maxcost_warn);
+                                "(%f >= %f)\n",
+                   iq->corigin, iq->cost, iq->__limits.maxcost_warn);
         }
     }
 
@@ -6301,7 +6294,10 @@ int reset_blkmax(void)
     return 0;
 }
 
-int get_blkmax(void) { return blkmax; }
+int get_blkmax(void)
+{
+    return blkmax;
+}
 
 static uint64_t block_processor_ms = 0;
 

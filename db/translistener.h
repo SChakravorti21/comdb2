@@ -73,11 +73,17 @@ enum {
     SP_FIELD_INTERVALDSUS = 16
 };
 
-enum { TYPE_TAGGED_ADD = 0x10, TYPE_TAGGED_UPD = 0x20, TYPE_TAGGED_DEL = 0x40 };
+enum { TYPE_TAGGED_ADD = 0x10,
+       TYPE_TAGGED_UPD = 0x20,
+       TYPE_TAGGED_DEL = 0x40 };
 
-enum { FIELD_FLAG_ABSENT = 0, FIELD_FLAG_NULL = 1, FIELD_FLAG_VALUE = 2 };
+enum { FIELD_FLAG_ABSENT = 0,
+       FIELD_FLAG_NULL = 1,
+       FIELD_FLAG_VALUE = 2 };
 
-enum { JAVASP_OP_LOAD = 1, JAVASP_OP_RELOAD = 2, JAVASP_OP_UNLOAD = 3 };
+enum { JAVASP_OP_LOAD = 1,
+       JAVASP_OP_RELOAD = 2,
+       JAVASP_OP_UNLOAD = 3 };
 
 /* This gets called from glue.c when a request is broadcast to us. */
 int javasp_do_procedure_op(int op, const char *name, const char *param,
@@ -197,19 +203,19 @@ void javasp_splock_rdlock(void);
 void javasp_splock_unlock(void);
 
 struct trigger_entry {
-  char *name;
-  char *type;
-  char *tbl_name;
-  char *event;
-  char *col;
-  char *seq;
+    char *name;
+    char *type;
+    char *tbl_name;
+    char *event;
+    char *col;
+    char *seq;
 };
 
 struct gather_triggers_arg;
 struct gather_triggers_arg {
     tran_type *tran;
     char *user;
-    int(*func)(struct gather_triggers_arg *, struct trigger_entry *);
+    int (*func)(struct gather_triggers_arg *, struct trigger_entry *);
     struct trigger_entry *entries;
     int n;
     int capacity;

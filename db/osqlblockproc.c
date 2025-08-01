@@ -81,7 +81,7 @@ struct blocksql_tran {
     uint16_t tbl_idx;
     unsigned long long last_genid; /* remember updrec/insrec genid for qblobs */
     unsigned long long
-        ins_seq;      /* remember key seq for inserts into ins tmptbl */
+        ins_seq;     /* remember key seq for inserts into ins tmptbl */
     int last_is_ins; /* 1 if processing INSERT, 0 for any other oql type */
 
     /* prefetch */
@@ -122,12 +122,12 @@ void get_participant_from_rpl(int is_uuid, char *rpl, int rplen, char **particip
 
 extern void live_sc_off(struct dbtable *db);
 
-#define CMP_KEY_MEMBER(k1, k2, var)                                            \
-    if (k1->var < k2->var) {                                                   \
-        return -1;                                                             \
-    }                                                                          \
-    if (k1->var > k2->var) {                                                   \
-        return 1;                                                              \
+#define CMP_KEY_MEMBER(k1, k2, var) \
+    if (k1->var < k2->var) {        \
+        return -1;                  \
+    }                               \
+    if (k1->var > k2->var) {        \
+        return 1;                   \
     }
 
 /**
@@ -539,7 +539,7 @@ static void sess_save_participant(osql_sess_t *sess, int is_uuid, char *rpl, int
 }
 
 static int _pre_process_saveop(osql_sess_t *sess, blocksql_tran_t *tran,
-                                char *rpl, int rplen, int type)
+                               char *rpl, int rplen, int type)
 {
     int rc = 0;
     switch (type) {
@@ -586,16 +586,16 @@ static int _pre_process_saveop(osql_sess_t *sess, blocksql_tran_t *tran,
 }
 
 #if DEBUG_REORDER
-#define DEBUG_PRINT_TMPBL_SAVING()                                             \
-    uuidstr_t mus;                                                             \
-    comdb2uuidstr(uuid, mus);                                                  \
-    logmsg(                                                                    \
-        LOGMSG_DEBUG,                                                          \
-        "%p:%s: rqid=%llx uuid=%s REORDER: SAVING %s tp=%d(%s), tbl_idx=%d,"   \
-        "stripe=%d, genid=0x%llx, seq=%d, is_rec=%d\n",                        \
-        (void *)pthread_self(), __func__, rqid, mus,                           \
-        (tmptbl == tran->db_ins ? "(INS) " : " "), type,                       \
-        osql_reqtype_str(type), key.tbl_idx, key.stripe, key.genid, key.seq,   \
+#define DEBUG_PRINT_TMPBL_SAVING()                                           \
+    uuidstr_t mus;                                                           \
+    comdb2uuidstr(uuid, mus);                                                \
+    logmsg(                                                                  \
+        LOGMSG_DEBUG,                                                        \
+        "%p:%s: rqid=%llx uuid=%s REORDER: SAVING %s tp=%d(%s), tbl_idx=%d," \
+        "stripe=%d, genid=0x%llx, seq=%d, is_rec=%d\n",                      \
+        (void *)pthread_self(), __func__, rqid, mus,                         \
+        (tmptbl == tran->db_ins ? "(INS) " : " "), type,                     \
+        osql_reqtype_str(type), key.tbl_idx, key.stripe, key.genid, key.seq, \
         key.is_rec);
 
 #else
@@ -801,7 +801,7 @@ int osql_bplog_build_sorese_req(uint8_t **pp_buf_start,
     /* build req */
     req.flags = BLKF_ERRSTAT; /* we want error stat */
     req.num_reqs = 1;
-    req.offset = op_hdr.nxt;  /* overall offset = next offset of last op */
+    req.offset = op_hdr.nxt; /* overall offset = next offset of last op */
 
     /* pack req in the space we saved at the start */
     if (block_req_put(&req, p_buf_req_start, p_buf_req_end) != p_buf_req_end)
@@ -868,7 +868,7 @@ static inline void get_tmptbl_data_and_len(struct temp_cursor *dbc,
  * return false otherwise
  */
 static inline int ins_is_less(oplog_key_t *opkey_ins, oplog_key_t *opkey,
-                               int add_stripe)
+                              int add_stripe)
 {
     if (!opkey_ins)
         return 0;
@@ -955,7 +955,7 @@ static int process_this_session(
 
     iq->queryid = osql_sess_queryid(sess);
     if (gbl_max_time_per_txn_ms)
-        iq->txn_ttl_ms = gettimeofday_ms() + gbl_max_time_per_txn_ms; 
+        iq->txn_ttl_ms = gettimeofday_ms() + gbl_max_time_per_txn_ms;
 
     if (sess->rqid != OSQL_RQID_USE_UUID)
         reqlog_set_rqid(iq->reqlogger, &sess->rqid, sizeof(unsigned long long));
@@ -980,7 +980,7 @@ static int process_this_session(
     if (rc && rc != IX_EMPTY && rc != IX_NOTFND) {
         reqlog_set_error(iq->reqlogger, "bdb_temp_table_first failed", rc);
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_first failed rc=%d bdberr=%d\n",
-                __func__, rc, *bdberr);
+               __func__, rc, *bdberr);
         return rc;
     }
 
@@ -1038,8 +1038,7 @@ static int process_this_session(
                 uuidstr_t uuid;
                 comdb2uuidstr(sess->uuid, uuid);
                 eventlog_debug("osql_process_packet: rc_out %d", rc_out);
-            }
-        );
+            });
 
         if (rc_out != 0 && rc_out != OSQL_RC_DONE) {
             reqlog_set_error(iq->reqlogger, "Error processing", rc_out);
@@ -1072,7 +1071,7 @@ static int process_this_session(
     if (rc != 0 && rc != IX_PASTEOF && rc != IX_EMPTY) {
         reqlog_set_error(iq->reqlogger, "Internal Error", rc);
         logmsg(LOGMSG_ERROR, "%s:%d bdb_temp_table_next failed rc=%d bdberr=%d\n",
-                __func__, __LINE__, rc, *bdberr);
+               __func__, __LINE__, rc, *bdberr);
         rc_out = ERR_INTERNAL;
         /* fall-through */
     }
@@ -1123,7 +1122,6 @@ static int apply_changes(struct ireq *iq, blocksql_tran_t *tran, void *iq_tran,
     if (iq->vfy_genid_track) {
         hash_clear(iq->vfy_genid_hash);
         pool_clear(iq->vfy_genid_pool);
-
     }
 
     if (iq->vfy_idx_track) {
@@ -1135,7 +1133,7 @@ static int apply_changes(struct ireq *iq, blocksql_tran_t *tran, void *iq_tran,
     if (!dbc || bdberr) {
         Pthread_mutex_unlock(&tran->store_mtx);
         logmsg(LOGMSG_ERROR, "%s: failed to create cursor bdberr = %d\n", __func__,
-                bdberr);
+               bdberr);
         return ERR_INTERNAL;
     }
 
@@ -1216,13 +1214,13 @@ void osql_bplog_time_done(osql_bp_timings_t *tms)
         "Total %llu (sql=%llu upd=%llu repl=%llu signal=%llu retries=%u) [",
         tms->req_finished - tms->req_received, /* total time */
         tms->req_alldone -
-            tms->req_received, /* time to get sql processing done */
-        tms->req_applied - tms->req_alldone,    /* time to apply updates */
-        tms->req_sentrc - tms->replication_end, /* time to sent rc back to
+            tms->req_received,                         /* time to get sql processing done */
+        tms->req_applied - tms->req_alldone,           /* time to apply updates */
+        tms->req_sentrc - tms->replication_end,        /* time to sent rc back to
                                                    sql (non-relevant for
                                                    blocksql*/
         tms->replication_end - tms->replication_start, /* time to replicate */
-        tms->retries - 1); /* how many time bplog was retried */
+        tms->retries - 1);                             /* how many time bplog was retried */
     logmsg(LOGMSG_USER, "%s]\n", msg);
 }
 
@@ -1278,7 +1276,8 @@ int bplog_schemachange_run(struct ireq *iq, uuid_t uuid, void *pscs)
     int rc = 0;
 
     /* run the asynchronous (do_XX) part of the schema changes */
-    LISTC_FOR_EACH_SAFE(scs, sc, tmp, scs_lnk) {
+    LISTC_FOR_EACH_SAFE(scs, sc, tmp, scs_lnk)
+    {
         iq->sc = sc;
         iq->sc->iq = iq;
         rc = osql_process_schemachange(sc, uuid);
@@ -1361,13 +1360,13 @@ int bplog_schemachange_wait(struct ireq *iq, int rc)
                     sc->db->sc_live_logical = 0;
                 }
                 if (rc == ERR_NOMASTER) {
-                        sc_set_downgrading(sc);
-                        bdb_close_only(sc->newdb->handle, &bdberr);
-                        freedb(sc->newdb);
-                        sc->newdb = NULL;
-                        sc_set_running(iq, sc, sc->tablename, 0, gbl_myhostname,
-                                       time(NULL), __func__, __LINE__);
-                        free_schema_change_type(sc);
+                    sc_set_downgrading(sc);
+                    bdb_close_only(sc->newdb->handle, &bdberr);
+                    freedb(sc->newdb);
+                    sc->newdb = NULL;
+                    sc_set_running(iq, sc, sc->tablename, 0, gbl_myhostname,
+                                   time(NULL), __func__, __LINE__);
+                    free_schema_change_type(sc);
                 }
             } else if (rc == ERR_NOMASTER) {
                 /* this can happen if a table was caught by downgrade during
@@ -1448,7 +1447,7 @@ void *resume_sc_multiddl_txn_finalize(void *p)
     comdb2_name_thread(__func__);
     bdb_thread_event(thedb->bdb_env, BDBTHR_EVENT_START_RDWR);
 
-    struct ireq *iq = (struct ireq*)p;
+    struct ireq *iq = (struct ireq *)p;
     struct schema_change_type *sc;
     tran_type *parent_trans = NULL;
     int error = 0;
@@ -1513,7 +1512,7 @@ void *resume_sc_multiddl_txn_finalize(void *p)
     iq->sc_locked = 0;
 
     rc = trans_commit_logical(iq, iq->sc_logical_tran, gbl_myhostname, 0, 1,
-                            NULL, 0, NULL, 0);
+                              NULL, 0, NULL, 0);
     if (replication_only_error_code(rc)) {
         logmsg(LOGMSG_WARN, "%s: trans_commit_logical failed to replicate\n", __func__);
     } else if (rc) {
@@ -1561,21 +1560,20 @@ abort_sc:
  */
 int resume_sc_multiddl_txn(sc_list_t *scl)
 {
-    LISTC_T(struct schema_change_type) scs;
+    LISTC_T(struct schema_change_type)
+    scs;
     struct schema_change_type *sc;
     int i, size;
     uuidstr_t us;
     int rc;
-    int resume = bdb_attr_get(thedb->bdb_attr, BDB_ATTR_SC_RESUME_AUTOCOMMIT) ?
-        SC_RESUME : SC_NEW_MASTER_RESUME;
+    int resume = bdb_attr_get(thedb->bdb_attr, BDB_ATTR_SC_RESUME_AUTOCOMMIT) ? SC_RESUME : SC_NEW_MASTER_RESUME;
 
     comdb2uuidstr(scl->uuid, us);
     listc_init(&scs, offsetof(struct schema_change_type, scs_lnk));
 
     for (i = 0; i < scl->count; i++) {
-        size =  (i < scl->count - 1) ? scl->offsets[i+1] - scl->offsets[i] :
-            scl->ser_scs_len - (scl->offsets[i] - scl->offsets[0]);
-        uint8_t *p_buf = (uint8_t*)&scl->ser_scs[scl->offsets[i] - scl->offsets[0]];
+        size = (i < scl->count - 1) ? scl->offsets[i + 1] - scl->offsets[i] : scl->ser_scs_len - (scl->offsets[i] - scl->offsets[0]);
+        uint8_t *p_buf = (uint8_t *)&scl->ser_scs[scl->offsets[i] - scl->offsets[0]];
         uint8_t *p_buf_end = p_buf + size;
 
         sc = new_schemachange_type();

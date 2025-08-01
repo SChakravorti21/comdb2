@@ -38,11 +38,12 @@
 ** characters.
 */
 
-#define PROCESS_10xxxxxx                                                       \
-    do {                                                                       \
-        ++u;                                                                   \
-        if (((*u) & 0xc0) != 0x80) return 1;                                   \
-        v = (v << 6) | ((*u) & 0x3f);                                          \
+#define PROCESS_10xxxxxx              \
+    do {                              \
+        ++u;                          \
+        if (((*u) & 0xc0) != 0x80)    \
+            return 1;                 \
+        v = (v << 6) | ((*u) & 0x3f); \
     } while (0)
 
 static int utf8_validate_int(const char *u, int max, int *valid_len)
@@ -51,21 +52,47 @@ static int utf8_validate_int(const char *u, int max, int *valid_len)
     const char *end = max >= 0 ? u + max : 0;
     while (u != end && *u) {
         uint32_t need, v = 0;
-        if      (((*u) & 0x80) == 0x00) { need = 1; v = (*u) & 0x7f; } /* 0xxxxxxx */
-        else if (((*u) & 0xe0) == 0xc0) { need = 2; v = (*u) & 0x1f; } /* 110xxxxx */
-        else if (((*u) & 0xf0) == 0xe0) { need = 3; v = (*u) & 0x0f; } /* 1110xxxx */
-        else if (((*u) & 0xf8) == 0xf0) { need = 4; v = (*u) & 0x07; } /* 11110xxx */
-        else return 1;
-        if (end && (u + need) > end) return 1;
+        if (((*u) & 0x80) == 0x00) {
+            need = 1;
+            v = (*u) & 0x7f;
+        } /* 0xxxxxxx */
+        else if (((*u) & 0xe0) == 0xc0) {
+            need = 2;
+            v = (*u) & 0x1f;
+        } /* 110xxxxx */
+        else if (((*u) & 0xf0) == 0xe0) {
+            need = 3;
+            v = (*u) & 0x0f;
+        } /* 1110xxxx */
+        else if (((*u) & 0xf8) == 0xf0) {
+            need = 4;
+            v = (*u) & 0x07;
+        } /* 11110xxx */
+        else
+            return 1;
+        if (end && (u + need) > end)
+            return 1;
         switch (need) {
-        case 4: PROCESS_10xxxxxx;
-        case 3: PROCESS_10xxxxxx;
-        case 2: PROCESS_10xxxxxx;
+        case 4:
+            PROCESS_10xxxxxx;
+        case 3:
+            PROCESS_10xxxxxx;
+        case 2:
+            PROCESS_10xxxxxx;
             /* check overlong encoding */
             switch (need) {
-            case 4: if (v < 0x10000) return 1; break;
-            case 3: if (v < 0x800)   return 1; break;
-            case 2: if (v < 0x80)    return 1; break;
+            case 4:
+                if (v < 0x10000)
+                    return 1;
+                break;
+            case 3:
+                if (v < 0x800)
+                    return 1;
+                break;
+            case 2:
+                if (v < 0x80)
+                    return 1;
+                break;
             }
             /* check for out-of-range and reserved numbers */
             if (v > 0x10ffff || (v >= 0xd800 && v <= 0xdfff)) {
@@ -86,7 +113,8 @@ int utf8_validate(const char *str, int max, int *valid_len)
 {
     int len;
     int rc = utf8_validate_int(str, max, &len);
-    if (valid_len) *valid_len = len;
+    if (valid_len)
+        *valid_len = len;
     return rc;
 }
 

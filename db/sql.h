@@ -67,36 +67,37 @@ enum transaction_level {
 #define CHECK_NEXT_QUERIES 20
 
 /* Static rootpages numbers. */
-enum { RTPAGE_SQLITE_MASTER = 1, RTPAGE_START = 2 };
+enum { RTPAGE_SQLITE_MASTER = 1,
+       RTPAGE_START = 2 };
 
 struct fingerprint_track {
     unsigned char fingerprint[FINGERPRINTSZ]; /* md5 digest hex string */
-    int64_t count;    /* Cumulative number of times executed */
-    int64_t cost;     /* Cumulative cost */
-    int64_t time;     /* Cumulative preparation and execution time */
-    int64_t max_cost; /* Max cost of any query */
-    int64_t prepTime; /* Cumulative preparation time only */
-    int64_t rows;     /* Cumulative number of rows selected */
-    int64_t curr_analyze_gen; /* If the analyze gen number is different */
-    int     check_next_queries; /* Check cost of next these many queries */
-    int     cost_increased; /* queries with cost greater than avg cost */
-    int64_t pre_cost_avg_per_row;     /* Average cost before last Analyze */
-    char *zNormSql;   /* The normalized SQL query */
-    size_t nNormSql;  /* Length of normalized SQL query */
-    int typeMismatch; /* Type(s) did not match when compared to sqlitex's */
-    int nameMismatch; /* Column name(s) did not match when compared to sqlitex's */
+    int64_t count;                            /* Cumulative number of times executed */
+    int64_t cost;                             /* Cumulative cost */
+    int64_t time;                             /* Cumulative preparation and execution time */
+    int64_t max_cost;                         /* Max cost of any query */
+    int64_t prepTime;                         /* Cumulative preparation time only */
+    int64_t rows;                             /* Cumulative number of rows selected */
+    int64_t curr_analyze_gen;                 /* If the analyze gen number is different */
+    int check_next_queries;                   /* Check cost of next these many queries */
+    int cost_increased;                       /* queries with cost greater than avg cost */
+    int64_t pre_cost_avg_per_row;             /* Average cost before last Analyze */
+    char *zNormSql;                           /* The normalized SQL query */
+    size_t nNormSql;                          /* Length of normalized SQL query */
+    int typeMismatch;                         /* Type(s) did not match when compared to sqlitex's */
+    int nameMismatch;                         /* Column name(s) did not match when compared to sqlitex's */
 
-    hash_t *query_plan_hash;   /* Query plans associated with fingerprint + cost stats */
-    int alert_once_query_plan; /* Alert only once if there is a better query plan for a query. Init to 1 */
+    hash_t *query_plan_hash;       /* Query plans associated with fingerprint + cost stats */
+    int alert_once_query_plan;     /* Alert only once if there is a better query plan for a query. Init to 1 */
     int alert_once_query_plan_max; /* Alert (once) if hit max number of plans for associated query. Init to 1 */
     int alert_once_truncated_col;  /* Alert once if we truncated some col in the query. Init to 1 */
 };
 
 struct sql_authorizer_state {
-    struct sqlclntstate *clnt;         /* pointer to current client info */
+    struct sqlclntstate *clnt; /* pointer to current client info */
     sqlite3 *db;
-    int flags;                         /* DDL, PRAGMA, CREATE TRIGGER denied? */
-    int numDdls;                       /* number of DDLs found */
+    int flags;   /* DDL, PRAGMA, CREATE TRIGGER denied? */
+    int numDdls; /* number of DDLs found */
     int numVTableLocks;
     char **vTableLocks;
     int hasVTables;
@@ -128,10 +129,10 @@ struct sqlthdstate {
 };
 
 typedef struct osqltimings {
-    unsigned long long query_received; /* query received, in need of dispatch */
+    unsigned long long query_received;   /* query received, in need of dispatch */
     unsigned long long query_dispatched; /* start sql processing */
     unsigned long long
-        query_finished; /* done processing this query (includes commit) */
+        query_finished;              /* done processing this query (includes commit) */
     unsigned long long commit_prep;  /* start shipping requests (relevant for
                                         recom/snapisol/serial) */
     unsigned long long commit_start; /* send commit signal */
@@ -141,7 +142,7 @@ typedef struct osqltimings {
 
 typedef struct fdbtimings {
     unsigned long long
-        total_time; /* total time for doing remote access, synchronous part */
+        total_time;                 /* total time for doing remote access, synchronous part */
     unsigned long long total_calls; /* total number of remote rcp calls */
     unsigned long long max_call;    /* longest sync call */
 } fdbtimings_t;
@@ -162,23 +163,24 @@ typedef struct osqlstate {
     int tablenamelen;        /* tablename length */
     int sentops;             /* number of operations per statement */
     int tran_ops;            /* actual number of operations for a transaction */
-    int replicant_numops; /* total num of ops sent by replicant to master which
+    int replicant_numops;    /* total num of ops sent by replicant to master which
                              includes USEDB, BLOB, etc. */
 
     /* == sqlclntstate == */
 
-    int count_changes;   /* enable pragma count_changes=1, for rr, sosql, recom,
+    int count_changes; /* enable pragma count_changes=1, for rr, sosql, recom,
                             snapisol, serial */
 
     /* storage for shadow tables created by offloading */
-    LISTC_T(struct shad_tbl) shadtbls;
+    LISTC_T(struct shad_tbl)
+    shadtbls;
 
     /* storage for dbq's shadtbl */
     shadbq_t shadbq;
     hash_t *dbq_hash;
 
     /* storage for verify, common for all transaction */
-    struct temp_table * verify_tbl;
+    struct temp_table *verify_tbl;
     struct temp_cursor *verify_cur; /* verify cursor */
 
     /* storage for schemachange, common for all transaction */
@@ -199,7 +201,7 @@ typedef struct osqlstate {
     /* verify handling */
     /* keep the log of sql strings for the current transaction */
     struct srs_tran *history;
-    int replay;  /* set this when a session is replayed, used by sorese */
+    int replay;           /* set this when a session is replayed, used by sorese */
     int sent_column_data; /* set this if we've already sent the column data */
 
     /* XXX for debugging */
@@ -209,8 +211,8 @@ typedef struct osqlstate {
 
     int error_is_remote; /* set if xerr is the error for a distributed tran
                             (i.e. already translated */
-    int dirty; /* optimization to nop selectv only transactions */
-    int running_ddl; /* ddl transaction */
+    int dirty;           /* optimization to nop selectv only transactions */
+    int running_ddl;     /* ddl transaction */
     unsigned is_reorder_on : 1;
 
     /* set to 1 if we have already called osql_sock_start in socksql mode */
@@ -247,7 +249,6 @@ enum trans_clntcomm {
 void sql_set_sqlengine_state(struct sqlclntstate *clnt, char *file, int line,
                              int newstate);
 
-
 struct fdb_distributed_tran;
 typedef struct fdb_distributed_tran fdb_distributed_tran_t;
 struct fdb_tbl_ent;
@@ -260,22 +261,22 @@ struct fdb;
 typedef struct fdb fdb_t;
 
 typedef struct {
-    enum transaction_level mode; /* TRANLEVEL_SOSQL, TRANLEVEL_RECOM, ... */
+    enum transaction_level mode;     /* TRANLEVEL_SOSQL, TRANLEVEL_RECOM, ... */
     struct cursor_tran *cursor_tran; /* id used to open cursors sharing same deadlock identity*/
-    tran_type *shadow_tran; /* used to keep local changes to btree, uncommitted yet */
-    tran_type *logical_tran; /* used by rowlocks ? */
+    tran_type *shadow_tran;          /* used to keep local changes to btree, uncommitted yet */
+    tran_type *logical_tran;         /* used by rowlocks ? */
 
     fdb_distributed_tran_t *dtran; /* remote transactions, contain each remote cluster tran */
-    int rollbacked; /* mark this to catch out-of-order errors */
+    int rollbacked;                /* mark this to catch out-of-order errors */
 
-    sqlite3_stmt *pStmt; /* if sql is in progress, points at the engine */
+    sqlite3_stmt *pStmt;             /* if sql is in progress, points at the engine */
     fdb_tbl_ent_t **lockedRemTables; /* list of fdb_tbl_ent_t* for read-locked
                                         remote tables */
-    int nLockedRemTables; /* number of pointers in lockedRemTablesRootp */
-    int trans_has_sp;     /* running a stored procedure */
-    int maxchunksize;     /* multi-transaction bulk mode */
-    int crtchunksize;     /* how many rows are processed already */
-    int nchunks;          /* number of chunks. 0 for a non-chunked transaction. */
+    int nLockedRemTables;            /* number of pointers in lockedRemTablesRootp */
+    int trans_has_sp;                /* running a stored procedure */
+    int maxchunksize;                /* multi-transaction bulk mode */
+    int crtchunksize;                /* how many rows are processed already */
+    int nchunks;                     /* number of chunks. 0 for a non-chunked transaction. */
 
     /* cache the versions of dta files to catch schema changes and fastinits */
     table_version_cache *table_version_cache;
@@ -295,29 +296,29 @@ typedef struct {
 typedef struct sqlclntstate_fdb {
     SBUF2 *remote_sql_sb; /* IN REMOTE DB: set if this is on behalf of a remote
                              sql session */
-    int flags; /* requester flags, like is this a sqlite_master special request
+    int flags;            /* requester flags, like is this a sqlite_master special request
                   ?*/
-    char *trim_key;  /* key used in prefiltering for find ops (sqlite_packed) */
-    int trim_keylen; /* lenght of the trim key */
+    char *trim_key;       /* key used in prefiltering for find ops (sqlite_packed) */
+    int trim_keylen;      /* lenght of the trim key */
     fdb_access_t *access; /* access control */
     int version;          /* version of the remote-cached object */
-    char *dbname;  /* if err is set, this indicate which fdb is responsible, if
+    char *dbname;         /* if err is set, this indicate which fdb is responsible, if
                       any */
-    char *tblname; /* if err is set, this indicate which tablename is
+    char *tblname;        /* if err is set, this indicate which tablename is
                       responsible */
-    int code_release;    /* code release in the remote requester */
-    fdb_affinity_t *aff; /* location affinity information */
+    int code_release;     /* code release in the remote requester */
+    fdb_affinity_t *aff;  /* location affinity information */
     struct errstat
-        xerr; /* error in fdb component, used to override sqlite and osql.xerr
+        xerr;         /* error in fdb component, used to override sqlite and osql.xerr
                  errors */
     int preserve_err; /* set to ignore up-stream errors when lower system sets
                          xerr */
     /* source side fields */
-    int n_fdb_affinities; /* number of fdbs in the fdb_ids and fdb_nodes arrays
+    int n_fdb_affinities;  /* number of fdbs in the fdb_ids and fdb_nodes arrays
                              */
-    char **fdb_ids;       /* the fdb for which we have affinity */
-    char **fdb_nodes;     /* node numbers preferred for each fdb in fdb_ids */
-    int *fdb_last_status; /* used to mark a node bad after a failure */
+    char **fdb_ids;        /* the fdb for which we have affinity */
+    char **fdb_nodes;      /* node numbers preferred for each fdb in fdb_ids */
+    int *fdb_last_status;  /* used to mark a node bad after a failure */
     int failed_heartbeats; /* used to signal failed communication with remotes */
 } sqlclntstate_fdb_t;
 
@@ -345,8 +346,7 @@ enum early_verify_error {
     EARLY_ERR_GENCHANGE = 3
 };
 
-enum connection_state
-{
+enum connection_state {
     CONNECTION_NEW,
     CONNECTION_IDLE,
     CONNECTION_RESET,
@@ -355,40 +355,40 @@ enum connection_state
 };
 
 enum {
-  ERR_GENERIC = -1,
-  ERR_PREPARE = -2,
-  ERR_PREPARE_RETRY = -3,
-  ERR_ROW_HEADER = -4,
-  ERR_CONVERSION_DT = -5,
+    ERR_GENERIC = -1,
+    ERR_PREPARE = -2,
+    ERR_PREPARE_RETRY = -3,
+    ERR_ROW_HEADER = -4,
+    ERR_CONVERSION_DT = -5,
 };
 
-#define RESPONSE_TYPES                                                         \
-    XRESPONSE(RESPONSE_COLUMNS)                                                \
-    XRESPONSE(RESPONSE_COLUMNS_LUA)                                            \
-    XRESPONSE(RESPONSE_COLUMNS_STR)                                            \
-    XRESPONSE(RESPONSE_COLUMNS_FDB_PUSH)                                       \
-    XRESPONSE(RESPONSE_COST)                                                   \
-    XRESPONSE(RESPONSE_DEBUG)                                                  \
-    XRESPONSE(RESPONSE_EFFECTS)                                                \
-    XRESPONSE(RESPONSE_ERROR)                                                  \
-    XRESPONSE(RESPONSE_ERROR_ACCESS)                                           \
-    XRESPONSE(RESPONSE_ERROR_APPSOCK_LIMIT)                                    \
-    XRESPONSE(RESPONSE_ERROR_BAD_STATE)                                        \
-    XRESPONSE(RESPONSE_ERROR_PREPARE)                                          \
-    XRESPONSE(RESPONSE_ERROR_PREPARE_RETRY)                                    \
-    XRESPONSE(RESPONSE_ERROR_REJECT)                                           \
-    XRESPONSE(RESPONSE_ERROR_INCOMPLETE)                                       \
-    XRESPONSE(RESPONSE_REDIRECT_FOREIGN)                                       \
-    XRESPONSE(RESPONSE_FLUSH)                                                  \
-    XRESPONSE(RESPONSE_HEARTBEAT)                                              \
-    XRESPONSE(RESPONSE_QUERY_STATS)                                            \
-    XRESPONSE(RESPONSE_ROW)                                                    \
-    XRESPONSE(RESPONSE_ROW_LAST)                                               \
-    XRESPONSE(RESPONSE_ROW_LAST_DUMMY)                                         \
-    XRESPONSE(RESPONSE_ROW_LUA)                                                \
-    XRESPONSE(RESPONSE_ROW_STR)                                                \
-    XRESPONSE(RESPONSE_TRACE)                                                  \
-    XRESPONSE(RESPONSE_ROW_REMTRAN)                                            \
+#define RESPONSE_TYPES                      \
+    XRESPONSE(RESPONSE_COLUMNS)             \
+    XRESPONSE(RESPONSE_COLUMNS_LUA)         \
+    XRESPONSE(RESPONSE_COLUMNS_STR)         \
+    XRESPONSE(RESPONSE_COLUMNS_FDB_PUSH)    \
+    XRESPONSE(RESPONSE_COST)                \
+    XRESPONSE(RESPONSE_DEBUG)               \
+    XRESPONSE(RESPONSE_EFFECTS)             \
+    XRESPONSE(RESPONSE_ERROR)               \
+    XRESPONSE(RESPONSE_ERROR_ACCESS)        \
+    XRESPONSE(RESPONSE_ERROR_APPSOCK_LIMIT) \
+    XRESPONSE(RESPONSE_ERROR_BAD_STATE)     \
+    XRESPONSE(RESPONSE_ERROR_PREPARE)       \
+    XRESPONSE(RESPONSE_ERROR_PREPARE_RETRY) \
+    XRESPONSE(RESPONSE_ERROR_REJECT)        \
+    XRESPONSE(RESPONSE_ERROR_INCOMPLETE)    \
+    XRESPONSE(RESPONSE_REDIRECT_FOREIGN)    \
+    XRESPONSE(RESPONSE_FLUSH)               \
+    XRESPONSE(RESPONSE_HEARTBEAT)           \
+    XRESPONSE(RESPONSE_QUERY_STATS)         \
+    XRESPONSE(RESPONSE_ROW)                 \
+    XRESPONSE(RESPONSE_ROW_LAST)            \
+    XRESPONSE(RESPONSE_ROW_LAST_DUMMY)      \
+    XRESPONSE(RESPONSE_ROW_LUA)             \
+    XRESPONSE(RESPONSE_ROW_STR)             \
+    XRESPONSE(RESPONSE_TRACE)               \
+    XRESPONSE(RESPONSE_ROW_REMTRAN)         \
     XRESPONSE(RESPONSE_RAW_PAYLOAD)
 
 #define XRESPONSE(x) x,
@@ -434,17 +434,17 @@ typedef uint64_t(ret_uint64_func)(struct sqlclntstate *);
 typedef int(override_type_func)(struct sqlclntstate *, int);
 typedef void *(auth_func)(struct sqlclntstate *);
 
-#define SQLITE_CALLBACK_API(ret, name)                                         \
+#define SQLITE_CALLBACK_API(ret, name) \
     ret (*column_##name)(struct sqlclntstate *, sqlite3_stmt *, int)
 
 struct plugin_callbacks {
     response_func *write_response; /* newsql_write_response */
-    response_func *read_response; /* newsql_read_response */
+    response_func *read_response;  /* newsql_read_response */
 
-    replay_func *save_stmt; /* newsql_save_stmt */
+    replay_func *save_stmt;    /* newsql_save_stmt */
     replay_func *restore_stmt; /* newsql_restore_stmt */
     replay_func *destroy_stmt; /* newsql_destroy_stmt */
-    replay_func *print_stmt; /* newsql_print_stmt */
+    replay_func *print_stmt;   /* newsql_print_stmt */
 
     // bound params
     plugin_func *param_count; /* newsql_param_count */
@@ -453,17 +453,17 @@ struct plugin_callbacks {
     param_value_func *param_value; /* newsql_param_value */
 
     // run_statement_typed
-    plugin_func *override_count; /* newsql_override_count */
+    plugin_func *override_count;       /* newsql_override_count */
     override_type_func *override_type; /* newsql_override_type */
 
-    plugin_func *has_cnonce; /* newsql_has_cnonce */
-    plugin_func *set_cnonce; /* newsql_set_cnonce */
-    plugin_func *clr_cnonce; /* newsql_clr_cnonce */
+    plugin_func *has_cnonce;       /* newsql_has_cnonce */
+    plugin_func *set_cnonce;       /* newsql_set_cnonce */
+    plugin_func *clr_cnonce;       /* newsql_clr_cnonce */
     cnonce_value_func *get_cnonce; /* newsql_has_cnonce */
 
     get_snapshot_func *get_snapshot; /* newsql_get_snapshot */
-    plugin_func *upd_snapshot; /* newsql_update_snapshot */
-    plugin_func *clr_snapshot; /* newsql_clear_snapshot */
+    plugin_func *upd_snapshot;       /* newsql_update_snapshot */
+    plugin_func *clr_snapshot;       /* newsql_clear_snapshot */
 
     plugin_func *has_high_availability; /* newsql_has_high_availability */
     plugin_func *set_high_availability; /* newsql_set_high_availability */
@@ -471,105 +471,105 @@ struct plugin_callbacks {
     plugin_func *get_high_availability; /* newsql_get_high_availability*/
     plugin_func *has_parallel_sql;      /* newsql_has_parallel_sql */
 
-    add_steps_func *add_steps; /* newsql_add_steps */
+    add_steps_func *add_steps;                 /* newsql_add_steps */
     setup_client_info_func *setup_client_info; /* newsql_setup_client_info */
-    skip_row_func *skip_row; /* newsql_skip_row */
-    log_context_func *log_context; /* newsql_log_context */
-    ret_uint64_func *get_client_starttime; /* newsql_get_client_starttime */
-    plugin_func *get_client_retries;       /* newsql_get_client_retries */
-    plugin_func *send_intrans_response; /* newsql_send_intrans_response */
+    skip_row_func *skip_row;                   /* newsql_skip_row */
+    log_context_func *log_context;             /* newsql_log_context */
+    ret_uint64_func *get_client_starttime;     /* newsql_get_client_starttime */
+    plugin_func *get_client_retries;           /* newsql_get_client_retries */
+    plugin_func *send_intrans_response;        /* newsql_send_intrans_response */
 
     /* These may change depending on underlying tranport (sbuf2 or libevent) */
-    plugin_func *close; /* newsql_close_evbuffer */
-    plugin_func *flush; /* newsql_flush_evbuffer */
-    plugin_func *get_fileno; /* newsql_get_fileno_evbuffer */
+    plugin_func *close;           /* newsql_close_evbuffer */
+    plugin_func *flush;           /* newsql_flush_evbuffer */
+    plugin_func *get_fileno;      /* newsql_get_fileno_evbuffer */
     response_func *get_x509_attr; /* newsql_get_x509_attr_evbuffer */
-    plugin_func *has_ssl; /* newsql_has_ssl_evbuffer */
-    plugin_func *has_x509; /* newsql_has_x509_evbuffer */
-    plugin_func *local_check; /* newsql_local_check_evbuffer */
-    plugin_func *peer_check; /* newsql_peer_check_evbuffer */
-    auth_func *get_authdata; /* newsql_get_authdata */
-    api_type_func *api_type; /* newsql_api_type */
+    plugin_func *has_ssl;         /* newsql_has_ssl_evbuffer */
+    plugin_func *has_x509;        /* newsql_has_x509_evbuffer */
+    plugin_func *local_check;     /* newsql_local_check_evbuffer */
+    plugin_func *peer_check;      /* newsql_peer_check_evbuffer */
+    auth_func *get_authdata;      /* newsql_get_authdata */
+    api_type_func *api_type;      /* newsql_api_type */
 
     /* Optional */
     void *state;
-    int (*column_count)(struct sqlclntstate *, sqlite3_stmt *); /* sqlite3_column_count */
-    int (*next_row)(struct sqlclntstate *, sqlite3_stmt *);     /* sqlite3_step */
-    char *(*tzname)(struct sqlclntstate *, sqlite3_stmt *); /* stmt_tzname */
-    SQLITE_CALLBACK_API(int, type);                   /* sqlite3_column_type */
-    SQLITE_CALLBACK_API(sqlite_int64, int64);         /* sqlite3_column_int64*/
-    SQLITE_CALLBACK_API(double, double);              /* sqlite3_column_double*/
-    SQLITE_CALLBACK_API(const unsigned char *, text); /* sqlite3_column_text */
-    SQLITE_CALLBACK_API(int, bytes);                  /* sqlite3_column_bytes */
-    SQLITE_CALLBACK_API(const void *, blob);          /* sqlite3_column_bytes */
-    SQLITE_CALLBACK_API(const dttz_t *, datetime);    /* sqlite3_column_datetime */
-    SQLITE_CALLBACK_API(sqlite3_value *, value);      /* sqlite3_column_value */
-    const intv_t *(*column_interval)(struct sqlclntstate *, sqlite3_stmt *, int, int);  /* sqlite3_column_interval*/
-    int (*sqlite_error)(struct sqlclntstate *, sqlite3_stmt *, const char **errstr);    /* sqlite3_errcode */
+    int (*column_count)(struct sqlclntstate *, sqlite3_stmt *);                        /* sqlite3_column_count */
+    int (*next_row)(struct sqlclntstate *, sqlite3_stmt *);                            /* sqlite3_step */
+    char *(*tzname)(struct sqlclntstate *, sqlite3_stmt *);                            /* stmt_tzname */
+    SQLITE_CALLBACK_API(int, type);                                                    /* sqlite3_column_type */
+    SQLITE_CALLBACK_API(sqlite_int64, int64);                                          /* sqlite3_column_int64*/
+    SQLITE_CALLBACK_API(double, double);                                               /* sqlite3_column_double*/
+    SQLITE_CALLBACK_API(const unsigned char *, text);                                  /* sqlite3_column_text */
+    SQLITE_CALLBACK_API(int, bytes);                                                   /* sqlite3_column_bytes */
+    SQLITE_CALLBACK_API(const void *, blob);                                           /* sqlite3_column_bytes */
+    SQLITE_CALLBACK_API(const dttz_t *, datetime);                                     /* sqlite3_column_datetime */
+    SQLITE_CALLBACK_API(sqlite3_value *, value);                                       /* sqlite3_column_value */
+    const intv_t *(*column_interval)(struct sqlclntstate *, sqlite3_stmt *, int, int); /* sqlite3_column_interval*/
+    int (*sqlite_error)(struct sqlclntstate *, sqlite3_stmt *, const char **errstr);   /* sqlite3_errcode */
 };
 
-#define make_plugin_callback(clnt, name, func)                                 \
+#define make_plugin_callback(clnt, name, func) \
     (clnt)->plugin.func = name##_##func
 
-#define make_plugin_optional_null(clnt, name)                                  \
+#define make_plugin_optional_null(clnt, name) \
     (clnt)->plugin.column_##name = NULL
 
-#define plugin_set_callbacks(clnt, name)                                       \
-    do {                                                                       \
-        make_plugin_callback(clnt, name, write_response);                      \
-        make_plugin_callback(clnt, name, read_response);                       \
-        make_plugin_callback(clnt, name, save_stmt);                           \
-        make_plugin_callback(clnt, name, restore_stmt);                        \
-        make_plugin_callback(clnt, name, destroy_stmt);                        \
-        make_plugin_callback(clnt, name, print_stmt);                          \
-        make_plugin_callback(clnt, name, param_count);                         \
-        make_plugin_callback(clnt, name, param_index);                         \
-        make_plugin_callback(clnt, name, param_value);                         \
-        make_plugin_callback(clnt, name, override_count);                      \
-        make_plugin_callback(clnt, name, override_type);                       \
-        make_plugin_callback(clnt, name, has_cnonce);                          \
-        make_plugin_callback(clnt, name, set_cnonce);                          \
-        make_plugin_callback(clnt, name, clr_cnonce);                          \
-        make_plugin_callback(clnt, name, get_cnonce);                          \
-        make_plugin_callback(clnt, name, get_snapshot);                        \
-        make_plugin_callback(clnt, name, upd_snapshot);                        \
-        make_plugin_callback(clnt, name, clr_snapshot);                        \
-        make_plugin_callback(clnt, name, has_high_availability);               \
-        make_plugin_callback(clnt, name, set_high_availability);               \
-        make_plugin_callback(clnt, name, clr_high_availability);               \
-        make_plugin_callback(clnt, name, get_high_availability);               \
-        make_plugin_callback(clnt, name, has_parallel_sql);                    \
-        make_plugin_callback(clnt, name, add_steps);                           \
-        make_plugin_callback(clnt, name, setup_client_info);                   \
-        make_plugin_callback(clnt, name, skip_row);                            \
-        make_plugin_callback(clnt, name, log_context);                         \
-        make_plugin_callback(clnt, name, get_client_starttime);                \
-        make_plugin_callback(clnt, name, get_client_retries);                  \
-        make_plugin_callback(clnt, name, send_intrans_response);               \
-        make_plugin_callback(clnt, name, close);                               \
-        make_plugin_callback(clnt, name, flush);                               \
-        make_plugin_callback(clnt, name, get_fileno);                          \
-        make_plugin_callback(clnt, name, get_x509_attr);                       \
-        make_plugin_callback(clnt, name, has_ssl);                             \
-        make_plugin_callback(clnt, name, has_x509);                            \
-        make_plugin_callback(clnt, name, local_check);                         \
-        make_plugin_callback(clnt, name, peer_check);                          \
-        make_plugin_callback(clnt, name, get_authdata);                        \
-        make_plugin_callback(clnt, name, api_type);                            \
-        make_plugin_optional_null(clnt, count);                                \
-        make_plugin_optional_null(clnt, type);                                 \
-        make_plugin_optional_null(clnt, int64);                                \
-        make_plugin_optional_null(clnt, double);                               \
-        make_plugin_optional_null(clnt, text);                                 \
-        make_plugin_optional_null(clnt, bytes);                                \
-        make_plugin_optional_null(clnt, blob);                                 \
-        make_plugin_optional_null(clnt, datetime);                             \
-        make_plugin_optional_null(clnt, interval);                             \
-        make_plugin_optional_null(clnt, value);                                \
-        (clnt)->plugin.state = NULL;                                           \
-        (clnt)->plugin.next_row = NULL;                                        \
-        (clnt)->plugin.tzname = NULL;                                          \
-        (clnt)->plugin.query_data_func = NULL;                                 \
+#define plugin_set_callbacks(clnt, name)                         \
+    do {                                                         \
+        make_plugin_callback(clnt, name, write_response);        \
+        make_plugin_callback(clnt, name, read_response);         \
+        make_plugin_callback(clnt, name, save_stmt);             \
+        make_plugin_callback(clnt, name, restore_stmt);          \
+        make_plugin_callback(clnt, name, destroy_stmt);          \
+        make_plugin_callback(clnt, name, print_stmt);            \
+        make_plugin_callback(clnt, name, param_count);           \
+        make_plugin_callback(clnt, name, param_index);           \
+        make_plugin_callback(clnt, name, param_value);           \
+        make_plugin_callback(clnt, name, override_count);        \
+        make_plugin_callback(clnt, name, override_type);         \
+        make_plugin_callback(clnt, name, has_cnonce);            \
+        make_plugin_callback(clnt, name, set_cnonce);            \
+        make_plugin_callback(clnt, name, clr_cnonce);            \
+        make_plugin_callback(clnt, name, get_cnonce);            \
+        make_plugin_callback(clnt, name, get_snapshot);          \
+        make_plugin_callback(clnt, name, upd_snapshot);          \
+        make_plugin_callback(clnt, name, clr_snapshot);          \
+        make_plugin_callback(clnt, name, has_high_availability); \
+        make_plugin_callback(clnt, name, set_high_availability); \
+        make_plugin_callback(clnt, name, clr_high_availability); \
+        make_plugin_callback(clnt, name, get_high_availability); \
+        make_plugin_callback(clnt, name, has_parallel_sql);      \
+        make_plugin_callback(clnt, name, add_steps);             \
+        make_plugin_callback(clnt, name, setup_client_info);     \
+        make_plugin_callback(clnt, name, skip_row);              \
+        make_plugin_callback(clnt, name, log_context);           \
+        make_plugin_callback(clnt, name, get_client_starttime);  \
+        make_plugin_callback(clnt, name, get_client_retries);    \
+        make_plugin_callback(clnt, name, send_intrans_response); \
+        make_plugin_callback(clnt, name, close);                 \
+        make_plugin_callback(clnt, name, flush);                 \
+        make_plugin_callback(clnt, name, get_fileno);            \
+        make_plugin_callback(clnt, name, get_x509_attr);         \
+        make_plugin_callback(clnt, name, has_ssl);               \
+        make_plugin_callback(clnt, name, has_x509);              \
+        make_plugin_callback(clnt, name, local_check);           \
+        make_plugin_callback(clnt, name, peer_check);            \
+        make_plugin_callback(clnt, name, get_authdata);          \
+        make_plugin_callback(clnt, name, api_type);              \
+        make_plugin_optional_null(clnt, count);                  \
+        make_plugin_optional_null(clnt, type);                   \
+        make_plugin_optional_null(clnt, int64);                  \
+        make_plugin_optional_null(clnt, double);                 \
+        make_plugin_optional_null(clnt, text);                   \
+        make_plugin_optional_null(clnt, bytes);                  \
+        make_plugin_optional_null(clnt, blob);                   \
+        make_plugin_optional_null(clnt, datetime);               \
+        make_plugin_optional_null(clnt, interval);               \
+        make_plugin_optional_null(clnt, value);                  \
+        (clnt)->plugin.state = NULL;                             \
+        (clnt)->plugin.next_row = NULL;                          \
+        (clnt)->plugin.tzname = NULL;                            \
+        (clnt)->plugin.query_data_func = NULL;                   \
     } while (0)
 
 int param_count(struct sqlclntstate *);
@@ -615,11 +615,11 @@ enum prepare_flags {
 /* This structure is designed to hold several pieces of data related to
  * work-in-progress on client SQL requests. */
 struct sqlworkstate {
-    const char *zNormSql; /* Normalized version of latest SQL query. */
-    char *zOrigNormSql;   /* Normalized version of original SQL query. */
-    struct sql_state rec; /* Prepared statement for original SQL query. */
+    const char *zNormSql;                      /* Normalized version of latest SQL query. */
+    char *zOrigNormSql;                        /* Normalized version of original SQL query. */
+    struct sql_state rec;                      /* Prepared statement for original SQL query. */
     unsigned char aFingerprint[FINGERPRINTSZ]; /* MD5 of normalized SQL. */
-    char zRuleRes[300];   /* Ruleset match result, if any. */
+    char zRuleRes[300];                        /* Ruleset match result, if any. */
 };
 
 struct sql_hist_cost {
@@ -690,12 +690,12 @@ struct features {
 
 /* Client specific sql state */
 struct sqlclntstate {
-    struct thdpool *pPool;     /* When null, the default SQL thread pool is
+    struct thdpool *pPool; /* When null, the default SQL thread pool is
                                 * being used to service the request; otherwise,
                                 * a specifically assigned SQL thread pool is
                                 * being used. */
 
-    struct sqlworkstate work;  /* This is the primary data related to the SQL
+    struct sqlworkstate work; /* This is the primary data related to the SQL
                                 * client request in progress.  This includes
                                 * the original SQL query and its normalized
                                 * variant (if applicable). */
@@ -744,11 +744,11 @@ struct sqlclntstate {
 
     struct rawnodestats *rawnodestats;
 
-    osqlstate_t osql;                /* offload sql state is kept here */
-    enum ctrl_sqleng ctrl_sqlengine; /* use to mark a begin/end out of state,
+    osqlstate_t osql;                   /* offload sql state is kept here */
+    enum ctrl_sqleng ctrl_sqlengine;    /* use to mark a begin/end out of state,
                                         see enum ctrl_sqleng
                                      */
-    int intrans; /* THIS FIELD IS USED BY sqlglue.c TO RECORD THE ENTRANCE (=1)
+    int intrans;                        /* THIS FIELD IS USED BY sqlglue.c TO RECORD THE ENTRANCE (=1)
                    AND THE EXIT(=0) in a sql transaction marked by a succesfull
                    call to BeginTrans, and Commit/Rollback respectively
                    THIS DOES NOT MATCH THE CLIENT TRANSACTION EXCERPT FOR
@@ -824,9 +824,10 @@ struct sqlclntstate {
 
     char *origin;
 
-    TAILQ_HEAD(, session_tbl) session_tbls;
+    TAILQ_HEAD(, session_tbl)
+    session_tbls;
 
-    int had_errors; /* to remain compatible with blocksql: if a user starts a
+    int had_errors;      /* to remain compatible with blocksql: if a user starts a
                        transaction, we
                        need to pend the first error until a commit is issued.
                        any statements
@@ -837,9 +838,9 @@ struct sqlclntstate {
     int saved_rc;        /* if had_errors, save the return code */
     char *sqlite_errstr; /* sqlite error string, static, never allocated */
 
-    int prep_rc;    /* last value returned from sqlite3_prepare_v3() */
-    int step_rc;    /* last value returned from sqlite3_step() */
-    int isselect;   /* track if the query is a select query.*/
+    int prep_rc;  /* last value returned from sqlite3_prepare_v3() */
+    int step_rc;  /* last value returned from sqlite3_step() */
+    int isselect; /* track if the query is a select query.*/
     int isUnlocked;
     int writeTransaction;
     int prepare_only;
@@ -977,23 +978,26 @@ struct sqlclntstate {
     /* The node doesn't change.  The pid does as connections get donated.  We
      * latch both values here since conninfo is lost when connections are reset. */
     int last_pid;
-    char* origin_host;
+    char *origin_host;
     int8_t sent_data_to_client;
     int8_t is_asof_snapshot;
-    LINKC_T(struct sqlclntstate) lnk; /* appsock + sbuf */
-    TAILQ_ENTRY(sqlclntstate) lru_entry; /* libevent connections which can be closed */
-    TAILQ_ENTRY(sqlclntstate) sql_entry; /* all libevent connections */
+    LINKC_T(struct sqlclntstate)
+    lnk; /* appsock + sbuf */
+    TAILQ_ENTRY(sqlclntstate)
+    lru_entry; /* libevent connections which can be closed */
+    TAILQ_ENTRY(sqlclntstate)
+    sql_entry;             /* all libevent connections */
     int last_sent_row_sec; /* used to delay releasing locks when bdb_lock is desired */
     int8_t rowbuffer;
     /* 1 if client has requested flat column values. */
     int flat_col_vals;
     plugin_func *recover_ddlk;
     replay_func *recover_ddlk_fail;
-    unsigned loading_stat: 1;
-    unsigned skip_eventlog: 1;
-    unsigned request_fp: 1;
-    unsigned dohsql_disable: 1;
-    unsigned can_redirect_fdb: 1;
+    unsigned loading_stat : 1;
+    unsigned skip_eventlog : 1;
+    unsigned request_fp : 1;
+    unsigned dohsql_disable : 1;
+    unsigned can_redirect_fdb : 1;
     unsigned force_fdb_push_redirect : 1; // this should only be set if can_redirect_fdb is true
     unsigned force_fdb_push_remote : 1;
     unsigned return_long_column_names : 1; // if 0 then tunable decides
@@ -1014,24 +1018,24 @@ struct sqlclntstate {
     int disable_fdb_push;
 
     /* Modsnap start point */
-    uint32_t modsnap_start_lsn_file; 
+    uint32_t modsnap_start_lsn_file;
     uint32_t modsnap_start_lsn_offset;
 
     /* Checkpoint LSN prior to modsnap start point */
     uint32_t last_checkpoint_lsn_file;
     uint32_t last_checkpoint_lsn_offset;
 
-    void *modsnap_registration; 
-    
-    int modsnap_in_progress; 
+    void *modsnap_registration;
+
+    int modsnap_in_progress;
 
     int lastresptype;
     char *externalAuthUser;
 
     struct remsql_set remsql_set;
-    int fdb_push_remote; /* cache the global on each prepare */
+    int fdb_push_remote;       /* cache the global on each prepare */
     int fdb_push_remote_write; /* cache the global on each prepare */
-    int n_set_commands; /* save the set that comes from a begin */
+    int n_set_commands;        /* save the set that comes from a begin */
     char **set_commands;
 
     // fdb 2pc
@@ -1051,7 +1055,8 @@ struct sqlclntstate {
     int allow_make_request;
 
     // coordinator participant information
-    LISTC_T(struct participant) participants;
+    LISTC_T(struct participant)
+    participants;
 
     unsigned disabled_logdel : 1; /* 1 if this clnt disabled logdel using set stmt and has not tried to re-enable it */
     unsigned verify_dbstore : 1;
@@ -1071,7 +1076,8 @@ struct query_path_component {
     int nnext;
     int nwrite;
     int nblobs;
-    LINKC_T(struct query_path_component) lnk;
+    LINKC_T(struct query_path_component)
+    lnk;
 };
 
 struct temptable {
@@ -1090,7 +1096,8 @@ struct Btree {
 
     bdb_temp_hash *genid_hash; /* rrn hash for non dtastripe support */
 
-    LISTC_T(BtCursor) cursors;
+    LISTC_T(BtCursor)
+    cursors;
 
     unsigned is_temporary : 1;
     unsigned is_hashtable : 1;
@@ -1106,7 +1113,11 @@ struct Btree {
     fdb_t *fdb;
 };
 
-enum { CFIRST = 0, CNEXT = 1, CPREV = 2, CLAST = 3, NORETRY = 256 };
+enum { CFIRST = 0,
+       CNEXT = 1,
+       CPREV = 2,
+       CLAST = 3,
+       NORETRY = 256 };
 
 typedef enum {
     CURSORCLASS_TEMPTABLE = 1,
@@ -1140,7 +1151,7 @@ struct BtCursor {
     /* various buffers: */
     uint8_t writeTransaction; /* save tran type during cursor open */
     void *ondisk_buf;         /* ondisk data */
-    void *ondisk_key; /* ondisk key. this is effectively also the pointer into the index */
+    void *ondisk_key;         /* ondisk key. this is effectively also the pointer into the index */
     struct rd_blob_buffer *rd_blob_buffers;
     blob_buffer_t wr_blob_buffers[MAXBLOBS];
 
@@ -1149,7 +1160,8 @@ struct BtCursor {
 
     unsigned eof : 1;   /* we reached the end of an index, but the current entry still contains valid data */
     unsigned empty : 1; /* there are no entries in the db - no results to return for any query */
-    LINKC_T(BtCursor) lnk;
+    LINKC_T(BtCursor)
+    lnk;
 
     /* these are sqlite format buffers */
     void *dtabuf;
@@ -1224,7 +1236,7 @@ struct BtCursor {
     double blob_cost;
 
     int nCookFields;
-    uint8_t is_recording; /* set for indexes; will store deep copies of data&blobs
+    uint8_t is_recording;   /* set for indexes; will store deep copies of data&blobs
                                to prevent verify errors */
     uint8_t is_sampled_idx; /* set to 1 if this is a sampled (previously
                                misnamed compressed) index */
@@ -1248,8 +1260,8 @@ struct BtCursor {
 
     unsigned long long keyDdl; /* rowid for side DDL row */
     char *dataDdl;             /* DDL row, cached during CREATE operations */
-    int nDataDdl;   /* length of the cached row for DDL instructions */
-    int open_flags; /* flags used to open it */
+    int nDataDdl;              /* length of the cached row for DDL instructions */
+    int open_flags;            /* flags used to open it */
 
     int tableversion;
 
@@ -1259,7 +1271,8 @@ struct BtCursor {
 };
 
 struct sql_hist {
-    LINKC_T(struct sql_hist) lnk;
+    LINKC_T(struct sql_hist)
+    lnk;
     struct string_ref *sql_ref;
     struct sql_hist_cost cost;
     int when;
@@ -1268,7 +1281,8 @@ struct sql_hist {
 };
 typedef LISTC_T(struct query_path_component) query_path_component_tp;
 struct sql_thread {
-    LINKC_T(struct sql_thread) lnk;
+    LINKC_T(struct sql_thread)
+    lnk;
     pthread_mutex_t lk;
     struct Btree *bt, *bttmp;
     int startms;
@@ -1309,19 +1323,19 @@ struct connection_info {
     int64_t sql_since_reset;
     int64_t num_resets;
     int64_t steps;
-    cdb2_client_intv_ds_t time_in_state; 
+    cdb2_client_intv_ds_t time_in_state;
     cdb2_client_datetime_t connect_time;
     cdb2_client_datetime_t last_reset_time;
     char *state;
     char *sql;
     char *fingerprint;
     int64_t is_admin;
-    int64_t is_ssl; /* 1 if this an SSL connection */
-    int64_t has_cert; /* 1 if the SSL connection has an X509 certificate */
+    int64_t is_ssl;    /* 1 if this an SSL connection */
+    int64_t has_cert;  /* 1 if the SSL connection has an X509 certificate */
     char *common_name; /* common name in the certificate */
     char common_name_str[ub_common_name];
 
-    /* latched in sqlinterfaces, not returned */ 
+    /* latched in sqlinterfaces, not returned */
     time_t connect_time_int;
     time_t last_reset_time_int;
     int node_int;
@@ -1479,17 +1493,17 @@ int get_prepared_stmt_try_lock(struct sqlthdstate *, struct sqlclntstate *, stru
 void sqlengine_thd_start(struct thdpool *, struct sqlthdstate *, enum thrtype);
 void sqlengine_thd_end(struct thdpool *, struct sqlthdstate *);
 
-#define SQL_POOL_LEGACY_NAME          ("sqlenginepool")
-#define SQL_POOL_DEFLT_NAME           ("default")
-#define SQL_POOL_STACK_SIZE           (4 * 1024 * 1024) /* 4 MiB */
-#define SQL_POOL_DEFLT_MIN_THREADS    (4)
-#define SQL_POOL_DEFLT_MAX_THREADS    (48)
-#define SQL_POOL_NAMED_MAX_THREADS    (1)
-#define SQL_POOL_LINGER_SECS          (30) /* 30 seconds */
-#define SQL_POOL_DEFLT_MAXQ_OVERRIDE  (500)
-#define SQL_POOL_NAMED_MAXQ_OVERRIDE  (500)
-#define SQL_POOL_MAXQ_AGE_MS          (5 * 60 * 1000) /* 5 minutes */
-#define SQL_POOL_STOP_TIMEOUT_US      (5000000) /* 5 seconds */
+#define SQL_POOL_LEGACY_NAME ("sqlenginepool")
+#define SQL_POOL_DEFLT_NAME ("default")
+#define SQL_POOL_STACK_SIZE (4 * 1024 * 1024) /* 4 MiB */
+#define SQL_POOL_DEFLT_MIN_THREADS (4)
+#define SQL_POOL_DEFLT_MAX_THREADS (48)
+#define SQL_POOL_NAMED_MAX_THREADS (1)
+#define SQL_POOL_LINGER_SECS (30) /* 30 seconds */
+#define SQL_POOL_DEFLT_MAXQ_OVERRIDE (500)
+#define SQL_POOL_NAMED_MAXQ_OVERRIDE (500)
+#define SQL_POOL_MAXQ_AGE_MS (5 * 60 * 1000) /* 5 minutes */
+#define SQL_POOL_STOP_TIMEOUT_US (5000000)   /* 5 seconds */
 
 typedef struct pool_entry {
     const char *zName;
@@ -1615,7 +1629,7 @@ struct client_sql_systable_data {
     int64_t cost;
     int64_t rows;
 
-    char fp[FINGERPRINTSZ*2+1];
+    char fp[FINGERPRINTSZ * 2 + 1];
 };
 
 struct query_count {
@@ -1643,7 +1657,6 @@ struct fixed_row_source {
     char **names;
     int (*fixed_values_callback)(struct sqlclntstate *, struct fixed_row_source *src, int rownum, int colnum, void **value, int *len);
 };
-
 
 void add_fingerprint_to_rawstats(struct rawnodestats *stats,
                                  unsigned char *fingerprint, int cost,

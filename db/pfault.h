@@ -29,7 +29,7 @@ enum pfrq_type {
                            based on that value */
     PFRQ_DATAGENID = 3, /* prefetch data block based on existing genid */
     PFRQ_DATAFRMKY =
-        4, /* prefetch data block by genid + form all associated keys w/
+        4,              /* prefetch data block by genid + form all associated keys w/
               that record and prefetch them too */
     PFRQ_DEFPRIMKY = 5, /* find record based on primary key in 'default' format.
                            then form all keys and prefetch them too */

@@ -36,13 +36,16 @@ extern int gbl_watcher_thread_ran;
 
 static void *watchdog_thread(void *arg);
 
-static void *dummy_thread(void *arg) { return NULL; }
+static void *dummy_thread(void *arg)
+{
+    return NULL;
+}
 
 static int gbl_watchdog_kill_time;
 static pthread_t gbl_watchdog_kill_tid;
 static pthread_mutex_t gbl_watchdog_kill_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static int gbl_nowatch = 1; /* start off disabled */
+static int gbl_nowatch = 1;   /* start off disabled */
 static int gbl_watchdog_time; /* last timestamp when things were ok */
 
 static pthread_attr_t gbl_pthread_joinable_attr;
@@ -90,14 +93,15 @@ void watchdog_cancel_alarm(void)
 
 int gbl_epoch_time; /* db has been up gbl_epoch_time - gbl_starttime seconds */
 
-static void watchdogauth(void) {
+static void watchdogauth(void)
+{
     struct sqlclntstate clnt;
     start_internal_sql_clnt(&clnt);
     clnt.admin = 0;
     clnt.argv0 = "auth_watchdog";
     clnt.conninfo.pid = getpid();
     clnt.current_user.bypass_auth = 0;
-    if(gbl_uses_externalauth)
+    if (gbl_uses_externalauth)
         check_user_password(&clnt);
     clnt.argv0 = NULL;
     end_internal_sql_clnt(&clnt);
@@ -185,16 +189,19 @@ static void *watchdog_thread(void *arg)
             fdb_sanity_check();
 
             /* find out if we're trying to stop threads */
-            LOCK(&stop_thds_time_lk) { stop_thds_time = gbl_stop_thds_time; }
+            LOCK(&stop_thds_time_lk)
+            {
+                stop_thds_time = gbl_stop_thds_time;
+            }
             UNLOCK(&stop_thds_time_lk);
             if (stop_thds_time) {
                 int diff_sec;
 
                 diff_sec = comdb2_time_epoch() - stop_thds_time;
                 if (diff_sec > gbl_stop_thds_time_threshold) {
-                    logmsg(LOGMSG_WARN, 
-                            "watchdog: Trying to stop threads for %d seconds\n",
-                            diff_sec);
+                    logmsg(LOGMSG_WARN,
+                           "watchdog: Trying to stop threads for %d seconds\n",
+                           diff_sec);
                     thd_dump();
                     its_bad = 1;
                 }
@@ -335,14 +342,14 @@ static void *watchdog_thread(void *arg)
             /* roughly every 5 minute */
             socket_pool_timeout();
         }
-        
+
         int one = 1;
         if (CAS32(gbl_trigger_timepart, one, 0)) {
             if (thedb->master == gbl_myhostname) {
                 rc = views_cron_restart(thedb->timepart_views);
                 if (rc) {
                     logmsg(LOGMSG_WARN, "Failed to restart timepartitions rc=%d!\n",
-                            rc);
+                           rc);
                 }
             }
         }
@@ -359,32 +366,33 @@ static void *watchdog_thread(void *arg)
                     const char *zState = NULL;
                     int slow_seconds = 0;
                     switch (conn_info->state_int) {
-                        case CONNECTION_QUEUED:
-                            zState = "QUEUED";
-                            slow_seconds = gbl_client_queued_slow_seconds;
-                            break;
-                        case CONNECTION_RUNNING:
-                            zState = "RUNNING";
-                            slow_seconds = gbl_client_running_slow_seconds;
-                            break;
+                    case CONNECTION_QUEUED:
+                        zState = "QUEUED";
+                        slow_seconds = gbl_client_queued_slow_seconds;
+                        break;
+                    case CONNECTION_RUNNING:
+                        zState = "RUNNING";
+                        slow_seconds = gbl_client_running_slow_seconds;
+                        break;
                     }
                     if ((zState != NULL) && (slow_seconds > 0)) {
                         int state_time = conn_info->time_in_state_int;
                         int diff_seconds = (conn_time_now - state_time) / 1000;
                         if ((diff_seconds < 0) || (diff_seconds > slow_seconds)) {
-                            logmsg((diff_seconds > 0) && gbl_client_abort_on_slow ?
-                                           LOGMSG_FATAL : LOGMSG_ERROR,
+                            logmsg((diff_seconds > 0) && gbl_client_abort_on_slow ? LOGMSG_FATAL : LOGMSG_ERROR,
                                    "%s: client #%lld has been in state %s for "
                                    "%d seconds (>%d): connect_time %0.2f "
                                    "seconds, raw_time_in_state %d, host {%s}, "
-                                   "pid %lld, sql {%s}\n", __func__,
+                                   "pid %lld, sql {%s}\n",
+                                   __func__,
                                    (long long int)conn_info->connection_id,
                                    zState, diff_seconds, slow_seconds,
                                    difftime(conn_info->connect_time_int, (time_t)0),
                                    conn_info->time_in_state_int, conn_info->host,
                                    (long long int)conn_info->pid, conn_info->sql);
-                             /* NOTE: Do not count negative seconds here... */
-                             if (diff_seconds > 0) slow_count++;
+                            /* NOTE: Do not count negative seconds here... */
+                            if (diff_seconds > 0)
+                                slow_count++;
                         }
                     }
                 }
@@ -458,8 +466,8 @@ static void *watchdog_watcher_thread(void *arg)
             */
             if (failed_once > 0) {
                 logmsg(LOGMSG_FATAL, "watchdog thread stuck for more than %d seconds - expected time was %d seconds, exiting\n",
-                        gbl_watchdog_watch_threshold,
-                        (int) time_metric_average(thedb->watchdog_time));
+                       gbl_watchdog_watch_threshold,
+                       (int)time_metric_average(thedb->watchdog_time));
                 comdb2_die(1);
             }
             failed_once++;
@@ -507,7 +515,7 @@ void create_watchdog_thread(struct dbenv *dbenv)
                         watchdog_watcher_thread, thedb);
     if (rc)
         logmsg(LOGMSG_ERROR, "Warning: can't start watchdog_watcher_thread thread:"
-               " rc %d err %s\n",
+                             " rc %d err %s\n",
                rc, strerror(rc));
 
     Pthread_attr_destroy(&attr);

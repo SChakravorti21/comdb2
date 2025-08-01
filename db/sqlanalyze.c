@@ -138,15 +138,17 @@ int backout_stats_frm_tbl(struct sqlclntstate *clnt, const char *table,
         stattbl, table, stattbl, table);
     assert(sql != NULL);
     int rc = run_internal_sql_clnt(clnt, sql);
-    sqlite3_free(sql); sql = NULL;
+    sqlite3_free(sql);
+    sql = NULL;
     if (rc)
         return rc;
     sql = sqlite3_mprintf(
-             "update sqlite_stat%d set tbl='%q' where tbl='cdb2.%q.sav'",
-             stattbl, table, table);
+        "update sqlite_stat%d set tbl='%q' where tbl='cdb2.%q.sav'",
+        stattbl, table, table);
     assert(sql != NULL);
     rc = run_internal_sql_clnt(clnt, sql);
-    sqlite3_free(sql); sql = NULL;
+    sqlite3_free(sql);
+    sql = NULL;
     return rc;
 }
 
@@ -201,30 +203,35 @@ static int check_stat1_and_flag(SBUF2 *sb)
 
 void cleanup_stats(SBUF2 *sb)
 {
-    if (!get_dbtable_by_name("sqlite_stat1")) return;
+    if (!get_dbtable_by_name("sqlite_stat1"))
+        return;
     char *final = "rollback";
     char *stat1_clean =
         "delete from sqlite_stat1 where tbl not in"
         "("
-            "select name from sqlite_master where type='table' group by name "
-            "union "
-            "select 'cdb2.'||name||'.sav' from sqlite_master where type='table' group by name"
+        "select name from sqlite_master where type='table' group by name "
+        "union "
+        "select 'cdb2.'||name||'.sav' from sqlite_master where type='table' group by name"
         ")";
     char *stat4_clean =
         "delete from sqlite_stat4 where tbl not in"
         "("
-            "select name from sqlite_master where type='table' group by name "
-            "union "
-            "select 'cdb2.'||name||'.sav' from sqlite_master where type='table' group by name"
+        "select name from sqlite_master where type='table' group by name "
+        "union "
+        "select 'cdb2.'||name||'.sav' from sqlite_master where type='table' group by name"
         ")";
     struct sqlclntstate clnt;
     start_internal_sql_clnt(&clnt);
     clnt.dbtran.mode = TRANLEVEL_RECOM;
-    if (run_internal_sql_clnt(&clnt, "begin") != 0) goto end;
-    if (run_internal_sql_clnt(&clnt, "delete from sqlite_stat1 where idx is null") != 0) goto end;
-    if (run_internal_sql_clnt(&clnt, stat1_clean) != 0) goto end;
+    if (run_internal_sql_clnt(&clnt, "begin") != 0)
+        goto end;
+    if (run_internal_sql_clnt(&clnt, "delete from sqlite_stat1 where idx is null") != 0)
+        goto end;
+    if (run_internal_sql_clnt(&clnt, stat1_clean) != 0)
+        goto end;
     if (get_dbtable_by_name("sqlite_stat4")) {
-        if (run_internal_sql_clnt(&clnt, stat4_clean) != 0) goto end;
+        if (run_internal_sql_clnt(&clnt, stat4_clean) != 0)
+            goto end;
     }
     final = "commit";
 end:
@@ -345,7 +352,7 @@ static int dispatch_sample_index_thread(index_descriptor_t *ix_des)
 
     /* dispatch */
     int rc = pthread_create(&ix_des->thread_id, &gbl_pthread_attr_detached,
-                        sampling_thread, ix_des);
+                            sampling_thread, ix_des);
 
     /* return */
     return rc;
@@ -405,7 +412,7 @@ static int sample_indicies(table_descriptor_t *td, struct sqlclntstate *client,
         int rc = dispatch_sample_index_thread(ix_des);
         if (0 != rc) {
             logmsg(LOGMSG_ERROR, "Couldn't start sampling-thread for table '%s' ix %d "
-                   "rc=%d\n",
+                                 "rc=%d\n",
                    table, i, rc);
             err = 1;
             break;
@@ -487,8 +494,8 @@ int64_t analyze_get_nrecs(int iTable)
     n_recs = s_ix->n_recs;
 
     /* boundry check return code */
-    assert( n_recs>=0 );
-    assert( n_recs<=LLONG_MAX );
+    assert(n_recs >= 0);
+    assert(n_recs <= LLONG_MAX);
 
     /* return actual number of records */
     return (int64_t)n_recs;
@@ -516,8 +523,8 @@ int64_t analyze_get_sampled_nrecs(const char *dbname, int ixnum)
     n_sampled_recs = client->sampled_idx_tbl[ixnum].n_sampled_recs;
 
     /* boundry check return code */
-    assert( n_sampled_recs>=0 );
-    assert( n_sampled_recs<=LLONG_MAX );
+    assert(n_sampled_recs >= 0);
+    assert(n_sampled_recs <= LLONG_MAX);
 
     /* return actual number of sampled records */
     return (int64_t)n_sampled_recs;
@@ -632,8 +639,7 @@ static void get_sampling_threshold(char *table, long long *sampling_thresh)
         *sampling_thresh = threshold;
 #ifdef DEBUG
         printf("Using llmetasaved threshold %lld\n", *sampling_thresh);
-    }
-    else {
+    } else {
         printf("Using default threshold %lld\n", *sampling_thresh);
 #endif
     }
@@ -681,7 +687,7 @@ static int analyze_table_int(table_descriptor_t *td, struct thr_handle *thr_self
     start_internal_sql_clnt(&clnt);
     clnt.dbtran.mode = TRANLEVEL_RECOM;
     clnt.osql_max_trans = 0; // allow large transactions
-    clnt.admin = 1; // allow analyze to bypass sql thdpool
+    clnt.admin = 1;          // allow analyze to bypass sql thdpool
     int sampled_table = 0;
 
     clnt.current_user = td->current_user;
@@ -702,8 +708,10 @@ static int analyze_table_int(table_descriptor_t *td, struct thr_handle *thr_self
     sql = sqlite3_mprintf("delete from sqlite_stat1 where tbl='cdb2.%q.sav'", td->table);
     assert(sql != NULL);
     rc = run_internal_sql_clnt(&clnt, sql);
-    if (rc) strncpy(zErrTab, sql, sizeof(zErrTab));
-    sqlite3_free(sql); sql = NULL;
+    if (rc)
+        strncpy(zErrTab, sql, sizeof(zErrTab));
+    sqlite3_free(sql);
+    sql = NULL;
 
     if (rc)
         goto error;
@@ -711,8 +719,10 @@ static int analyze_table_int(table_descriptor_t *td, struct thr_handle *thr_self
     sql = sqlite3_mprintf("update sqlite_stat1 set tbl='cdb2.%q.sav' where tbl='%q'", td->table, td->table);
     assert(sql != NULL);
     rc = run_internal_sql_clnt(&clnt, sql);
-    if (rc) strncpy(zErrTab, sql, sizeof(zErrTab));
-    sqlite3_free(sql); sql = NULL;
+    if (rc)
+        strncpy(zErrTab, sql, sizeof(zErrTab));
+    sqlite3_free(sql);
+    sql = NULL;
 
     if (rc)
         goto error;
@@ -721,8 +731,10 @@ static int analyze_table_int(table_descriptor_t *td, struct thr_handle *thr_self
         sql = sqlite3_mprintf("delete from sqlite_stat4 where tbl='cdb2.%q.sav'", td->table);
         assert(sql != NULL);
         rc = run_internal_sql_clnt(&clnt, sql);
-        if (rc) strncpy(zErrTab, sql, sizeof(zErrTab));
-        sqlite3_free(sql); sql = NULL;
+        if (rc)
+            strncpy(zErrTab, sql, sizeof(zErrTab));
+        sqlite3_free(sql);
+        sql = NULL;
 
         if (rc)
             goto error;
@@ -730,8 +742,10 @@ static int analyze_table_int(table_descriptor_t *td, struct thr_handle *thr_self
         sql = sqlite3_mprintf("update sqlite_stat4 set tbl='cdb2.%q.sav' where tbl='%q'", td->table, td->table);
         assert(sql != NULL);
         rc = run_internal_sql_clnt(&clnt, sql);
-        if (rc) strncpy(zErrTab, sql, sizeof(zErrTab));
-        sqlite3_free(sql); sql = NULL;
+        if (rc)
+            strncpy(zErrTab, sql, sizeof(zErrTab));
+        sqlite3_free(sql);
+        sql = NULL;
 
         if (rc)
             goto error;
@@ -765,10 +779,12 @@ static int analyze_table_int(table_descriptor_t *td, struct thr_handle *thr_self
     clnt.is_analyze = 0;
     if (rc) {
         snprintf(zErrTab, sizeof(zErrTab), "failed:%s", sql);
-        sqlite3_free(sql); sql = NULL;
+        sqlite3_free(sql);
+        sql = NULL;
         goto error;
     }
-    sqlite3_free(sql); sql = NULL;
+    sqlite3_free(sql);
+    sql = NULL;
 
     for (int i = 0; i < tbl->nsqlix; ++i) {
         struct schema *ix = tbl->ixschema[i];
@@ -778,24 +794,27 @@ static int analyze_table_int(table_descriptor_t *td, struct thr_handle *thr_self
         /* Temporarily generate both old & new style names for single prod move */
         logmsg(LOGMSG_USER, "%s: have idx:%s cloning into:%s\n", __func__, ix->sqlitetag, namebuf);
         sql = sqlite3_mprintf("INSERT INTO sqlite_stat1(tbl, idx, stat) "
-                "SELECT tbl, '%q', stat FROM sqlite_stat1 "
-                "WHERE tbl='%q' AND idx='%q'",
-                ix->sqlitetag, tbl->tablename, namebuf);
+                              "SELECT tbl, '%q', stat FROM sqlite_stat1 "
+                              "WHERE tbl='%q' AND idx='%q'",
+                              ix->sqlitetag, tbl->tablename, namebuf);
         rc = run_internal_sql_clnt(&clnt, sql);
         if (rc) {
             snprintf(zErrTab, sizeof(zErrTab), "failed:%s", sql);
-            sqlite3_free(sql); sql = NULL;
+            sqlite3_free(sql);
+            sql = NULL;
             goto error;
         }
-        if (!get_dbtable_by_name("sqlite_stat4")) continue;
+        if (!get_dbtable_by_name("sqlite_stat4"))
+            continue;
         sql = sqlite3_mprintf("INSERT INTO sqlite_stat4(tbl, idx, neq, nlt, ndlt, sample) "
-                "SELECT tbl, '%q', neq, nlt, ndlt, sample FROM sqlite_stat4 "
-                "WHERE tbl='%q' AND idx='%q'",
-                ix->sqlitetag, tbl->tablename, namebuf);
+                              "SELECT tbl, '%q', neq, nlt, ndlt, sample FROM sqlite_stat4 "
+                              "WHERE tbl='%q' AND idx='%q'",
+                              ix->sqlitetag, tbl->tablename, namebuf);
         rc = run_internal_sql_clnt(&clnt, sql);
         if (rc) {
             snprintf(zErrTab, sizeof(zErrTab), "failed:%s", sql);
-            sqlite3_free(sql); sql = NULL;
+            sqlite3_free(sql);
+            sql = NULL;
             goto error;
         }
     }
@@ -998,9 +1017,9 @@ static inline int check_stat1(SBUF2 *sb)
  */
 static inline int set_analyze_running(SBUF2 *sb)
 {
-    analyze_abort_requested = 0; 
+    analyze_abort_requested = 0;
     uint32_t old = XCHANGE32(analyze_running_flag, 1); // set analyze_running_flag
-    if (1 == old) // analyze_running_flag was already 1, so bail out
+    if (1 == old)                                      // analyze_running_flag was already 1, so bail out
     {
         sbuf2printf(sb, ">%s: analyze is already running\n", __func__);
         sbuf2printf(sb, "FAILED\n");
@@ -1015,7 +1034,7 @@ void set_analyze_abort_requested()
     if (!analyze_running_flag)
         return;
 
-    analyze_abort_requested = 1; 
+    analyze_abort_requested = 1;
 
     return;
 }
@@ -1059,7 +1078,7 @@ int analyze_table(char *table, SBUF2 *sb, int scale, int override_llmeta, int by
 
     if (clnt) {
         td.current_user = clnt->current_user;
-        td.appdata      = clnt->appdata;
+        td.appdata = clnt->appdata;
         td.get_authdata = clnt->plugin.get_authdata;
     }
     td.current_user.bypass_auth = bypass_auth;
@@ -1072,7 +1091,7 @@ int analyze_table(char *table, SBUF2 *sb, int scale, int override_llmeta, int by
     int rc = dispatch_table_thread(&td);
 
     if (0 != rc) {
-       logmsg(LOGMSG_ERROR, "Analyze: Couldn't start table-thread for table '%s' rc=%d\n", table, rc);
+        logmsg(LOGMSG_ERROR, "Analyze: Couldn't start table-thread for table '%s' rc=%d\n", table, rc);
         logmsg(LOGMSG_ERROR, "Analyze FAILED\n");
         analyze_running_flag = 0;
         return -1;
@@ -1137,7 +1156,7 @@ int analyze_database(SBUF2 *sb, int scale, int override_llmeta)
 
         if (clnt) {
             td[idx].current_user = clnt->current_user;
-            td[idx].appdata      = clnt->appdata;
+            td[idx].appdata = clnt->appdata;
             td[idx].get_authdata = clnt->plugin.get_authdata;
         }
 
@@ -1198,10 +1217,16 @@ int analyze_dump_stats(void)
 }
 
 /* enabled sampled indicies */
-void analyze_enable_sampled_indicies(void) { sampled_tables_enabled = 1; }
+void analyze_enable_sampled_indicies(void)
+{
+    sampled_tables_enabled = 1;
+}
 
 /* disable sampled indicies */
-void analyze_disable_sampled_indicies(void) { sampled_tables_enabled = 0; }
+void analyze_disable_sampled_indicies(void)
+{
+    sampled_tables_enabled = 0;
+}
 
 /* set sampling threshold */
 int analyze_set_sampling_threshold(void *context, void *thresh)
@@ -1218,29 +1243,28 @@ int analyze_set_sampling_threshold(void *context, void *thresh)
 }
 
 /* get sampling threshold */
-long long analyze_get_sampling_threshold(void) { return sampling_threshold; }
+long long analyze_get_sampling_threshold(void)
+{
+    return sampling_threshold;
+}
 
 /* set maximum analyze compression threads */
-int analyze_set_max_comp_threads( int maxthd )
+int analyze_set_max_comp_threads(int maxthd)
 {
     /* must have at least 1 */
-    if( maxthd < 1 )
-    {
-        printf( "%s: invalid value for maxthd\n", __func__ );
+    if (maxthd < 1) {
+        printf("%s: invalid value for maxthd\n", __func__);
         return -1;
     }
     /* can have no more than hard-max */
-    if( maxthd > analyze_hard_max_comp_threads )
-    {
-        printf( "%s: hard-maximum is %d\n", __func__, 
-                analyze_hard_max_comp_threads );
+    if (maxthd > analyze_hard_max_comp_threads) {
+        printf("%s: hard-maximum is %d\n", __func__,
+               analyze_hard_max_comp_threads);
         return -1;
     }
     analyze_max_comp_threads = maxthd;
     return 0;
 }
-
-
 
 /* set maximum analyze threads */
 int analyze_set_max_table_threads(void *context, void *maxthd)
@@ -1283,7 +1307,10 @@ int analyze_set_max_sampling_threads(void *context, void *maxthd)
 }
 
 /* return a 1 if analyze is running, 0 otherwise */
-int analyze_is_running(void) { return analyze_running_flag; }
+int analyze_is_running(void)
+{
+    return analyze_running_flag;
+}
 
 /* analyze message-trap thread */
 void *message_trap_td(void *args)
@@ -1294,9 +1321,9 @@ void *message_trap_td(void *args)
     sb = sbuf2open(1, 0);
 
     /* analyze the database */
-    analyze_database(sb, 
-         bdb_attr_get(thedb->bdb_attr, BDB_ATTR_DEFAULT_ANALYZE_PERCENT),
-         0); //override llmeta scale 0 (false)
+    analyze_database(sb,
+                     bdb_attr_get(thedb->bdb_attr, BDB_ATTR_DEFAULT_ANALYZE_PERCENT),
+                     0); //override llmeta scale 0 (false)
 
     /* flush sbuf */
     sbuf2flush(sb);
@@ -1380,19 +1407,21 @@ void add_idx_stats(const char *tbl, const char *oldname, const char *newname)
     sql = sqlite3_mprintf("INSERT INTO sqlite_stat1 select tbl, '%q' as "
                           "idx, stat FROM sqlite_stat1 WHERE tbl='%q' and "
                           "idx='%q' \n",
-             newname, tbl, oldname);
+                          newname, tbl, oldname);
     assert(sql != NULL);
     run_internal_sql(sql);
-    sqlite3_free(sql); sql = NULL;
+    sqlite3_free(sql);
+    sql = NULL;
 
     if (get_dbtable_by_name("sqlite_stat4")) {
         sql = sqlite3_mprintf("INSERT INTO sqlite_stat4 select tbl, '%q' "
                               "as idx, neq, nlt, ndlt, sample FROM "
                               "sqlite_stat4 WHERE tbl='%q' and idx='%q' \n",
-                 newname, tbl, oldname);
+                              newname, tbl, oldname);
         assert(sql != NULL);
         run_internal_sql(sql);
-        sqlite3_free(sql); sql = NULL;
+        sqlite3_free(sql);
+        sql = NULL;
     }
 }
 
@@ -1403,7 +1432,7 @@ int do_analyze(char *tbl, int percent)
     int overwrite_llmeta = 1;
     if (percent == 0) {
         overwrite_llmeta = 0;
-        percent = bdb_attr_get(thedb->bdb_attr, 
+        percent = bdb_attr_get(thedb->bdb_attr,
                                BDB_ATTR_DEFAULT_ANALYZE_PERCENT);
     }
 
@@ -1416,4 +1445,3 @@ int do_analyze(char *tbl, int percent)
     sbuf2free(sb2);
     return rc;
 }
-

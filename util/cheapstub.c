@@ -32,7 +32,7 @@
 #include <inttypes.h>
 
 #if defined(_LINUX_SOURCE) || defined(_SUN_SOURCE)
-#  include <execinfo.h>
+#include <execinfo.h>
 #endif
 
 #include <logmsg.h>
@@ -49,7 +49,7 @@ extern void backtrace_symbols_fd(void *const *, int, int);
 static void cheapstub(FILE *f)
 {
     if (f == NULL)
-        f=stdout;
+        f = stdout;
     pthread_t tid = pthread_self();
     const char size = 32;
     void *buf[size];
@@ -58,22 +58,24 @@ static void cheapstub(FILE *f)
     logmsgf(LOGMSG_USER, f,
             "tid=%p %" PRIxPTR " stack trace, run addr2line -f -e <exe> on: \n",
             (void *)tid, (intptr_t)tid);
-    for  (int i = 2; i < n; ++i) {
+    for (int i = 2; i < n; ++i) {
         logmsgf(LOGMSG_USER, f, "%p ", buf[i]);
     }
-    logmsgf(LOGMSG_USER,  f, "\n");
+    logmsgf(LOGMSG_USER, f, "\n");
 
 #ifdef DEBUG
     char **funcs = backtrace_symbols(buf, n);
-    if (funcs == NULL) 
+    if (funcs == NULL)
         n = 0;
 
     int i;
-    for  (i = 0; i < n; ++i) {
+    for (i = 0; i < n; ++i) {
         char *name = funcs[i];
 
-        while (*name && *name != '(') ++name;
-        if (! (*name)) continue;
+        while (*name && *name != '(')
+            ++name;
+        if (!(*name))
+            continue;
         ++name;
         int j = 0;
         while (name[j] && name[j] != ')' && name[j] != '+')
@@ -81,8 +83,10 @@ static void cheapstub(FILE *f)
         if (j == 0)
             continue;
         name[j] = '\0';
-        if (strcmp(name, "comdb2_linux_cheap_stack_trace") == 0) continue;
-        if (strcmp(name, "cheap_stack_trace") == 0) continue;
+        if (strcmp(name, "comdb2_linux_cheap_stack_trace") == 0)
+            continue;
+        if (strcmp(name, "cheap_stack_trace") == 0)
+            continue;
         logmsgf(LOGMSG_USER, f, "%p: %s\n", (void *)tid, name);
     }
     free(funcs);

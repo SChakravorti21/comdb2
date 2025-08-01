@@ -84,7 +84,7 @@ void req_stats(struct dbtable *db)
                 logmsg(LOGMSG_USER, "REQUEST STATS FOR DB %d '%s'\n", db->dbnum, db->tablename);
                 hdr = 1;
             }
-            logmsg(LOGMSG_USER, "%-20s %"PRId64"\n", req2a(ii), db->typcnt[ii]);
+            logmsg(LOGMSG_USER, "%-20s %" PRId64 "\n", req2a(ii), db->typcnt[ii]);
         }
     }
     for (jj = 0; jj < BLOCK_MAXOPCODE; jj++) {
@@ -93,7 +93,7 @@ void req_stats(struct dbtable *db)
                 logmsg(LOGMSG_USER, "REQUEST STATS FOR DB %d '%s'\n", db->dbnum, db->tablename);
                 hdr = 1;
             }
-            logmsg(LOGMSG_USER, "    %-20s %"PRId64"\n", breq2a(jj), db->blocktypcnt[jj]);
+            logmsg(LOGMSG_USER, "    %-20s %" PRId64 "\n", breq2a(jj), db->blocktypcnt[jj]);
         }
     }
     for (jj = 0; jj < MAX_OSQL_TYPES; jj++) {
@@ -102,7 +102,7 @@ void req_stats(struct dbtable *db)
                 logmsg(LOGMSG_USER, "REQUEST STATS FOR DB %d '%s'\n", db->dbnum, db->tablename);
                 hdr = 1;
             }
-            logmsg(LOGMSG_USER, "    %-20s %"PRId64"\n", osql_reqtype_str(jj), db->blockosqltypcnt[jj]);
+            logmsg(LOGMSG_USER, "    %-20s %" PRId64 "\n", osql_reqtype_str(jj), db->blockosqltypcnt[jj]);
         }
     }
 }
@@ -221,7 +221,7 @@ retry:
             iq->usedb = iq->origdb;
 
             n_retries++;
-            
+
             /* avg_tolock_us is updated without a lock; make sure it stays in [0..25msec]
              * re:177309919
              */
@@ -301,7 +301,7 @@ static comdb2_opcode_t fwd_block_op_handler = {OP_FWD_BLOCK, "fwdblockop",
 static comdb2_opcode_t sorese_op_handler = {OP_SORESE, "sorese",
                                             handle_op_sorese};
 static comdb2_opcode_t fwd_block_le_op_handler = {OP_FWD_BLOCK_LE, "fwdblockople",
-                                               handle_op_block};
+                                                  handle_op_block};
 
 int init_opcode_handlers()
 {
@@ -544,8 +544,7 @@ int handle_ireq(struct ireq *iq)
             iq->p_buf_in_end = iq->p_buf_in = NULL;
         } else if (iq->ipc_sndbak) {
             iq->ipc_sndbak(iq, rc, iq->p_buf_out - iq->p_buf_out_start);
-        }
-        else if (comdb2_ipc_sndbak_len_sinfo) {
+        } else if (comdb2_ipc_sndbak_len_sinfo) {
             comdb2_ipc_sndbak_len_sinfo(iq, rc);
         }
     }

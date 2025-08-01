@@ -105,24 +105,25 @@ struct fdb_tran {
     char magic[4];
     char *tid; /* transaction id */
     char *
-        host; /* what is the remote replicant this transaction is submitted to
+        host;                     /* what is the remote replicant this transaction is submitted to
                  */
-    int rc;   /* cached result */
-    int errstrlen; /* length of err string, if any */
-    char *errstr;  /* error string */
-    fdb_t *fdb;    /* pointer to the foreign db */
+    int rc;                       /* cached result */
+    int errstrlen;                /* length of err string, if any */
+    char *errstr;                 /* error string */
+    fdb_t *fdb;                   /* pointer to the foreign db */
     cdb2_effects_tp last_effects; /* only set in handle_fdb_push_write  */
     int is_cdb2api;
     union {
-        SBUF2 *sb;     /* connection to this fdb */
+        SBUF2 *sb;          /* connection to this fdb */
         cdb2_hndl_tp *hndl; /* cdb2api connection, iff is_cdb2api == 1 */
     } fcon;
 
     LINKC_T(
-        struct fdb_tran) lnk; /* chain of subtransactions, part of the same
+        struct fdb_tran)
+    lnk; /* chain of subtransactions, part of the same
                                  distributed transaction */
     LISTC_T(struct svc_cursor)
-        cursors; /* list of cursors for tran (used on backend side) */
+    cursors; /* list of cursors for tran (used on backend side) */
 
     uuid_t tiduuid;
 
@@ -149,7 +150,8 @@ typedef struct fdb_tran fdb_tran_t;
 
 struct fdb_distributed_tran {
     int remoted; /* set to 1 if this is the remote part of a transaction */
-    LISTC_T(fdb_tran_t) fdb_trans; /* list of subtransactions */
+    LISTC_T(fdb_tran_t)
+    fdb_trans; /* list of subtransactions */
 };
 
 typedef struct fdb_cursor_if {
@@ -418,8 +420,7 @@ int fdb_2pc_set(sqlclntstate *clnt, fdb_t *fdb, cdb2_hndl_tp *hndl);
  *  Create a fdb push connector
  *
  */
-fdb_push_connector_t* fdb_push_create(const char *dbname, enum mach_class class, int override, int local,
+fdb_push_connector_t *fdb_push_create(const char *dbname, enum mach_class class, int override, int local,
                                       enum ast_type type);
 
 #endif
-

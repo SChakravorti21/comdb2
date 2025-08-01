@@ -324,7 +324,7 @@ int osql_repository_terminatenode(char *host)
  *
  */
 int osql_repository_cancelall(void)
-{ 
+{
     return osql_repository_terminatenode(0);
 }
 

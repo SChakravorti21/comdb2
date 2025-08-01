@@ -39,49 +39,49 @@ typedef struct ack_info_t {
 ** new_ack_info() allocates storage on the stack as its intended to be sent
 ** inline. no need to free this storage.
 */
-#define ack_info_from_host(info)                                               \
-    (char *)(((info)->fromlen <= 0 || (info)->hdrsz <= sizeof(ack_info) ||     \
-              (info)->fromlen > ((info)->hdrsz - sizeof(ack_info)))            \
-                 ? NULL                                                        \
+#define ack_info_from_host(info)                                           \
+    (char *)(((info)->fromlen <= 0 || (info)->hdrsz <= sizeof(ack_info) || \
+              (info)->fromlen > ((info)->hdrsz - sizeof(ack_info)))        \
+                 ? NULL                                                    \
                  : (uint8_t *)(info) + ((info)->hdrsz - (info)->fromlen))
 
-#define new_ack_info(ptr, payloadsz, fromhost)                                 \
-    do {                                                                       \
-        int __len = strlen(fromhost) + 1;                                      \
-        (ptr) = alloca(sizeof(ack_info) + payloadsz + __len);                  \
-        (ptr)->hdrsz = sizeof(ack_info) + __len;                               \
-        (ptr)->len = payloadsz;                                                \
-        (ptr)->fromlen = __len;                                                \
-        (ptr)->from = (ptr)->to = 0;                                           \
-        strcpy((char *)((uint8_t *)(ptr) + sizeof(ack_info)), fromhost);       \
+#define new_ack_info(ptr, payloadsz, fromhost)                           \
+    do {                                                                 \
+        int __len = strlen(fromhost) + 1;                                \
+        (ptr) = alloca(sizeof(ack_info) + payloadsz + __len);            \
+        (ptr)->hdrsz = sizeof(ack_info) + __len;                         \
+        (ptr)->len = payloadsz;                                          \
+        (ptr)->fromlen = __len;                                          \
+        (ptr)->from = (ptr)->to = 0;                                     \
+        strcpy((char *)((uint8_t *)(ptr) + sizeof(ack_info)), fromhost); \
     } while (0)
 
 #define ack_info_data(info) (void *)((uint8_t *)(info) + (info)->hdrsz)
 
-#define ack_info_size(info)                                                    \
-    (((info)->hdrsz + (info)->len) < (info)->hdrsz                             \
-         ? 0                                                                   \
+#define ack_info_size(info)                        \
+    (((info)->hdrsz + (info)->len) < (info)->hdrsz \
+         ? 0                                       \
          : (info)->hdrsz + (info)->len)
 
 /* Convert ack_info header into big endian */
-#define ack_info_from_cpu(info)                                                \
-    do {                                                                       \
-        (info)->hdrsz = htonl((info)->hdrsz);                                  \
-        (info)->type = htonl((info)->type);                                    \
-        (info)->len = htonl((info)->len);                                      \
-        (info)->from = htonl((info)->from);                                    \
-        (info)->to = htonl((info)->to);                                        \
-        (info)->fromlen = htonl((info)->fromlen);                              \
+#define ack_info_from_cpu(info)                   \
+    do {                                          \
+        (info)->hdrsz = htonl((info)->hdrsz);     \
+        (info)->type = htonl((info)->type);       \
+        (info)->len = htonl((info)->len);         \
+        (info)->from = htonl((info)->from);       \
+        (info)->to = htonl((info)->to);           \
+        (info)->fromlen = htonl((info)->fromlen); \
     } while (0)
 
-#define ack_info_to_cpu(info)                                                  \
-    do {                                                                       \
-        (info)->hdrsz = ntohl((info)->hdrsz);                                  \
-        (info)->type = ntohl((info)->type);                                    \
-        (info)->len = ntohl((info)->len);                                      \
-        (info)->from = ntohl((info)->from);                                    \
-        (info)->to = ntohl((info)->to);                                        \
-        (info)->fromlen = ntohl((info)->fromlen);                              \
+#define ack_info_to_cpu(info)                     \
+    do {                                          \
+        (info)->hdrsz = ntohl((info)->hdrsz);     \
+        (info)->type = ntohl((info)->type);       \
+        (info)->len = ntohl((info)->len);         \
+        (info)->from = ntohl((info)->from);       \
+        (info)->to = ntohl((info)->to);           \
+        (info)->fromlen = ntohl((info)->fromlen); \
     } while (0)
 
 struct bdb_state_tag;

@@ -8,4 +8,4 @@ void remove_alias(const char *);
 char *get_alias(const char *);
 char *get_tablename(const char *);
 void dump_alias_info();
-#endif 
+#endif

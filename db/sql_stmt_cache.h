@@ -46,7 +46,8 @@ enum query_data_ops {
     QUERY_DATA_DELETE = 3
 };
 
-enum query_data_type { QUERY_STMT_DATA = 1, QUERY_HINT_DATA = 2 };
+enum query_data_type { QUERY_STMT_DATA = 1,
+                       QUERY_HINT_DATA = 2 };
 
 /* Forward declaration */
 struct sqlclntstate;
@@ -64,15 +65,18 @@ typedef struct stmt_cache_entry {
 
     plugin_query_data_func *qd_func; /* Pointer to the current client info */
 
-    LINKC_T(struct stmt_cache_entry) lnk;
+    LINKC_T(struct stmt_cache_entry)
+    lnk;
 } stmt_cache_entry_t;
 
 typedef struct stmt_cache {
     hash_t *hash;
     /* During overflow, the last entry from one of the following
       lists is freed. */
-    LISTC_T(stmt_cache_entry_t) param_stmt_list;
-    LISTC_T(stmt_cache_entry_t) noparam_stmt_list;
+    LISTC_T(stmt_cache_entry_t)
+    param_stmt_list;
+    LISTC_T(stmt_cache_entry_t)
+    noparam_stmt_list;
 } stmt_cache_t;
 
 struct sql_state {

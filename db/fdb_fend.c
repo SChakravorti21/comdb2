@@ -93,9 +93,9 @@ static int _test_trap_dlock1 = 0;
 
 /* fdb_tbl_ent stores one entry per data or index for a foreign table */
 struct fdb_tbl_ent {
-    int rootpage;        /* local rootpage in the specific sqlite3 engine */
-    int source_rootpage; /* rootpage of the table in the source fdb */
-    int ixnum;           /* index number, -1 is data */
+    int rootpage;                /* local rootpage in the specific sqlite3 engine */
+    int source_rootpage;         /* rootpage of the table in the source fdb */
+    int ixnum;                   /* index number, -1 is data */
     unsigned long long _version; /* cached version, use tbl->version in most
                                     cases; it is used here for sqlite_stats */
 
@@ -107,7 +107,8 @@ struct fdb_tbl_ent {
     struct fdb_tbl *tbl; /* let me go rootpage->table(name) */
 
     LINKC_T(
-        struct fdb_tbl_ent) lnk; /* link for entries list (data and indexes) */
+        struct fdb_tbl_ent)
+    lnk; /* link for entries list (data and indexes) */
 };
 
 /* foreign db table structure, caches the sql master rows */
@@ -124,7 +125,8 @@ struct fdb_tbl {
     int ix_partial; /* is there partial index */
     int ix_expr;    /* is there expressions index */
 
-    LISTC_T(struct fdb_tbl_ent) ents;
+    LISTC_T(struct fdb_tbl_ent)
+    ents;
     pthread_mutex_t ents_mtx; /* entries add/rm lock */ /*TODO: review this
                                                            mutex, we need
                                                            something else */
@@ -138,18 +140,18 @@ struct fdb {
     char *dbname;
     int dbname_len; /* excluding terminal 0 */
     enum mach_class class
-        ;      /* what class is the cluster CLASS_PROD, CLASS_TEST, ... */
+        ;               /* what class is the cluster CLASS_PROD, CLASS_TEST, ... */
     int class_override; /* set if class is part of table name at creation */
-    int local; /* was this added by a LOCAL access ?*/
-    int dbnum; /* cache dbnum for db, needed by current dbt_handl_alloc* */
+    int local;          /* was this added by a LOCAL access ?*/
+    int dbnum;          /* cache dbnum for db, needed by current dbt_handl_alloc* */
 
     int users; /* how many clients this db has, sql engines and cursors */
     pthread_mutex_t users_mtx;
 
     hash_t *
-        h_ents_rootp;    /* FDB_TBL_ENT_T data and index entries, by rootpage */
-    hash_t *h_ents_name; /* FDB_TBL_ENT_T data and index entries, by name */
-    hash_t *h_tbls_name; /* FDB_TBL_T entries */
+        h_ents_rootp;          /* FDB_TBL_ENT_T data and index entries, by rootpage */
+    hash_t *h_ents_name;       /* FDB_TBL_ENT_T data and index entries, by name */
+    hash_t *h_tbls_name;       /* FDB_TBL_T entries */
     pthread_rwlock_t h_rwlock; /* hash lock */
 
     fdb_location_t *loc; /* where is the db located? */
@@ -165,7 +167,7 @@ struct fdb {
     int has_sqlstat4; /* if sqlstat4 was found */
 
     int server_version; /* save the server_version */
-    ssl_mode ssl; /* does this server needs ssl */
+    ssl_mode ssl;       /* does this server needs ssl */
 };
 
 /* cache of foreign dbs */
@@ -207,7 +209,7 @@ struct fdb_cursor {
 
     fdb_tran_t *trans; /* which subtransaction this is part of */
 
-    enum fdb_fcon_type type;  /* to allow future multiple connectors */
+    enum fdb_fcon_type type; /* to allow future multiple connectors */
     union {
         fcon_sock_t sock;
         fcon_cdb2api_t api;
@@ -221,9 +223,9 @@ struct fdb_cursor {
 
     enum fdb_cur_stream_state streaming; /* used to track partial streams */
     uuid_t ciduuid;                      /* UUID/fastseed storage for cursor */
-    uuid_t tiduuid; /* UUID/fastseed storage for transaction, if any, or 0 */
-    char *node;     /* connected to where? */
-    int need_ssl;   /* uses ssl */
+    uuid_t tiduuid;                      /* UUID/fastseed storage for transaction, if any, or 0 */
+    char *node;                          /* connected to where? */
+    int need_ssl;                        /* uses ssl */
 };
 
 typedef struct fdb_systable_info {
@@ -497,7 +499,7 @@ fdb_t *get_fdb(const char *dbname)
     return fdb;
 }
 
-static void init_fdb(fdb_t * fdb, const char * dbname, enum mach_class class, int local, int class_override)
+static void init_fdb(fdb_t *fdb, const char *dbname, enum mach_class class, int local, int class_override)
 {
     fdb->dbname = strdup(dbname);
     fdb->class = class;
@@ -589,7 +591,6 @@ void destroy_local_fdb(fdb_t *fdb)
 {
     if (fdb)
         __free_fdb(fdb);
-
 }
 
 /**
@@ -1016,10 +1017,10 @@ run:
     fdbc_if = fdb_cursor_open(clnt, cur, cur->rootpage, NULL, NULL, need_ssl);
     if (!fdbc_if) {
         rc = clnt->fdb_state.xerr.errval;
-        logmsg(LOGMSG_ERROR, 
-                "%s: failed to connect remote sqlite_master rc =%d \"%s\"\n",
-                __func__, clnt->fdb_state.xerr.errval,
-                clnt->fdb_state.xerr.errstr);
+        logmsg(LOGMSG_ERROR,
+               "%s: failed to connect remote sqlite_master rc =%d \"%s\"\n",
+               __func__, clnt->fdb_state.xerr.errval,
+               clnt->fdb_state.xerr.errstr);
         goto done;
     }
 
@@ -1029,30 +1030,30 @@ run:
     if (versioned) {
         if (initial) {
             sql = sqlite3_mprintf(
-                     "select *, table_version(tbl_name) from sqlite_master"
-                     " where tbl_name='%q' collate nocase or tbl_name="
-                     "'sqlite_stat1' or "
-                     "tbl_name='sqlite_stat4'",
-                     tbl->name);
+                "select *, table_version(tbl_name) from sqlite_master"
+                " where tbl_name='%q' collate nocase or tbl_name="
+                "'sqlite_stat1' or "
+                "tbl_name='sqlite_stat4'",
+                tbl->name);
         } else {
             sql = sqlite3_mprintf(
-                     "select *, table_version(tbl_name) from sqlite_master"
-                     " where tbl_name='%q' collate nocase",
-                     tbl->name);
+                "select *, table_version(tbl_name) from sqlite_master"
+                " where tbl_name='%q' collate nocase",
+                tbl->name);
         }
     } else {
         /* fallback to old un-versioned implementation */
         if (initial) {
             sql = sqlite3_mprintf(
-                     "select * from sqlite_master"
-                     " where tbl_name='%q' or tbl_name='sqlite_stat1' or "
-                     "tbl_name='sqlite_stat4' collate nocase",
-                     tbl->name);
+                "select * from sqlite_master"
+                " where tbl_name='%q' or tbl_name='sqlite_stat1' or "
+                "tbl_name='sqlite_stat4' collate nocase",
+                tbl->name);
         } else {
             sql = sqlite3_mprintf(
-                     "select * from sqlite_master"
-                     " where tbl_name='%q' collate nocase",
-                     tbl->name);
+                "select * from sqlite_master"
+                " where tbl_name='%q' collate nocase",
+                tbl->name);
         }
     }
     fdbc->sql_hint = sql;
@@ -1125,9 +1126,9 @@ run:
         rowlen = fdbc_if->datalen(cur);
 
         if (rowlen <= 0) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: failure to retrieve remote schema, row=%p rowlen=%d\n",
-                    __func__, row, rowlen);
+            logmsg(LOGMSG_ERROR,
+                   "%s: failure to retrieve remote schema, row=%p rowlen=%d\n",
+                   __func__, row, rowlen);
             rc = FDB_ERR_BUG;
             goto close;
         }
@@ -1236,7 +1237,7 @@ int comdb2_fdb_check_class(const char *dbname)
 
     if (fdb->class != requested_lvl) {
         logmsg(LOGMSG_ERROR, "%s: cached fdb is a different class, failing\n",
-                __func__);
+               __func__);
         rc = FDB_ERR_CLASS_DENIED;
         goto done;
     }
@@ -1261,8 +1262,8 @@ static int __check_sqlite_stat(sqlite3 *db, fdb_tbl_ent_t *ent, Table *tab)
     /* incorrect rootpage numbers */
     if (ent && tab && (tab->tnum != ent->rootpage)) {
         logmsg(LOGMSG_ERROR, "Stale cache for \"%s.%s\", wrong rootpage number "
-                        "sqlite=%d shared=%d\n",
-                ent->tbl->fdb->dbname, tab->zName, tab->tnum, ent->rootpage);
+                             "sqlite=%d shared=%d\n",
+               ent->tbl->fdb->dbname, tab->zName, tab->tnum, ent->rootpage);
 
         return SQLITE_SCHEMA_REMOTE;
     }
@@ -1270,8 +1271,8 @@ static int __check_sqlite_stat(sqlite3 *db, fdb_tbl_ent_t *ent, Table *tab)
     /* sqlite cached but not shared! */
     if (!ent && tab) {
         logmsg(LOGMSG_ERROR, "Stale cache for \"%s.%s\", wrong rootpage number "
-                        "sqlite=%d but not shared\n",
-                db->aDb[tab->iDb].zDbSName, tab->zName, tab->tnum);
+                             "sqlite=%d but not shared\n",
+               db->aDb[tab->iDb].zDbSName, tab->zName, tab->tnum);
 
         return SQLITE_SCHEMA_REMOTE;
     }
@@ -1285,8 +1286,7 @@ static int _fdb_check_sqlite3_cached_stats(sqlite3 *db, fdb_t *fdb)
     if (sqlite3_is_preparer(db))
         return SQLITE_OK;
 
-    char *dbname = fdb->local == 0 ? fdb->dbname :
-        sqlite3_mprintf("LOCAL_%s", fdb->dbname);
+    char *dbname = fdb->local == 0 ? fdb->dbname : sqlite3_mprintf("LOCAL_%s", fdb->dbname);
     fdb_tbl_ent_t *stat_ent;
     Table *stat_tab;
 
@@ -1323,18 +1323,19 @@ static int _failed_AddAndLockTable(const char *dbname, int errcode,
 
     if (clnt->fdb_state.xerr.errval && clnt->fdb_state.preserve_err) {
         logmsg(LOGMSG_ERROR, "Ignored error rc=%d str=\"%s\", got new rc=%d new prefix=\"%s\"\n",
-            clnt->fdb_state.xerr.errval, clnt->fdb_state.xerr.errstr, errcode,
-            prefix);
+               clnt->fdb_state.xerr.errval, clnt->fdb_state.xerr.errstr, errcode,
+               prefix);
     } else {
         /* need to pass error to sqlite */
-        errstat_set_rcstrf(&clnt->fdb_state.xerr, errcode, 
-                 "%s for db \"%s\"", prefix, dbname);
+        errstat_set_rcstrf(&clnt->fdb_state.xerr, errcode,
+                           "%s for db \"%s\"", prefix, dbname);
     }
 
     return SQLITE_ERROR; /* speak sqlite */
 }
 
-int create_local_fdb(const char *fdb_name, fdb_t **fdb) {
+int create_local_fdb(const char *fdb_name, fdb_t **fdb)
+{
     int local, lvl_override;
     local = lvl_override = 0;
 
@@ -1342,8 +1343,8 @@ int create_local_fdb(const char *fdb_name, fdb_t **fdb) {
     if (lvl == CLASS_UNKNOWN || lvl == CLASS_DENIED) {
         logmsg(LOGMSG_ERROR, "%s: Could not find usable fdb class\n", __func__);
         const int rc = (lvl == CLASS_UNKNOWN)
-                        ? FDB_ERR_CLASS_UNKNOWN
-                        : FDB_ERR_CLASS_DENIED;
+                           ? FDB_ERR_CLASS_UNKNOWN
+                           : FDB_ERR_CLASS_DENIED;
         return rc;
     }
 
@@ -1839,15 +1840,15 @@ static int insert_table_entry_from_packedsqlite(fdb_t *fdb, fdb_tbl_t *tbl,
 
     if (gbl_fdb_track)
         logmsg(LOGMSG_USER, "%s:%s Inserting table %s:%s rootp=%d src_rootp=%d "
-                        "version=%llu, sql %s\n",
-                fdb->dbname, tbl->name, name, tbl_name, rootpage,
-                source_rootpage, version, sql);
+                            "version=%llu, sql %s\n",
+               fdb->dbname, tbl->name, name, tbl_name, rootpage,
+               source_rootpage, version, sql);
 
     if (strcasecmp(name, tbl_name) &&
         (where = strstr(sql, ") where (")) != NULL) {
         if (!gbl_partial_indexes) {
             logmsg(LOGMSG_ERROR, "Foreign table has partial indexes but partial "
-                            "indexes feature is disabled on this machine\n");
+                                 "indexes feature is disabled on this machine\n");
             rc = FDB_ERR_PI_DISABLED;
             goto out;
         }
@@ -1858,8 +1859,8 @@ static int insert_table_entry_from_packedsqlite(fdb_t *fdb, fdb_tbl_t *tbl,
         (strstr(sql, "((") || strstr(sql, "))") || strstr(sql, ", ("))) {
         if (!gbl_expressions_indexes) {
             logmsg(LOGMSG_ERROR, "Foreign table has expressions indexes but "
-                            "expressions indexes feature is disabled on this "
-                            "machine\n");
+                                 "expressions indexes feature is disabled on this "
+                                 "machine\n");
             rc = FDB_ERR_EXPRIDX_DISABLED;
             goto out;
         }
@@ -2188,7 +2189,7 @@ static int _fdb_remote_reconnect(fdb_t *fdb, SBUF2 **psb, char *host, int use_ca
 
     if (!sb) {
         logmsg(LOGMSG_ERROR, "%s unable to connect to %s %s\n", __func__,
-                fdb->dbname, host);
+               fdb->dbname, host);
         return FDB_ERR_CONNECT;
     }
 
@@ -2321,7 +2322,7 @@ static int _fdb_send_open_retries(sqlclntstate *clnt, fdb_t *fdb,
             psb = &trans->fcon.sb;
         }
 
-        if ((rc = _fdb_remote_reconnect(fdb, psb, host, (fdbc)?1:0)) == FDB_NOERR) {
+        if ((rc = _fdb_remote_reconnect(fdb, psb, host, (fdbc) ? 1 : 0)) == FDB_NOERR) {
             if (fdbc) {
                 fdbc->streaming = FDB_CUR_IDLE;
                 rc = fdb_send_open(clnt, msg, fdbc->cid, trans, source_rootpage, flags, version, fdbc->fcon.sock.sb);
@@ -2339,8 +2340,7 @@ static int _fdb_send_open_retries(sqlclntstate *clnt, fdb_t *fdb,
                     fdb_init_disttxn(clnt);
 
                     char *coordinator_dbname = strdup(gbl_dbname);
-                    char *coordinator_tier = gbl_machine_class ?
-                        strdup(gbl_machine_class) : strdup(gbl_myhostname);
+                    char *coordinator_tier = gbl_machine_class ? strdup(gbl_machine_class) : strdup(gbl_myhostname);
                     char *dist_txnid = strdup(clnt->dist_txnid);
 
                     rc = fdb_send_2pc_begin(clnt, msg, trans, clnt->dbtran.mode,
@@ -2400,8 +2400,7 @@ static int _fdb_send_open_retries(sqlclntstate *clnt, fdb_t *fdb,
             host = fdb_select_node(&fdb->loc, op, host, &avail_nodes,
                                    &lcl_nodes, &fdb->dbcon_mtx);
             continue; /* try again with the selected node, can be the same */
-        }
-        else {
+        } else {
             /* either this is the first node, and
                   have location info (avail_nodes, lcl_nodes),
                or this is a retry after first node failed */
@@ -2440,7 +2439,7 @@ static int _fdb_send_open_retries(sqlclntstate *clnt, fdb_t *fdb,
 
     if (!(*psb)) {
         logmsg(LOGMSG_ERROR, "%s: failed to connect after %d nodes checked\n",
-                __func__, tried_nodes);
+               __func__, tried_nodes);
         clnt->fdb_state.preserve_err = 1;
         clnt->fdb_state.xerr.errval = FDB_ERR_CONNECT_CLUSTER;
         snprintf(clnt->fdb_state.xerr.errstr,
@@ -2491,7 +2490,7 @@ static void _cursor_set_common(fdb_cursor_if_t *fdbc_if, char *tid, int flags,
     fdbc->intf = fdbc_if;
 }
 
-cdb2_hndl_tp* fdb_connect(const char *dbname, enum mach_class inclass, int local,
+cdb2_hndl_tp *fdb_connect(const char *dbname, enum mach_class inclass, int local,
                           const char **outclass, int flags)
 {
     cdb2_hndl_tp *hndl = NULL;
@@ -2552,7 +2551,6 @@ static fdb_cursor_if_t *_cursor_open_remote_cdb2api(sqlclntstate *clnt,
 
     _cursor_set_common(fdbc_if, NULL, flags, use_ssl);
 
-
     fdbc->fcon.api.hndl = fdb_connect(fdb->dbname, fdb->class, fdb->local, &class,
                                       CDB2_SQL_ROWS);
     if (!fdbc->fcon.api.hndl)
@@ -2604,7 +2602,7 @@ int fdb_2pc_set(sqlclntstate *clnt, fdb_t *fdb, cdb2_hndl_tp *hndl)
     rc = cdb2_run_statement(hndl, str);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: %s:%s failed to set remtran_name rc %d\n",
-                __func__, fdb->dbname, class, rc);
+               __func__, fdb->dbname, class, rc);
         return -1;
     }
 
@@ -2612,7 +2610,7 @@ int fdb_2pc_set(sqlclntstate *clnt, fdb_t *fdb, cdb2_hndl_tp *hndl)
     rc = cdb2_run_statement(hndl, str);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: %s:%s failed to set remtran_tier rc %d\n",
-                __func__, fdb->dbname, class, rc);
+               __func__, fdb->dbname, class, rc);
         return -1;
     }
 
@@ -2620,15 +2618,15 @@ int fdb_2pc_set(sqlclntstate *clnt, fdb_t *fdb, cdb2_hndl_tp *hndl)
     rc = cdb2_run_statement(hndl, str);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: %s:%s failed to set remtran_txnid rc %d\n",
-                __func__, fdb->dbname, class, rc);
+               __func__, fdb->dbname, class, rc);
         return -1;
     }
 
-    snprintf(str, sizeof(str), "SET REMTRAN_TSTAMP %"PRId64"", clnt->dist_timestamp);
+    snprintf(str, sizeof(str), "SET REMTRAN_TSTAMP %" PRId64 "", clnt->dist_timestamp);
     rc = cdb2_run_statement(hndl, str);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: %s:%s failed to set remtran_tstamp rc %d\n",
-                __func__, fdb->dbname, class, rc);
+               __func__, fdb->dbname, class, rc);
         return -1;
     }
 
@@ -2770,7 +2768,7 @@ fdb_cursor_if_t *fdb_cursor_open(sqlclntstate *clnt, BtCursor *pCur,
 
     if (pCur->fdbc) {
         logmsg(LOGMSG_ERROR, "%s: fdb cursor already opened, refreshing\n",
-                __func__);
+               __func__);
         rc = pCur->fdbc->close(pCur);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: closing fdb cursor failed rc=%d\n", __func__, rc);
@@ -2786,7 +2784,7 @@ fdb_cursor_if_t *fdb_cursor_open(sqlclntstate *clnt, BtCursor *pCur,
         ent = get_fdb_tbl_ent_by_rootpage_from_fdb(fdb, rootpage);
         if (!ent) {
             logmsg(LOGMSG_ERROR, "%s: unable to find rootpage %d\n", __func__,
-                    rootpage);
+                   rootpage);
 
             clnt->fdb_state.preserve_err = 1;
             clnt->fdb_state.xerr.errval = FDB_ERR_BUG;
@@ -2891,18 +2889,18 @@ static int fdb_cursor_close(BtCursor *pCur)
     if (pCur->fdbc) {
         /*TODO: check sqlite_stat cursors and their caching */
         fdb_cursor_t *fdbc = pCur->fdbc->impl;
-        if (fdbc->type == FCON_TYPE_LEGACY) { 
+        if (fdbc->type == FCON_TYPE_LEGACY) {
 
             fdb_send_close(fdbc->msg, fdbc->cid,
-                    (fdbc->trans) ? fdbc->trans->tid : 0,
-                    (fdbc->trans) ? fdbc->trans->seq : 0,
-                    fdbc->fcon.sock.sb);
+                           (fdbc->trans) ? fdbc->trans->tid : 0,
+                           (fdbc->trans) ? fdbc->trans->seq : 0,
+                           fdbc->fcon.sock.sb);
         }
         /* closing the cursor locally */
         fdb_cursor_close_on_open(pCur, 1);
     } else {
         logmsg(LOGMSG_ERROR, "%s cursor already closed rootpage=%d?\n", __func__,
-                pCur->rootpage);
+               pCur->rootpage);
     }
 
     return FDB_NOERR;
@@ -2935,9 +2933,9 @@ static char *_build_run_sql_from_hint(BtCursor *pCur, Mem *m, int ncols,
                 pCur->col_mask);
 
             if (orderDesc == NULL) {
-                logmsg(LOGMSG_ERROR, 
-                        "%s: Failed to get order from sqlite, broken engine!\n",
-                        __func__);
+                logmsg(LOGMSG_ERROR,
+                       "%s: Failed to get order from sqlite, broken engine!\n",
+                       __func__);
                 *error = 1;
                 return NULL;
             }
@@ -2956,16 +2954,16 @@ static char *_build_run_sql_from_hint(BtCursor *pCur, Mem *m, int ncols,
     }
 
     if (whereDesc || hasCondition) {
-        char * single_select;
-        char * where_pred;
-        single_select = sqlite3_mprintf("SELECT %s%srowid FROM \"%w\"", 
-                    (columnsDesc) ? columnsDesc : ((using_col_filter) ? "" : "*"),
-                    (columnsDesc) ? ", " : ((using_col_filter) ? "" : ", "),
-                    tableName);
+        char *single_select;
+        char *where_pred;
+        single_select = sqlite3_mprintf("SELECT %s%srowid FROM \"%w\"",
+                                        (columnsDesc) ? columnsDesc : ((using_col_filter) ? "" : "*"),
+                                        (columnsDesc) ? ", " : ((using_col_filter) ? "" : ", "),
+                                        tableName);
         where_pred = sqlite3_mprintf("%s%s%s",
-                whereDesc ? whereDesc : "",
-                (whereDesc != NULL && hasCondition) ? " AND " : "",
-                orderDesc ? orderDesc : "");
+                                     whereDesc ? whereDesc : "",
+                                     (whereDesc != NULL && hasCondition) ? " AND " : "",
+                                     orderDesc ? orderDesc : "");
         if (at_least_one)
             /* NOTE: in the rare case when this is a data cursor Rewind (i.e. CFIRST)
              * since there is a predicate, we need to make sure at least one row is
@@ -2974,18 +2972,18 @@ static char *_build_run_sql_from_hint(BtCursor *pCur, Mem *m, int ncols,
              * keys (like, in a join)
              */
             sql = sqlite3_mprintf("%s WHERE %s union select * from (%s limit 1)",
-                    single_select, where_pred, single_select);
+                                  single_select, where_pred, single_select);
         else {
             sql = sqlite3_mprintf("%s WHERE %s",
-                    single_select, where_pred);
+                                  single_select, where_pred);
         }
         sqlite3_free(single_select);
         sqlite3_free(where_pred);
     } else {
         sql = sqlite3_mprintf("SELECT %s%srowid FROM \"%w\"%s",
-                 (columnsDesc) ? columnsDesc : ((using_col_filter) ? "" : "*"),
-                 (columnsDesc) ? ", " : ((using_col_filter) ? "" : ", "),
-                 tableName, orderDesc ? orderDesc : "");
+                              (columnsDesc) ? columnsDesc : ((using_col_filter) ? "" : "*"),
+                              (columnsDesc) ? ", " : ((using_col_filter) ? "" : ", "),
+                              tableName, orderDesc ? orderDesc : "");
     }
 
     if (!sql) {
@@ -3017,7 +3015,6 @@ done:
     return sql;
 }
 
-
 static char *fdb_cursor_get_data(BtCursor *pCur)
 {
     assert(pCur->fdbc != NULL);
@@ -3037,7 +3034,7 @@ static int fdb_cursor_get_datalen(BtCursor *pCur)
 
     if (gbl_fdb_track) {
         logmsg(LOGMSG_USER, "XXXX: get datalen %d\n",
-                fdb_msg_datalen(pCur->fdbc->impl->msg));
+               fdb_msg_datalen(pCur->fdbc->impl->msg));
     }
     return fdb_msg_datalen(pCur->fdbc->impl->msg);
 }
@@ -3048,7 +3045,7 @@ static unsigned long long fdb_cursor_get_genid(BtCursor *pCur)
 
     if (gbl_fdb_track) {
         logmsg(LOGMSG_USER, "XXXX: get genid %llx\n",
-                fdb_msg_genid(pCur->fdbc->impl->msg));
+               fdb_msg_genid(pCur->fdbc->impl->msg));
     }
     return fdb_msg_genid(pCur->fdbc->impl->msg);
 }
@@ -3074,7 +3071,7 @@ static void fdb_cursor_get_found_data(BtCursor *pCur, unsigned long long *genid,
     if (gbl_fdb_track) {
         unsigned long long t = osql_log_time();
         logmsg(LOGMSG_USER, "XXXX: %llu get found data genid=%llx len=%d [", t,
-                *genid, *datalen);
+               *genid, *datalen);
         fsnapf(stderr, *data, *datalen);
         logmsg(LOGMSG_USER, "]\n");
     }
@@ -3124,7 +3121,7 @@ static int fdb_serialize_key(BtCursor *pCur, Mem *key, int nfields)
 
         if (!pCur->keybuf) {
             logmsg(LOGMSG_ERROR, "%s: failed to allocate buffer %d bytes\n",
-                    __func__, datasz + hdrsz);
+                   __func__, datasz + hdrsz);
             return FDB_ERR_MALLOC;
         }
         pCur->keybuf_alloc = datasz + hdrsz;
@@ -3291,9 +3288,9 @@ static int _fdb_build_move_str(BtCursor *pCur, int how, char **psql, int *psqlle
         sqllen = strlen(sql) + 1;
     } else {
         sql = _build_run_sql_from_hint(
-                pCur, NULL, 0, (how == CLAST) ? OP_Prev : OP_Next, &sqllen, &error,
-                /* is this a Rewind on a data cursor ? */
-                how == CFIRST && fdbc->ent && fdbc->ent->ixnum < 0);
+            pCur, NULL, 0, (how == CLAST) ? OP_Prev : OP_Next, &sqllen, &error,
+            /* is this a Rewind on a data cursor ? */
+            how == CFIRST && fdbc->ent && fdbc->ent->ixnum < 0);
     }
 
     if (!sql) {
@@ -3318,7 +3315,7 @@ static void _fdb_handle_sqlite_schema_err(fdb_cursor_t *fdbc, char *errstr)
 
     remote_version = atoll(errstr);
 
-    logmsg(LOGMSG_ERROR, 
+    logmsg(LOGMSG_ERROR,
            "%s: local version %llu is stale, need %llu \"%s\"\n",
            __func__, fdbc->ent->tbl->version, remote_version,
            errstr);
@@ -3342,13 +3339,13 @@ static int _fdb_handle_io_read_error(BtCursor *pCur, int *retry, int *pollms,
                            FDB_ERR_TRANSIENT_IO);
     if (gbl_fdb_track)
         logmsg(LOGMSG_USER,
-                "%s:%d blacklisting %s, retrying..\n", __func__,
-                __LINE__, fdbc->node);
+               "%s:%d blacklisting %s, retrying..\n", __func__,
+               __LINE__, fdbc->node);
     if (_fdb_io_retry(retry, pollms))
         return 1;
 
     logmsg(LOGMSG_ERROR,
-            "%s:%d failed to reconnect after %d retries\n", f, l, *retry);
+           "%s:%d failed to reconnect after %d retries\n", f, l, *retry);
     return 0;
 }
 
@@ -3380,11 +3377,11 @@ retry:
     if (MOVE_IS_ABSOLUTE(how)) {
         /* this is a rewind, lets make sure the pipe is clean */
         if (fdbc->streaming != FDB_CUR_IDLE) {
-version_retry:
+        version_retry:
             rc = fdb_cursor_reopen(pCur);
             if (rc || !pCur->fdbc /*did we fail to pass error back */) {
                 logmsg(LOGMSG_ERROR, "%s: failed to reconnect rc=%d\n", __func__,
-                        rc);
+                       rc);
                 return rc;
             }
             fdbc = pCur->fdbc->impl;
@@ -3406,9 +3403,9 @@ version_retry:
         }
 
         rc = fdb_send_run_sql(
-                fdbc->msg, fdbc->cid, sqllen, sql,
-                (fdbc->ent) ? fdb_table_version(fdbc->ent->tbl->version) : 0, 0,
-                NULL, flags, fdbc->fcon.sock.sb);
+            fdbc->msg, fdbc->cid, sqllen, sql,
+            (fdbc->ent) ? fdb_table_version(fdbc->ent->tbl->version) : 0, 0,
+            NULL, flags, fdbc->fcon.sock.sb);
 
         if (fdbc->sql_hint != sql) {
             sqlite3_free(sql);
@@ -3460,7 +3457,7 @@ version_retry:
                        "%s: failed to retrieve streaming "
                        "row rc=%d \"%s\"\n",
                        __func__, rc,
-                          errstr ? errstr : "error string not set");
+                       errstr ? errstr : "error string not set");
                 fdbc->streaming = FDB_CUR_ERROR;
             }
 
@@ -3555,7 +3552,7 @@ static int fdb_cursor_find_sql(BtCursor *pCur, Mem *key, int nfields,
 retry:
     /* this is a rewind, lets make sure the pipe is clean */
     if (fdbc->streaming != FDB_CUR_IDLE) {
-version_retry:
+    version_retry:
         rc = fdb_cursor_reopen(pCur);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: failed to reconnect rc=%d\n", __func__,
@@ -3564,7 +3561,7 @@ version_retry:
         }
         fdbc = pCur->fdbc->impl;
     }
-    
+
     rc = _fdb_build_find_str(pCur, key, nfields, bias, &sql, &sqllen);
     if (rc)
         return rc;
@@ -3572,10 +3569,10 @@ version_retry:
     start_rpc = osql_log_time();
 
     rc = fdb_send_run_sql(
-            fdbc->msg, fdbc->cid, sqllen, sql,
-            (fdbc->ent) ? fdb_table_version(fdbc->ent->tbl->version) : 0,
-            packed_keylen, packed_key, FDB_RUN_SQL_TRIM,
-            fdbc->fcon.sock.sb);
+        fdbc->msg, fdbc->cid, sqllen, sql,
+        (fdbc->ent) ? fdb_table_version(fdbc->ent->tbl->version) : 0,
+        packed_keylen, packed_key, FDB_RUN_SQL_TRIM,
+        fdbc->fcon.sock.sb);
 
     if (fdbc->sql_hint != sql) {
         sqlite3_free(sql);
@@ -3611,7 +3608,7 @@ version_retry:
                         state->preserve_err = 1;
                         errstat_set_rc(&state->xerr, FDB_ERR_READ_IO);
                         errstat_set_str(&state->xerr, errstr ? errstr
-                                        : "error string not set");
+                                                             : "error string not set");
                     }
                     logmsg(LOGMSG_ERROR,
                            "%s: failed to retrieve streaming"
@@ -3665,7 +3662,8 @@ fdb_sqlstat_cache_t *fdb_sqlstats_get(fdb_t *fdb)
 
     /* this should be an sql thread */
     thd = pthread_getspecific(query_info_key);
-    if (!thd) return NULL;
+    if (!thd)
+        return NULL;
 
     clnt = thd->clnt;
 
@@ -3674,13 +3672,13 @@ fdb_sqlstat_cache_t *fdb_sqlstats_get(fdb_t *fdb)
        We need to allow bdb lock to recover if we keep waiting
      */
     do {
-#       ifdef __APPLE__
+#ifdef __APPLE__
         rc = pthread_mutex_trylock(&fdb->sqlstats_mtx);
         if (rc == EBUSY) {
             poll(NULL, 0, 10);
             rc = ETIMEDOUT;
         }
-#       else
+#else
         struct timespec ts;
         clock_gettime(CLOCK_REALTIME, &ts);
         ts.tv_nsec += interval;
@@ -3689,7 +3687,7 @@ fdb_sqlstat_cache_t *fdb_sqlstats_get(fdb_t *fdb)
             ts.tv_nsec -= 1000000000;
         }
         rc = pthread_mutex_timedlock(&fdb->sqlstats_mtx, &ts);
-#       endif
+#endif
         if (rc) {
             if (rc == ETIMEDOUT) {
                 int irc = clnt_check_bdb_lock_desired(clnt);
@@ -3702,7 +3700,7 @@ fdb_sqlstat_cache_t *fdb_sqlstats_get(fdb_t *fdb)
             }
 
             logmsg(LOGMSG_ERROR, "%s: pthread_mutex_timedlock failed with rc=%d\n",
-                    __func__, rc);
+                   __func__, rc);
             return NULL;
         } else {
             break; /* got the lock */
@@ -3831,8 +3829,11 @@ const char *fdb_parse_comdb2_remote_dbname(const char *zDatabase,
  * Get dbname, tablename, and so on
  *
  */
-const char *fdb_dbname_name(const fdb_t * const fdb) { return fdb->dbname; }
-const char *fdb_dbname_class_routing(const fdb_t * const fdb)
+const char *fdb_dbname_name(const fdb_t *const fdb)
+{
+    return fdb->dbname;
+}
+const char *fdb_dbname_class_routing(const fdb_t *const fdb)
 {
     if (fdb->local)
         /*
@@ -3989,7 +3990,7 @@ static int fdb_cursor_update(BtCursor *pCur, sqlclntstate *clnt,
         uuidstr_t ciduuid;
         uuidstr_t tiduuid;
         logmsg(LOGMSG_USER, "Cursor %s: UPDATE for transaction %s "
-               "oldgenid=%llx to genid=%llx seq=%d %s%s\n",
+                            "oldgenid=%llx to genid=%llx seq=%d %s%s\n",
                comdb2uuidstr((unsigned char *)fdbc->cid, ciduuid),
                comdb2uuidstr((unsigned char *)trans->tid, tiduuid), genid,
                oldgenid, trans->seq, (tblname) ? "tblname=" : "",
@@ -4052,7 +4053,7 @@ static fdb_distributed_tran_t *fdb_trans_create_dtran(sqlclntstate *clnt)
 
     if (dtran) {
         logmsg(LOGMSG_ERROR, "%s: bug! this looks like an nested sql transaction\n",
-                __func__);
+               __func__);
         return NULL;
     }
 
@@ -4141,7 +4142,7 @@ static fdb_tran_t *_dtran_get_subtran_cdb2api(sqlclntstate *clnt, fdb_t *fdb,
         return NULL;
 
     tran->is_cdb2api = 1;
-    
+
     return tran;
 }
 
@@ -4161,8 +4162,8 @@ static fdb_tran_t *fdb_trans_dtran_get_subtran(sqlclntstate *clnt,
          * 2) socksql txn and push remote read and writes are enabled
          */
         if (fdb->server_version >= FDB_VER_WR_CDB2API && !clnt->disable_fdb_push && clnt->fdb_push_remote_write &&
-            (/*1*/!clnt->in_client_trans ||
-            (/*2*/clnt->fdb_push_remote && clnt->dbtran.mode == TRANLEVEL_SOSQL)))
+            (/*1*/ !clnt->in_client_trans ||
+             (/*2*/ clnt->fdb_push_remote && clnt->dbtran.mode == TRANLEVEL_SOSQL)))
             tran = _dtran_get_subtran_cdb2api(clnt, fdb, use_ssl);
         else
             tran = _dtran_get_subtran(clnt, fdb, use_ssl);
@@ -4183,8 +4184,8 @@ static fdb_tran_t *fdb_trans_dtran_get_subtran(sqlclntstate *clnt,
         if (gbl_fdb_track) {
             uuidstr_t us;
             logmsg(LOGMSG_USER, "%s Reusing tid=%s db=\"%s\" cdb2api %d\n", __func__,
-                       comdb2uuidstr((unsigned char *)tran->tid, us),
-                       fdb->dbname, tran->is_cdb2api);
+                   comdb2uuidstr((unsigned char *)tran->tid, us),
+                   fdb->dbname, tran->is_cdb2api);
         }
         /* this is a bug, probably sharing the wrong fdb_tran after switching to 
          * a lower version protocol
@@ -4487,8 +4488,8 @@ int fdb_trans_rollback(sqlclntstate *clnt)
 
         if (gbl_fdb_track)
             logmsg(LOGMSG_USER, "%s Send Commit tid=%llx db=\"%s\" rc=%d\n",
-                    __func__, *(unsigned long long *)tran->tid,
-                    tran->fdb->dbname, rc);
+                   __func__, *(unsigned long long *)tran->tid,
+                   tran->fdb->dbname, rc);
 
         if (rc) {
             logmsg(
@@ -4513,7 +4514,10 @@ int fdb_trans_rollback(sqlclntstate *clnt)
     return 0;
 }
 
-char *fdb_trans_id(fdb_tran_t *trans) { return trans->tid; }
+char *fdb_trans_id(fdb_tran_t *trans)
+{
+    return trans->tid;
+}
 
 int fdb_is_sqlite_stat(fdb_t *fdb, int rootpage)
 {
@@ -4536,7 +4540,7 @@ char *fdb_get_alias(const char **p_tablename)
     if (!alias) {
         if (errstr) {
             logmsg(LOGMSG_ERROR, "%s: error retrieving fdb alias for %s\n", __func__,
-                    tablename);
+                   tablename);
             free(errstr);
         }
     } else {
@@ -4553,7 +4557,10 @@ char *fdb_get_alias(const char **p_tablename)
     return alias;
 }
 
-void fdb_stat_alias(void) { dump_alias_info(); }
+void fdb_stat_alias(void)
+{
+    dump_alias_info();
+}
 
 /**
 * This function will check some critical regions
@@ -4750,14 +4757,14 @@ static void fdb_clear_schema(const char *dbname, const char *tblname,
         tbl = hash_find_readonly(fdb->h_tbls_name, &tblname);
         if (tbl == NULL) {
             logmsg(LOGMSG_ERROR, "Unknown table \"%s\" in db \"%s\"\n", tblname,
-                    dbname);
+                   dbname);
             goto done;
         }
 
         if (__free_fdb_tbl(tbl, fdb)) {
-            logmsg(LOGMSG_ERROR, 
-                    "Error clearing schema for table \"%s\" in db \"%s\"\n",
-                    tblname, dbname);
+            logmsg(LOGMSG_ERROR,
+                   "Error clearing schema for table \"%s\" in db \"%s\"\n",
+                   tblname, dbname);
         }
     }
 
@@ -4933,18 +4940,18 @@ int fdb_process_message(const char *line, int lline)
         return FDB_ERR_GENERIC;
     } else if (tokcmp(tok, ltok, "help") == 0) {
         logmsg(LOGMSG_USER, "Usage:\n"
-                        "    fdb init                          = removes all "
-                        "schemas and index stats\n"
-                        "    fdb clear schema dbname           = removes "
-                        "schema caches for all tables in db \"dbname\"\n"
-                        "    fdb clear schema dbname tblname   = removes "
-                        "schema cache for table \"tblname\" in db \"dbname\"\n"
-                        "    fdb clear sqlite_stats            = removes "
-                        "cached sqlite stats data\n"
-                        "    fdb info db                       = print cached "
-                        "tables names and their versions for all dbs\n"
-                        "    fdb info db dbname                = print cached "
-                        "tables names and their versions in db \"dbname\"\n");
+                            "    fdb init                          = removes all "
+                            "schemas and index stats\n"
+                            "    fdb clear schema dbname           = removes "
+                            "schema caches for all tables in db \"dbname\"\n"
+                            "    fdb clear schema dbname tblname   = removes "
+                            "schema cache for table \"tblname\" in db \"dbname\"\n"
+                            "    fdb clear sqlite_stats            = removes "
+                            "cached sqlite stats data\n"
+                            "    fdb info db                       = print cached "
+                            "tables names and their versions for all dbs\n"
+                            "    fdb info db dbname                = print cached "
+                            "tables names and their versions in db \"dbname\"\n");
     } else if (tokcmp(tok, ltok, "init") == 0) {
         fdb_init();
     } else if (tokcmp(tok, ltok, "clear") == 0) {
@@ -5029,7 +5036,7 @@ int fdb_process_message(const char *line, int lline)
             return FDB_ERR_GENERIC;
         }
     } else if (tokcmp(tok, ltok, "test") == 0) {
-        tok = segtok((char*) line, lline, &st, &ltok);
+        tok = segtok((char *)line, lline, &st, &ltok);
         if (ltok == 0) {
             logmsg(LOGMSG_ERROR, "fdb test error: missing trap name\n");
             return FDB_ERR_GENERIC;
@@ -5152,7 +5159,7 @@ int fdb_lock_table(sqlite3_stmt *pStmt, sqlclntstate *clnt, Table *tab,
                     db->zDbSName, tab->zName, tab->version, ent->tbl->version);
             } else {
                 logmsg(LOGMSG_USER, "No cache for \"%s.%s\", sql version=%u\n",
-                        db->zDbSName, tab->zName, tab->version);
+                       db->zDbSName, tab->zName, tab->version);
             }
         }
         return SQLITE_SCHEMA_REMOTE;
@@ -5214,7 +5221,7 @@ int fdb_heartbeats(fdb_hbeats_type *hbeats)
         uuidstr_t us;
         comdb2uuidstr((unsigned char *)tran->tid, us);
         logmsg(LOGMSG_USER, "%s Send heartbeat tid=%s db=\"%s\" rc=%d\n",
-                __func__, us, tran->fdb->dbname, rc);
+               __func__, us, tran->fdb->dbname, rc);
     }
     return rc;
 }
@@ -5305,7 +5312,8 @@ static int _fdb_set_affinity_node(sqlclntstate *clnt, const fdb_t *fdb,
         iarr =
             (int *)realloc(fdb_state->fdb_last_status,
                            (fdb_state->n_fdb_affinities + 1) * sizeof(char *));
-        if (!iarr) return FDB_ERR_MALLOC;
+        if (!iarr)
+            return FDB_ERR_MALLOC;
 
         fdb_state->fdb_last_status = iarr;
 
@@ -5450,9 +5458,9 @@ done:
     return rc;
 }
 
-int fdb_get_server_semver(const fdb_t * const fdb, const char ** version)
+int fdb_get_server_semver(const fdb_t *const fdb, const char **version)
 {
-    cdb2_hndl_tp * hndl = NULL;
+    cdb2_hndl_tp *hndl = NULL;
 
     int rc = cdb2_open(&hndl, fdb_dbname_name(fdb), is_local(fdb) ? "local" : fdb_dbname_class_routing(fdb), 0);
     if (rc) {
@@ -5465,7 +5473,7 @@ int fdb_get_server_semver(const fdb_t * const fdb, const char ** version)
         goto done;
     }
 
-    rc = cdb2_next_record(hndl); 
+    rc = cdb2_next_record(hndl);
     if (rc != CDB2_OK) {
         rc = (rc == CDB2ERR_CONNECT_ERROR) ? FDB_ERR_CONNECT : FDB_ERR_GENERIC;
         goto done;
@@ -5600,20 +5608,20 @@ void fdb_systable_info_free(void *data, int npoints)
     free(ient);
 }
 
-#define CHECK_ROW_LEN(ret) \
-    do { \
-    cdb2_hndl_tp *hndl = pCur->fdbc->impl->fcon.api.hndl; \
-    int len = cdb2_column_size(hndl, 0); \
-    if (len <= sizeof(unsigned long long)) { \
-        logmsg(LOGMSG_ERROR, "%s: BUG, row length is too small %d\n", \
-               __func__, len); \
-        return (ret); \
-    } \
-    } while (0); 
+#define CHECK_ROW_LEN(ret)                                                \
+    do {                                                                  \
+        cdb2_hndl_tp *hndl = pCur->fdbc->impl->fcon.api.hndl;             \
+        int len = cdb2_column_size(hndl, 0);                              \
+        if (len <= sizeof(unsigned long long)) {                          \
+            logmsg(LOGMSG_ERROR, "%s: BUG, row length is too small %d\n", \
+                   __func__, len);                                        \
+            return (ret);                                                 \
+        }                                                                 \
+    } while (0);
 
 static char *fdb_cursor_get_data_cdb2api(BtCursor *pCur)
 {
-    char * value = NULL;
+    char *value = NULL;
 
     CHECK_ROW_LEN(NULL);
 
@@ -5657,7 +5665,7 @@ static void fdb_cursor_get_found_data_cdb2api(BtCursor *pCur,
     }
 
     unsigned long long l =
-        *(unsigned long long*)(value + len - sizeof(unsigned long long));
+        *(unsigned long long *)(value + len - sizeof(unsigned long long));
 
     if (genid) {
         *genid = flibc_ntohll(l);
@@ -5717,28 +5725,28 @@ static int _fdb_cdb2api_send_set(fdb_cursor_t *fdbc)
     return FDB_NOERR;
 }
 
-#define SET_INT(name, value) \
-    do { \
-        snprintf(str, sizeof(str), "SET %s %d", \
-                 name, value); \
-        rc = cdb2_run_statement(hndl, str); \
-        if (rc) { \
+#define SET_INT(name, value)                                       \
+    do {                                                           \
+        snprintf(str, sizeof(str), "SET %s %d",                    \
+                 name, value);                                     \
+        rc = cdb2_run_statement(hndl, str);                        \
+        if (rc) {                                                  \
             logmsg(LOGMSG_ERROR, "%s failed to write %s \"%s\"\n", \
-                   __func__, name, str); \
-            return -1; \
-        } \
+                   __func__, name, str);                           \
+            return -1;                                             \
+        }                                                          \
     } while (0);
 
-#define SET_STR(name, value) \
-    do { \
-        snprintf(str, sizeof(str), "SET %s %s", \
-                 name, value); \
-        rc = cdb2_run_statement(hndl, str); \
-        if (rc) { \
+#define SET_STR(name, value)                                       \
+    do {                                                           \
+        snprintf(str, sizeof(str), "SET %s %s",                    \
+                 name, value);                                     \
+        rc = cdb2_run_statement(hndl, str);                        \
+        if (rc) {                                                  \
             logmsg(LOGMSG_ERROR, "%s failed to write %s \"%s\"\n", \
-                   __func__, name, str); \
-            return -1; \
-        } \
+                   __func__, name, str);                           \
+            return -1;                                             \
+        }                                                          \
     } while (0);
 
 static int _fdb_client_set_options(sqlclntstate *clnt,
@@ -5811,15 +5819,15 @@ static int _fdb_run_sql(BtCursor *pCur, char *sql)
 
                     rc = FDB_ERR_FDB_VERSION;
                     goto done;
-                /* remote speaks cdb2api, but wants older protocol */
+                    /* remote speaks cdb2api, but wants older protocol */
                 } else if (!strncasecmp(errstr, err_cdb2apiold,
                                         strlen(err_cdb2apiold))) {
                     tmp = errstr + strlen(err_cdb2apiold);
-                    tmp = skipws((char*)tmp);
+                    tmp = skipws((char *)tmp);
                     if (!tmp) {
                         logmsg(LOGMSG_ERROR,
                                "Failed to retrieve server version \"%s\"\n",
-                                errstr);
+                               errstr);
                         rc = FDB_ERR_GENERIC;
                     } else {
                         _update_fdb_version(pCur, tmp);
@@ -5829,14 +5837,14 @@ static int _fdb_run_sql(BtCursor *pCur, char *sql)
                 } else if (!strncasecmp(errstr, err_tableschemaold,
                                         strlen(err_tableschemaold))) {
                     tmp = errstr + strlen(err_tableschemaold);
-                    tmp = skipws((char*)tmp);
+                    tmp = skipws((char *)tmp);
                     if (!tmp) {
                         logmsg(LOGMSG_ERROR,
                                "Failed to retrieve table version \"%s\"\n",
-                                errstr);
+                               errstr);
                         rc = FDB_ERR_GENERIC;
                     } else {
-                        _fdb_handle_sqlite_schema_err(fdbc, (char*)tmp);
+                        _fdb_handle_sqlite_schema_err(fdbc, (char *)tmp);
                         rc = SQLITE_SCHEMA_REMOTE;
                     }
                     goto done;
@@ -5846,7 +5854,7 @@ static int _fdb_run_sql(BtCursor *pCur, char *sql)
             if (state) {
                 state->preserve_err = 1;
                 errstat_set_rcstrf(&state->xerr, FDB_ERR_BUG,
-                        "%s", errstr ? errstr : "missing api error string");
+                                   "%s", errstr ? errstr : "missing api error string");
             }
             fdbc->streaming = FDB_CUR_ERROR;
             logmsg(LOGMSG_ERROR,
@@ -5859,7 +5867,7 @@ static int _fdb_run_sql(BtCursor *pCur, char *sql)
             if (state) {
                 state->preserve_err = 1;
                 errstat_set_rcstrf(&state->xerr, FDB_ERR_READ_IO,
-                        "%s", errstr);
+                                   "%s", errstr);
             }
             logmsg(LOGMSG_ERROR,
                    "%s: received cdb2api error "
@@ -5899,13 +5907,13 @@ static int fdb_cursor_move_sql_cdb2api(BtCursor *pCur, int how)
 
     /* if absolute move, send new query */
     if (how == CFIRST || how == CLAST) {
-version_retry:
+    version_retry:
         rc = _fdb_build_move_str(pCur, how, &sql, NULL);
         if (rc)
             return rc;
 
         rc = _fdb_run_sql(pCur, sql);
-        if (rc  == FDB_ERR_FDB_VERSION) {
+        if (rc == FDB_ERR_FDB_VERSION) {
             /* might move cursor to different backend */
             rc = fdb_cursor_reopen(pCur);
             if (rc)
@@ -5996,54 +6004,53 @@ version_retry:
     return rc;
 }
 
-#define GET_INT(val) \
-    do { \
-        sqlstr = skipws(sqlstr); \
-        if (!*sqlstr) { \
-            snprintf(err, errlen, \
-                     "missing setting value"); \
-            return -1; \
-        } \
-        if (((val) = atoi(sqlstr)) < 0) { \
-            snprintf(err, errlen, \
+#define GET_INT(val)                                      \
+    do {                                                  \
+        sqlstr = skipws(sqlstr);                          \
+        if (!*sqlstr) {                                   \
+            snprintf(err, errlen,                         \
+                     "missing setting value");            \
+            return -1;                                    \
+        }                                                 \
+        if (((val) = atoi(sqlstr)) < 0) {                 \
+            snprintf(err, errlen,                         \
                      "invalid setting value %s", sqlstr); \
-            return -1; \
-        } \
+            return -1;                                    \
+        }                                                 \
     } while (0);
 
-#define GET_CSTR(str, name, dstr, dstrl) \
-    do { \
-        char *ptr = (str); \
-        while (*ptr && ptr[0] != ' ') \
-            ptr++; \
-        int len = ptr - (str) + 1; \
-        if (len > (dstrl)) { \
+#define GET_CSTR(str, name, dstr, dstrl)                                \
+    do {                                                                \
+        char *ptr = (str);                                              \
+        while (*ptr && ptr[0] != ' ')                                   \
+            ptr++;                                                      \
+        int len = ptr - (str) + 1;                                      \
+        if (len > (dstrl)) {                                            \
             snprintf(err, errlen, "%s too long \"%s\"", (name), (str)); \
-            return -1; \
-        } \
-        \
-        bzero((dstr), (dstrl)); \
-        memcpy((dstr), (str), len-1); \
-        \
-        (str) = ptr;\
+            return -1;                                                  \
+        }                                                               \
+                                                                        \
+        bzero((dstr), (dstrl));                                         \
+        memcpy((dstr), (str), len - 1);                                 \
+                                                                        \
+        (str) = ptr;                                                    \
     } while (0);
 
-#define GET_PCSTR(str, name, dstr) \
-    do { \
-        char *ptr = (str); \
-        while (*ptr && ptr[0] != ' ') \
-            ptr++; \
-        int len = ptr - (str) + 1; \
-        (dstr) = calloc(1, len); \
-        if (!(dstr)) { \
+#define GET_PCSTR(str, name, dstr)               \
+    do {                                         \
+        char *ptr = (str);                       \
+        while (*ptr && ptr[0] != ' ')            \
+            ptr++;                               \
+        int len = ptr - (str) + 1;               \
+        (dstr) = calloc(1, len);                 \
+        if (!(dstr)) {                           \
             snprintf(err, errlen, "err malloc"); \
-            return -1; \
-        } \
-        memcpy((dstr), (str), len-1); \
-        \
-        (str) = ptr;\
+            return -1;                           \
+        }                                        \
+        memcpy((dstr), (str), len - 1);          \
+                                                 \
+        (str) = ptr;                             \
     } while (0);
-
 
 int process_fdb_set_cdb2api(sqlclntstate *clnt, char *sqlstr, char *err,
                             int errlen)
@@ -6168,7 +6175,7 @@ int process_fdb_set_cdb2api_2pc(sqlclntstate *clnt, char *sqlstr, char *err,
             snprintf(err, errlen, "missing coordinator tier");
             return -1;
         }
-        clnt->coordinator_tier= strdup(sqlstr);
+        clnt->coordinator_tier = strdup(sqlstr);
     } else if (strncasecmp(sqlstr, "txnid ", 6) == 0) {
         sqlstr += 6;
         if (!sqlstr[0]) {
@@ -6283,31 +6290,30 @@ static fdb_push_connector_t *fdb_push_connector_create(const char *dbname,
 
     if (sqlite3UnlockTable(dbname, tblname)) {
         logmsg(LOGMSG_ERROR, "%s:%d Failed to unlock table %s on db %s\n!!",
-                                __func__, __LINE__, tblname, dbname); 
+               __func__, __LINE__, tblname, dbname);
     }
 
     switch (rc) {
-        case FDB_NOERR:
-            logmsg(LOGMSG_ERROR, "Table %s already exists, ver %llu\n", tblname, remote_version);
-            if (type == AST_TYPE_CREATE)
-                return NULL;
-            /* for drop, this is not error */
-        case FDB_ERR_FDB_TBL_NOTFOUND:
-            break; /* good */
-        default:
-            logmsg(LOGMSG_ERROR, "Lookup table %s failed rd %d err %d \"%s\"\n",
-                   tblname, rc, err.errval, err.errstr);
+    case FDB_NOERR:
+        logmsg(LOGMSG_ERROR, "Table %s already exists, ver %llu\n", tblname, remote_version);
+        if (type == AST_TYPE_CREATE)
             return NULL;
+        /* for drop, this is not error */
+    case FDB_ERR_FDB_TBL_NOTFOUND:
+        break; /* good */
+    default:
+        logmsg(LOGMSG_ERROR, "Lookup table %s failed rd %d err %d \"%s\"\n",
+               tblname, rc, err.errval, err.errstr);
+        return NULL;
     }
 
-    fdb_push_connector_t * push = fdb_push_create(dbname, class, override, local, type);
+    fdb_push_connector_t *push = fdb_push_create(dbname, class, override, local, type);
     return push;
 }
 
-
 static int _running_dist_ddl(struct schema_change_type *sc, char **errmsg, uint32_t nshards,
                              char **dbnames, uint32_t numcols, char **columns, char **shardnames,
-                             char **sqls, enum ast_type type) 
+                             char **sqls, enum ast_type type)
 {
     struct errstat err = {0};
     int i;
@@ -6317,7 +6323,7 @@ static int _running_dist_ddl(struct schema_change_type *sc, char **errmsg, uint3
     enum mach_class myclass = get_my_mach_class();
 
     sqlclntstate *clnt = get_sql_clnt();
-    if(!clnt) {
+    if (!clnt) {
         logmsg(LOGMSG_ERROR, "%s Clnt not found, bug, aborting!\n", __func__);
         abort();
     }
@@ -6327,14 +6333,13 @@ static int _running_dist_ddl(struct schema_change_type *sc, char **errmsg, uint3
     /* Fix this, for now disable 2pc if its a DDL */
     clnt->use_2pc = 0;
 
-    pushes = (fdb_push_connector_t**)alloca(nshards * sizeof(fdb_push_connector_t*));
-    bzero(pushes, nshards * sizeof(fdb_push_connector_t*));
+    pushes = (fdb_push_connector_t **)alloca(nshards * sizeof(fdb_push_connector_t *));
+    bzero(pushes, nshards * sizeof(fdb_push_connector_t *));
 
     /* create create sql statements */
-    for(i = 0; i < nshards; i++) {
+    for (i = 0; i < nshards; i++) {
         if (strncasecmp(thedb->envname, dbnames[i], strlen(thedb->envname))) {
-            pushes[i] = fdb_push_connector_create(dbnames[i], type == AST_TYPE_CREATE ?
-                                                  shardnames[i] : sc->partition.u.genshard.tablename,
+            pushes[i] = fdb_push_connector_create(dbnames[i], type == AST_TYPE_CREATE ? shardnames[i] : sc->partition.u.genshard.tablename,
                                                   myclass, local, 1, type);
             if (!pushes[i]) {
                 logmsg(LOGMSG_ERROR, "%s malloc shard push %d\n", __func__, i);
@@ -6415,7 +6420,7 @@ static int _running_dist_ddl(struct schema_change_type *sc, char **errmsg, uint3
         pos += snprintf(&extra_set[5][pos], strl[5] - pos, "%s ", shardnames[i]);
 
     /* start the transaction */
-    for(i = 0; i < nshards; i++) {
+    for (i = 0; i < nshards; i++) {
         clnt->fdb_push = pushes[i];
         char *sql = clnt->sql;
         clnt->sql = sqls[i];
@@ -6439,10 +6444,10 @@ static int _running_dist_ddl(struct schema_change_type *sc, char **errmsg, uint3
                 logmsg(LOGMSG_ERROR, "Failed run create ddl %s rc %d err %s\n",
                        dbnames[i], rc, err.errstr);
             goto abort;
-        }  else if (pushes[i]) {
+        } else if (pushes[i]) {
             /* need to mark the create as a remote write */
             fdb_t *fdb = get_fdb(dbnames[i]);
-            fdb_tran_t * tran = fdb_get_subtran(clnt->dbtran.dtran, fdb);
+            fdb_tran_t *tran = fdb_get_subtran(clnt->dbtran.dtran, fdb);
             tran->nwrites += 1;
         }
     }
@@ -6481,16 +6486,16 @@ setup_error:
 int osql_test_create_genshard(struct schema_change_type *sc, char **errmsg, int nshards,
                               char **dbnames, uint32_t numcols, char **columns, char **shardnames)
 {
-    char **sqls = (char**)alloca(nshards * sizeof(char*));
+    char **sqls = (char **)alloca(nshards * sizeof(char *));
     int i;
 
     /* sc will be replicated for each shard, set the type here to genshard SHARD creation */
     assert(sc->partition.type == PARTITION_ADD_GENSHARD_COORD);
     sc->partition.type = PARTITION_ADD_GENSHARD;
 
-    bzero(sqls, nshards * sizeof(char*));
+    bzero(sqls, nshards * sizeof(char *));
     /* create create sql statements */
-    for(i = 0; i < nshards; i++) {
+    for (i = 0; i < nshards; i++) {
         int len = strlen(sc->newcsc2) + strlen(shardnames[i]) + 64;
         sqls[i] = malloc(len);
         if (!sqls[i]) {
@@ -6517,16 +6522,16 @@ int osql_test_remove_genshard(struct schema_change_type *sc, char **errmsg)
     dbtable *tbl = get_dbtable_by_name(sc->tablename);
     assert(tbl);
     uint32_t nshards = tbl->numdbs;
-    char **sqls = (char**)alloca(nshards * sizeof(char*));
+    char **sqls = (char **)alloca(nshards * sizeof(char *));
     int i;
 
     /* sc will be replicated for each shard, set the type here to genshard SHARD creation */
     assert(sc->partition.type == PARTITION_REM_GENSHARD_COORD);
     sc->partition.type = PARTITION_REM_GENSHARD;
 
-    bzero(sqls, nshards * sizeof(char*));
+    bzero(sqls, nshards * sizeof(char *));
     /* create create sql statements */
-    for(i = 0; i < nshards; i++) {
+    for (i = 0; i < nshards; i++) {
         /* NOTE: since we use an sqlalias at this point, use the partition name not the shard name
          * int len = strlen(shardnames[i]) + 64;
          */
@@ -6540,7 +6545,6 @@ int osql_test_remove_genshard(struct schema_change_type *sc, char **errmsg)
         snprintf(sqls[i], len, "drop table \'%s\'", sc->partition.u.genshard.tablename);
     }
 
-
     /* this is not passed through syntax, it is retrieved from dbtable object */
 
     return _running_dist_ddl(sc, errmsg, tbl->numdbs, tbl->dbnames, 0, NULL, tbl->shardnames, sqls, AST_TYPE_DROP);
@@ -6551,4 +6555,3 @@ setup_error:
     }
     return -1;
 }
-

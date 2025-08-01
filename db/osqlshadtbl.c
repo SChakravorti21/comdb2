@@ -128,11 +128,11 @@ static int osql_destroy_bpfunc_temptbl(bdb_state_type *bdb_state,
                                        struct sqlclntstate *clnt);
 
 #if DEBUG_REORDER
-#define DEBUG_PRINT_NUMOPS()                                                   \
-    do {                                                                       \
-        uuidstr_t us;                                                          \
-        DEBUGMSG("uuid=%s, replicant_numops=%d\n",                             \
-                 comdb2uuidstr(osql->uuid, us), osql->replicant_numops);       \
+#define DEBUG_PRINT_NUMOPS()                                             \
+    do {                                                                 \
+        uuidstr_t us;                                                    \
+        DEBUGMSG("uuid=%s, replicant_numops=%d\n",                       \
+                 comdb2uuidstr(osql->uuid, us), osql->replicant_numops); \
     } while (0)
 #else
 #define DEBUG_PRINT_NUMOPS()
@@ -295,7 +295,7 @@ static shad_tbl_t *open_shadtbl(struct BtCursor *pCur)
             if (!once) {
                 once = 1;
                 logmsg(LOGMSG_ERROR, "%s: sql_thread has no sqlclntstate!\n",
-                        __func__);
+                       __func__);
             }
             return NULL;
         }
@@ -338,9 +338,9 @@ int osql_shadtbl_reset_for_selectv(struct sqlclntstate *clnt)
         rc = bdb_temp_table_close_cursor(thedb->bdb_env, osql->verify_cur,
                                          &bdberr);
         if (rc) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: bdb_temp_table_close failed, rc=%d bdberr=%d\n",
-                    __func__, rc, bdberr);
+            logmsg(LOGMSG_ERROR,
+                   "%s: bdb_temp_table_close failed, rc=%d bdberr=%d\n",
+                   __func__, rc, bdberr);
             return -1;
         }
 
@@ -349,7 +349,7 @@ int osql_shadtbl_reset_for_selectv(struct sqlclntstate *clnt)
             thedb->bdb_env, osql->verify_tbl, NULL, &bdberr);
         if (!osql->verify_cur) {
             logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_cursor failed, bdberr=%d\n",
-                    __func__, bdberr);
+                   __func__, bdberr);
             bdb_temp_table_close(thedb->bdb_env, osql->verify_tbl, &bdberr);
             return -1;
         }
@@ -565,20 +565,20 @@ static int truncate_tablecursor(bdb_state_type *bdb_env,
         rc = bdb_temp_table_close_cursor(bdb_env, *cur, bdberr);
         if (rc)
             logmsg(LOGMSG_ERROR, "%s: fail to close cursor bdberr=%d\n", __func__,
-                    *bdberr);
+                   *bdberr);
     }
 
     if (tbl) {
         rc = bdb_temp_table_truncate(bdb_env, tbl, bdberr);
         if (rc)
             logmsg(LOGMSG_ERROR, "%s: error truncating add temp_table rc=%d bdberr=%d\n",
-                    __func__, rc, *bdberr);
+                   __func__, rc, *bdberr);
     }
 
     *cur = bdb_temp_table_cursor(bdb_env, tbl, NULL, bdberr);
     if (!*cur) {
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_cursor failed, bdberr=%d\n",
-                __func__, *bdberr);
+               __func__, *bdberr);
         return -1;
     }
 
@@ -724,7 +724,7 @@ static int create_tablecursor(bdb_state_type *bdb_env, struct tmp_table **ptbl,
 
     if (!tbl->table) {
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_create failed, bderr=%d\n",
-                __func__, *bdberr);
+               __func__, *bdberr);
         free(tbl);
         return -1;
     }
@@ -734,7 +734,7 @@ static int create_tablecursor(bdb_state_type *bdb_env, struct tmp_table **ptbl,
         *pcur = bdb_temp_table_cursor(bdb_env, tbl->table, NULL, bdberr);
         if (!*pcur) {
             logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_cursor failed, bdberr=%d\n",
-                    __func__, *bdberr);
+                   __func__, *bdberr);
             bdb_temp_table_close(bdb_env, tbl->table, bdberr);
             free(tbl);
             return -1;
@@ -758,7 +758,7 @@ void *osql_get_shadtbl_addtbl_newcursor(struct BtCursor *pCur)
         cur = bdb_temp_table_cursor(bdbenv, tbl->add_tbl->table, NULL, &bdberr);
         if (!cur) {
             logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_cursor failed, bdberr=%d\n",
-                    __func__, bdberr);
+                   __func__, bdberr);
         }
         return cur;
     }
@@ -989,12 +989,12 @@ int osql_save_updrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
                                     &bdberr);
             if (rc) {
                 logmsg(LOGMSG_ERROR, "%s: fail to update genid %llx (%lld) rc=%d "
-                                "bdberr=%d (3)\n",
-                        __func__, tmp, genid, rc, bdberr);
+                                     "bdberr=%d (3)\n",
+                       __func__, tmp, genid, rc, bdberr);
                 return -1;
             }
         } else {
-            // We are here because the running transaction did an insert followed by an update 
+            // We are here because the running transaction did an insert followed by an update
             // on the same row.
 
             // We will replace the seqnum used to represent the changes that this transaction
@@ -1003,7 +1003,7 @@ int osql_save_updrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
 
             // Applying the old flags to the new seqnum is essential for a transaction like
             // the one below to be sent to master as an upsert:
-            // 
+            //
             // -- recom
             // begin
             // upsert on row X
@@ -1018,7 +1018,7 @@ int osql_save_updrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
         rc = delete_synthetic_row(pCur, thd, tbl);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: fail to update genid %llx (%lld) rc=%d bdberr=%d (4)\n",
-                __func__, tmp, pCur->genid, rc, bdberr);
+                   __func__, tmp, pCur->genid, rc, bdberr);
             return -1;
         }
     } else {
@@ -1030,7 +1030,7 @@ int osql_save_updrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
                                 &genid, sizeof(genid), NULL, &bdberr);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: fail to update genid %llx (%lld) rc=%d bdberr=%d (5)\n",
-                __func__, tmp, genid, rc, bdberr);
+                   __func__, tmp, genid, rc, bdberr);
             return -1;
         }
 
@@ -1039,7 +1039,7 @@ int osql_save_updrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
                                         sizeof(tmp), &bdberr);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: fail to update genid %llx (%lld) rc=%d bdberr=%d (6)\n",
-                __func__, tmp, pCur->genid, rc, bdberr);
+                   __func__, tmp, pCur->genid, rc, bdberr);
             return -1;
         }
     }
@@ -1049,18 +1049,18 @@ int osql_save_updrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
                             (char *)pData, nData, NULL, &bdberr);
 
     if (rc) {
-        logmsg(LOGMSG_ERROR, 
-                "%s: fail to update genid %llx (%lld) rc=%d bdberr=%d (7)\n",
-                __func__, tmp, tmp, rc, bdberr);
+        logmsg(LOGMSG_ERROR,
+               "%s: fail to update genid %llx (%lld) rc=%d bdberr=%d (7)\n",
+               __func__, tmp, tmp, rc, bdberr);
         return -1;
     }
 
     /* add  the new indexes */
     rc = insert_record_indexes(pCur, thd, tmp, &bdberr);
     if (rc) {
-        logmsg(LOGMSG_ERROR, 
-                "%s: fail to update genid %llx (%lld) rc=%d bdberr=%d (8)\n",
-                __func__, tmp, pCur->genid, rc, bdberr);
+        logmsg(LOGMSG_ERROR,
+               "%s: fail to update genid %llx (%lld) rc=%d bdberr=%d (8)\n",
+               __func__, tmp, pCur->genid, rc, bdberr);
         return -1;
     }
 
@@ -1087,7 +1087,7 @@ int osql_save_updrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
     fprintf(stdout,
             "[%llu %s] Updated genid=%llu (%p) rc=%d pCur->genid=%llu\n",
             osql->rqid, comdb2uuidstr(osql->uuid, us), pCur->genid,
-            (void *) pthread_self(), rc, pCur->genid);
+            (void *)pthread_self(), rc, pCur->genid);
 #endif
 
     tbl->seq = increment_seq(tbl->seq);
@@ -1134,12 +1134,12 @@ int osql_save_insrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
     fprintf(stdout, "[%llu %s] Inserted seq=%llu (%p) rc=%d pCur->genid=%llu\n",
             thd->clnt->osql.rqid,
             comdb2uuidstr(thd->clnt->osql.uuid, us), tmp,
-            (void *) pthread_self(), rc, pCur->genid);
+            (void *)pthread_self(), rc, pCur->genid);
 #endif
 
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: fail to insert genid %llx (%lld) rc=%d bdberr=%d\n",
-                __func__, tmp, pCur->genid, rc, bdberr);
+               __func__, tmp, pCur->genid, rc, bdberr);
         return -1;
     }
 
@@ -1150,7 +1150,7 @@ int osql_save_insrec(struct BtCursor *pCur, struct sql_thread *thd, char *pData,
      */
     if (insert_record_indexes(pCur, thd, tmp, &bdberr)) {
         logmsg(LOGMSG_ERROR, "%s: error updating the shadow indexes bdberr = %d\n",
-                __func__, bdberr);
+               __func__, bdberr);
         return -1;
     }
 
@@ -1200,7 +1200,7 @@ int osql_save_delrec(struct BtCursor *pCur, struct sql_thread *thd)
     }
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: fail to delete genid %llx (%lld) rc=%d bdberr=%d (5)\n",
-                __func__, tbl->seq, pCur->genid, rc, bdberr);
+               __func__, tbl->seq, pCur->genid, rc, bdberr);
         return -1;
     }
 
@@ -1283,7 +1283,7 @@ int osql_save_index(struct BtCursor *pCur, struct sql_thread *thd,
                                 NULL, &bdberr);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: fail to insert seq %llu rc=%d bdberr=%d\n",
-                    __func__, key.seq, rc, bdberr);
+                   __func__, key.seq, rc, bdberr);
             return -1;
         }
     }
@@ -1364,7 +1364,7 @@ int osql_save_updcols(struct BtCursor *pCur, struct sql_thread *thd,
                 bdb_temp_table_delete(tbl->env->bdb_env, tbl->blb_cur, &bdberr);
             if (rc) {
                 logmsg(LOGMSG_ERROR, "%s: failed to delete old updcols rc=%d bdberr=%d\n",
-                        __func__, rc, bdberr);
+                       __func__, rc, bdberr);
             }
             updCols = oldUpdCols;
         }
@@ -1384,12 +1384,12 @@ int osql_save_updcols(struct BtCursor *pCur, struct sql_thread *thd,
     fprintf(stdout, "[%llu %s] Inserted updcol seq=%llu id=%llu len=%d (%p) "
                     "rc=%d pCur->genid=%llu\n",
             osql->rqid, comdb2uuidstr(osql->uuid, us), key.seq, key.id, len,
-            (void *) pthread_self(), rc, pCur->genid);
+            (void *)pthread_self(), rc, pCur->genid);
 #endif
 
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: fail to insert seq %llu rc=%d bdberr=%d\n",
-                __func__, key.seq, rc, bdberr);
+               __func__, key.seq, rc, bdberr);
         return -1;
     }
 
@@ -1457,12 +1457,12 @@ int osql_save_qblobs(struct BtCursor *pCur, struct sql_thread *thd,
             fprintf(stdout, "[%llu] Inserted blob seq=%llu id=%llu len=%zu (%p) "
                             "rc=%d pCur->genid=%llu\n",
                     osql->rqid, key.seq, key.id, blobs[i].length,
-                    (void *) pthread_self(), rc, pCur->genid);
+                    (void *)pthread_self(), rc, pCur->genid);
 #endif
 
             if (rc) {
                 logmsg(LOGMSG_ERROR, "%s: fail to insert seq %llu rc=%d bdberr=%d\n",
-                        __func__, key.seq, rc, bdberr);
+                       __func__, key.seq, rc, bdberr);
                 return -1;
             }
         }
@@ -1690,7 +1690,7 @@ static int process_local_shadtbl_skp(struct sqlclntstate *clnt, shad_tbl_t *tbl,
             return 0;
 
         logmsg(LOGMSG_ERROR, "%s: bdb_tran_deltbl_first failed rc=%d bdberr=%d\n",
-                __func__, rc, *bdberr);
+               __func__, rc, *bdberr);
         return SQLITE_INTERNAL;
     }
 
@@ -1756,7 +1756,7 @@ static int process_local_shadtbl_skp(struct sqlclntstate *clnt, shad_tbl_t *tbl,
         rc = 0;
     } else {
         logmsg(LOGMSG_ERROR, "%s:%d bdb_temp_table_next failed rc=%d bdberr=%d\n",
-                __func__, __LINE__, rc, *bdberr);
+               __func__, __LINE__, rc, *bdberr);
         /* fall-through */
     }
 
@@ -1795,15 +1795,15 @@ static int process_local_shadtbl_updcols(struct sqlclntstate *clnt,
 
     if (ldata < 4) {
         logmsg(LOGMSG_ERROR, "%s: invalid size for updcol object: %d!\n", __func__,
-                ldata);
+               ldata);
         return SQLITE_INTERNAL;
     }
 
     cksz = (cdata[0] + 1) * sizeof(int);
     if (ldata != cksz) {
-        logmsg(LOGMSG_ERROR, 
-                "%s: mismatched size for updcol object: got %d should be %d!\n",
-                __func__, ldata, cksz);
+        logmsg(LOGMSG_ERROR,
+               "%s: mismatched size for updcol object: got %d should be %d!\n",
+               __func__, ldata, cksz);
         return SQLITE_INTERNAL;
     }
 
@@ -1816,9 +1816,9 @@ static int process_local_shadtbl_updcols(struct sqlclntstate *clnt,
                            osql_nettype, &cdata[1], cdata[0]);
 
     if (rc) {
-        logmsg(LOGMSG_ERROR, 
-                "%s: error writting record to master in offload mode %d!\n",
-                __func__, rc);
+        logmsg(LOGMSG_ERROR,
+               "%s: error writting record to master in offload mode %d!\n",
+               __func__, rc);
         return SQLITE_INTERNAL;
     }
     osql->replicant_numops++;
@@ -1879,9 +1879,9 @@ static int process_local_shadtbl_qblob(struct sqlclntstate *clnt,
             data = bdb_temp_table_data(tbl->blb_cur);
             ldata = bdb_temp_table_datasize(tbl->blb_cur);
         } else {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: error finding blob %d!\n",
-                    __func__, rc);
+            logmsg(LOGMSG_ERROR,
+                   "%s: error finding blob %d!\n",
+                   __func__, rc);
             return SQLITE_INTERNAL;
         }
 
@@ -1889,9 +1889,9 @@ static int process_local_shadtbl_qblob(struct sqlclntstate *clnt,
                              osql_nettype, data, ldata);
 
         if (rc) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: error writting record to master in offload mode %d!\n",
-                    __func__, rc);
+            logmsg(LOGMSG_ERROR,
+                   "%s: error writting record to master in offload mode %d!\n",
+                   __func__, rc);
             return SQLITE_INTERNAL;
         }
         osql->replicant_numops++;
@@ -1947,7 +1947,7 @@ static int process_local_shadtbl_index(struct sqlclntstate *clnt,
 
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: error writting record to master in offload mode %d!\n",
-                    __func__, rc);
+                   __func__, rc);
             return SQLITE_INTERNAL;
         }
         osql->replicant_numops++;
@@ -1969,7 +1969,7 @@ static int process_local_shadtbl_add(struct sqlclntstate *clnt, shad_tbl_t *tbl,
         return 0;
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_first failed rc=%d bdberr=%d\n",
-                __func__, rc, *bdberr);
+               __func__, rc, *bdberr);
         return SQLITE_INTERNAL;
     }
 
@@ -2079,7 +2079,7 @@ static int process_local_shadtbl_upd(struct sqlclntstate *clnt, shad_tbl_t *tbl,
         return 0;
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_first failed rc=%d bdberr=%d\n",
-                __func__, rc, *bdberr);
+               __func__, rc, *bdberr);
         return SQLITE_INTERNAL;
     }
 
@@ -2132,9 +2132,9 @@ static int process_local_shadtbl_upd(struct sqlclntstate *clnt, shad_tbl_t *tbl,
         int *updCols = NULL;
         rc = process_local_shadtbl_updcols(clnt, tbl, &updCols, bdberr, seq);
         if (rc) {
-                logmsg(LOGMSG_ERROR,
-                       "%s: error processing updcols rc %d!\n",
-                       __func__, rc);
+            logmsg(LOGMSG_ERROR,
+                   "%s: error processing updcols rc %d!\n",
+                   __func__, rc);
             return SQLITE_INTERNAL;
         }
 
@@ -2270,11 +2270,11 @@ static int insert_record_indexes(BtCursor *pCur, struct sql_thread *thd,
             datacopy = alloca(4 * pCur->db->ix_collattr[ix]);
 
             rc = extract_decimal_quantum(pCur->db, ix, pCur->ondisk_buf, datacopy,
-                                       4 * pCur->db->ix_collattr[ix], 
-                                       &datacopylen);
+                                         4 * pCur->db->ix_collattr[ix],
+                                         &datacopylen);
             if (rc) {
                 logmsg(LOGMSG_ERROR, "%s: failed to construct decimal index rc=%d\n",
-                        __func__, rc);
+                       __func__, rc);
                 tmpcur->close(tmpcur, bdberr);
                 return SQLITE_INTERNAL;
             }
@@ -2286,7 +2286,7 @@ static int insert_record_indexes(BtCursor *pCur, struct sql_thread *thd,
         rc = tmpcur->insert(tmpcur, nKey, key, pCur->db->ix_keylen[ix],
                             datacopy, datacopylen, bdberr);
         if (rc) {
-           logmsg(LOGMSG_ERROR, "%s: bdb_cursor_insert ix %d rc %d\n", __func__, ix,
+            logmsg(LOGMSG_ERROR, "%s: bdb_cursor_insert ix %d rc %d\n", __func__, ix,
                    *bdberr);
             tmpcur->close(tmpcur, bdberr);
             return SQLITE_INTERNAL;
@@ -2294,7 +2294,7 @@ static int insert_record_indexes(BtCursor *pCur, struct sql_thread *thd,
 
         rc = tmpcur->close(tmpcur, bdberr);
         if (rc) {
-           logmsg(LOGMSG_ERROR, "%s: bdb_cursor_close ix %d rc %d\n", __func__, ix, *bdberr);
+            logmsg(LOGMSG_ERROR, "%s: bdb_cursor_close ix %d rc %d\n", __func__, ix, *bdberr);
             return SQLITE_INTERNAL;
         }
     }
@@ -2366,7 +2366,7 @@ static int delete_record_indexes(BtCursor *pCur, char *pdta, int dtasize,
 
             rc = tmpcur->close(tmpcur, &newbdberr);
             if (rc)
-               logmsg(LOGMSG_ERROR, "%s:bdb_cursor_close ix %d rc %d bdberr %d\n", __func__,
+                logmsg(LOGMSG_ERROR, "%s:bdb_cursor_close ix %d rc %d bdberr %d\n", __func__,
                        ix, rc, newbdberr);
 
             return -1;
@@ -2460,7 +2460,7 @@ static int reopen_shadtbl_cursors(bdb_state_type *bdb_env, osqlstate_t *osql,
             *shad_cur = bdb_temp_table_cursor(bdb_env, shad_tbl, NULL, &bdberr);
             if (!*shad_cur) {
                 logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_cursor failed, bdberr=%d\n",
-                        __func__, bdberr);
+                       __func__, bdberr);
                 return -1;
             }
         }
@@ -2527,9 +2527,9 @@ static int close_shadtbl_cursors(bdb_state_type *bdb_env, osqlstate_t *osql,
 
         rc = bdb_temp_table_close_cursor(bdb_env, *shad_cur, &bdberr);
         if (rc) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: bdb_temp_table_close failed, rc=%d bdberr=%d\n",
-                    __func__, rc, bdberr);
+            logmsg(LOGMSG_ERROR,
+                   "%s: bdb_temp_table_close failed, rc=%d bdberr=%d\n",
+                   __func__, rc, bdberr);
             return -1;
         }
         *shad_cur = NULL;
@@ -2582,13 +2582,13 @@ static int _saved_dta_row(struct temp_cursor *cur, char **row, int *rowlen)
     saved_dta_row_len = bdb_temp_table_datasize(cur);
     if (saved_dta_row_len <= 0) {
         logmsg(LOGMSG_ERROR, "%s:%d: fail to retrieve datasize (3.1)\n", __FILE__,
-                __LINE__);
+               __LINE__);
         return -1;
     }
     saved_dta_row_orig = bdb_temp_table_data(cur);
     if (!saved_dta_row_orig) {
         logmsg(LOGMSG_ERROR, "%s:%d: fail to retrieve data (3.2)\n", __FILE__,
-                __LINE__);
+               __LINE__);
         return -1;
     }
 
@@ -2705,8 +2705,8 @@ typedef struct recgenid_key {
 BB_COMPILE_TIME_ASSERT(recgenid_key_size,
                        sizeof(recgenid_key_t) == 4 + MAXTABLELEN + 4 + 8);
 
-#define RECGENID_KEY_PACKED_LEN(k)                                             \
-    (sizeof((k).tablename_len) + (k).tablename_len +                           \
+#define RECGENID_KEY_PACKED_LEN(k)                   \
+    (sizeof((k).tablename_len) + (k).tablename_len + \
      sizeof((k).tableversion) + sizeof((k).genid))
 
 static void *pack_recgenid_key(recgenid_key_t *key, uint8_t *buf, size_t len)
@@ -2769,7 +2769,7 @@ int osql_save_recordgenid(struct BtCursor *pCur, struct sql_thread *thd,
                                         &bdberr);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: failed to create verify rc=%d bdberr=%d\n",
-                    __func__, rc, bdberr);
+                   __func__, rc, bdberr);
             return -1;
         }
     }
@@ -2817,7 +2817,8 @@ int is_genid_recorded(struct sql_thread *thd, struct BtCursor *pCur,
     recgenid_key_t key;
     uint8_t *packed_key = NULL;
 
-    if (!osql->verify_tbl) return 0;
+    if (!osql->verify_tbl)
+        return 0;
 
     if (!osql->verify_cur) {
         logmsg(LOGMSG_ERROR, "%s: error getting verify cursor\n", __func__);
@@ -2875,7 +2876,7 @@ static int process_local_shadtbl_recgenids(struct sqlclntstate *clnt,
         return 0;
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_first failed rc=%d bdberr=%d\n",
-                __func__, rc, *bdberr);
+               __func__, rc, *bdberr);
         return SQLITE_INTERNAL;
     }
 
@@ -2896,9 +2897,9 @@ static int process_local_shadtbl_recgenids(struct sqlclntstate *clnt,
             rc = process_local_shadtbl_usedb(clnt, key.tablename,
                                              key.tableversion);
             if (rc) {
-                logmsg(LOGMSG_ERROR, 
-                        "%s:%d: error writting usedb to master in offload mode rc %d!\n",
-                        __func__, __LINE__, rc);
+                logmsg(LOGMSG_ERROR,
+                       "%s:%d: error writting usedb to master in offload mode rc %d!\n",
+                       __func__, __LINE__, rc);
                 return SQLITE_INTERNAL;
             }
             strncpy0(old_tablename, key.tablename, MAXTABLELEN);
@@ -2912,9 +2913,9 @@ static int process_local_shadtbl_recgenids(struct sqlclntstate *clnt,
         rc = osql_send_recordgenid(&osql->target, osql->rqid, osql->uuid,
                                    key.genid, osql_nettype);
         if (rc) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: error writting record genid to master in offload mode rc %d!\n",
-                    __func__, rc);
+            logmsg(LOGMSG_ERROR,
+                   "%s: error writting record genid to master in offload mode rc %d!\n",
+                   __func__, rc);
             return SQLITE_INTERNAL;
         }
         osql->replicant_numops++;
@@ -2927,7 +2928,7 @@ static int process_local_shadtbl_recgenids(struct sqlclntstate *clnt,
         rc = 0;
     } else {
         logmsg(LOGMSG_ERROR, "%s:%d bdb_temp_table_next failed rc=%d bdberr=%d\n",
-                __func__, __LINE__, rc, *bdberr);
+               __func__, __LINE__, rc, *bdberr);
         /* fall-through */
     }
 
@@ -3002,7 +3003,8 @@ static int process_local_shadtbl_sc(struct sqlclntstate *clnt, int *bdberr)
     }
 
     rc = bdb_temp_table_first(bdb_state, cur, bdberr);
-    if (rc == IX_EMPTY) return 0;
+    if (rc == IX_EMPTY)
+        return 0;
     if (rc) {
         logmsg(LOGMSG_ERROR,
                "%s: bdb_temp_table_first failed rc=%d bdberr=%d\n", __func__,
@@ -3216,14 +3218,14 @@ static int osql_create_temptbl(bdb_state_type *bdb_state,
     table = bdb_temp_table_create(bdb_state, bdberr);
     if (!table) {
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_create failed, bderr=%d\n",
-                __func__, *bdberr);
+               __func__, *bdberr);
         return -1;
     }
 
     cursor = bdb_temp_table_cursor(bdb_state, table, NULL, bdberr);
     if (!cursor) {
         logmsg(LOGMSG_ERROR, "%s: bdb_temp_table_cursor failed, bdberr=%d\n",
-                __func__, *bdberr);
+               __func__, *bdberr);
         bdb_temp_table_close(bdb_state, table, bdberr);
         return -1;
     }
@@ -3245,7 +3247,7 @@ static int osql_destroy_temptbl(bdb_state_type *bdb_state,
         rc = bdb_temp_table_close_cursor(bdb_state, *cursor, &bdberr);
         if (rc)
             logmsg(LOGMSG_ERROR, "%s: fail to close cursor bdberr=%d\n", __func__,
-                    bdberr);
+                   bdberr);
     }
 
     if (*table) {
@@ -3371,7 +3373,8 @@ int osql_shadtbl_usedb_only(struct sqlclntstate *clnt)
 
 struct genid_entry {
     genid_t id;
-    SLIST_ENTRY(genid_entry) entry;
+    SLIST_ENTRY(genid_entry)
+    entry;
 };
 SLIST_HEAD(genid_list, genid_entry);
 
@@ -3419,7 +3422,8 @@ static int resend_delreq_dbq(void *obj, void *arg)
     struct sqlclntstate *clnt = arg;
     struct genid_entry *e;
     char *qname = l->qname;
-    SLIST_FOREACH(e, &l->genids, entry) {
+    SLIST_FOREACH(e, &l->genids, entry)
+    {
         int rc = osql_send_del_qdb_logic(clnt, qname, e->id);
         if (rc) {
             return rc;

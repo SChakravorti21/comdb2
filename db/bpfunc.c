@@ -45,7 +45,8 @@ static int empty(void *tran, bpfunc_t *func, struct errstat *err)
 
 void free_bpfunc(bpfunc_t *func)
 {
-    if (unlikely(!func)) return;
+    if (unlikely(!func))
+        return;
     free_bpfunc_arg(func->arg);
     if (func)
         free(func);
@@ -378,7 +379,7 @@ static int exec_authentication(void *tran, bpfunc_t *func, struct errstat *err)
         rc = bdb_user_password_set(tran, DEFAULT_USER, DEFAULT_PASSWORD);
 
     if (rc == 0)
-      rc = net_send_authcheck_all(thedb->handle_sibling);
+        rc = net_send_authcheck_all(thedb->handle_sibling);
 
     gbl_check_access_controls = 1;
     ++gbl_bpfunc_auth_gen;
@@ -408,27 +409,28 @@ static int exec_alias(void *tran, bpfunc_t *func, struct errstat *err)
 
     /* update in-mem structure */
 
-    if (alias->op == ALIAS_OP__CREATE) 
+    if (alias->op == ALIAS_OP__CREATE)
         add_alias(alias->name, alias->remote);
-    else 
+    else
         remove_alias(alias->name);
     return 0;
 }
 
+int success_alias(void *tran, bpfunc_t *func, struct errstat *err)
+{
+    int rc = 0;
+    int bdberr = 0;
 
-int success_alias(void *tran, bpfunc_t *func, struct errstat *err) {
-     int rc = 0;
-     int bdberr = 0;
-
-     /* tell replicants to do so as well */
-     rc = bdb_llog_alias(thedb->bdb_env, 1 /* wait */, &bdberr);
-     if(rc)
-         errstat_set_rcstrf(err, rc, "%s -- bdb_llog_views rc:%d bdberr:%d",
-                            __func__, rc, bdberr);
-     return rc;
+    /* tell replicants to do so as well */
+    rc = bdb_llog_alias(thedb->bdb_env, 1 /* wait */, &bdberr);
+    if (rc)
+        errstat_set_rcstrf(err, rc, "%s -- bdb_llog_views rc:%d bdberr:%d",
+                           __func__, rc, bdberr);
+    return rc;
 }
 
-int fail_alias(void *tran, bpfunc_t *func, struct errstat *err) {
+int fail_alias(void *tran, bpfunc_t *func, struct errstat *err)
+{
     int rc = 0;
     char *error;
     BpfuncAlias *alias = func->arg->alias;
@@ -444,9 +446,9 @@ int fail_alias(void *tran, bpfunc_t *func, struct errstat *err) {
     }
 
     /* update in-mem structure */
-    if (alias->op == ALIAS_OP__CREATE) 
+    if (alias->op == ALIAS_OP__CREATE)
         remove_alias(alias->name);
-    else 
+    else
         add_alias(alias->name, alias->remote);
     return rc;
 }
@@ -500,15 +502,15 @@ static int exec_timepart_retention(void *tran, bpfunc_t *func,
 
 int success_timepart_retention(void *tran, bpfunc_t *func, struct errstat *err)
 {
-     int rc = 0;
-     int bdberr = 0;
+    int rc = 0;
+    int bdberr = 0;
 
-     rc = bdb_llog_views(thedb->bdb_env, func->arg->tp_ret->timepartname, 1,
-                         &bdberr);
-     if(rc)
-         errstat_set_rcstrf(err, rc, "%s -- bdb_llog_views rc:%d bdberr:%d",
-                            __func__, rc, bdberr);
-     return rc;
+    rc = bdb_llog_views(thedb->bdb_env, func->arg->tp_ret->timepartname, 1,
+                        &bdberr);
+    if (rc)
+        errstat_set_rcstrf(err, rc, "%s -- bdb_llog_views rc:%d bdberr:%d",
+                           __func__, rc, bdberr);
+    return rc;
 }
 
 static int prepare_timepart_retention(bpfunc_t *tp)

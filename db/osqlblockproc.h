@@ -46,7 +46,7 @@
 #include "comdb2uuid.h"
 
 struct bplog_func // UNDONE FABIO
-    {
+{
     int code;
     void *arg;
 };

@@ -42,9 +42,7 @@ int do_rename_table(struct ireq *iq, struct schema_change_type *s,
      * dropped prior in our transaction. If we check in finalize, those tables
      * will have already been dropped.
      */
-    if (!gbl_transactional_drop_plus_rename
-        && ((colliding_db = get_dbtable_by_name(s->newtable)) != NULL)
-        && (!gbl_lightweight_rename || (db != colliding_db))) {
+    if (!gbl_transactional_drop_plus_rename && ((colliding_db = get_dbtable_by_name(s->newtable)) != NULL) && (!gbl_lightweight_rename || (db != colliding_db))) {
         sc_client_error(s, "New table name exists");
         return SC_TABLE_ALREADY_EXIST;
     }
@@ -100,8 +98,7 @@ int finalize_rename_table(struct ireq *iq, struct schema_change_type *s,
         return -1;
     }
 
-    if (gbl_transactional_drop_plus_rename
-        && get_dbtable_by_name(s->newtable)) {
+    if (gbl_transactional_drop_plus_rename && get_dbtable_by_name(s->newtable)) {
         sc_client_error(s, "New table name exists");
         return SC_TABLE_ALREADY_EXIST;
     }

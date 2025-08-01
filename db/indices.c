@@ -24,7 +24,6 @@
 #include "eventlog.h"
 #include "tohex.h"
 
-
 extern int gbl_partial_indexes;
 static __thread void *defered_index_tbl = NULL;
 static __thread void *defered_index_tbl_cursor = NULL;
@@ -51,24 +50,24 @@ typedef struct {
     short ixnum;
     short ixlen;
     char ixkey[MAXKEYLEN + GENIDLEN + 1]; // consider storing up to the largest key
-                           // for dups genid is appended to end of key
+                                          // for dups genid is appended to end of key
     dit_t type;
     unsigned long long genid;
     unsigned long long newgenid; // new genid used for update
 } dtikey_t;
 
-#define CMP_KEY_MEMBER(k1, k2, var)                                            \
-    if (k1->var < k2->var) {                                                   \
-        return -1;                                                             \
-    }                                                                          \
-    if (k1->var > k2->var) {                                                   \
-        return 1;                                                              \
+#define CMP_KEY_MEMBER(k1, k2, var) \
+    if (k1->var < k2->var) {        \
+        return -1;                  \
+    }                               \
+    if (k1->var > k2->var) {        \
+        return 1;                   \
     }
 
-#define MEMCMP_KEY_MEMBER(k1, k2, var, len)                                    \
-    int __rc = memcmp(k1->var, k2->var, len);                                  \
-    if (__rc != 0) {                                                           \
-        return __rc;                                                           \
+#define MEMCMP_KEY_MEMBER(k1, k2, var, len)   \
+    int __rc = memcmp(k1->var, k2->var, len); \
+    if (__rc != 0) {                          \
+        return __rc;                          \
     }
 
 static int defered_index_key_cmp(void *usermem, int key1len, const void *key1,
@@ -169,7 +168,7 @@ void delete_defered_index_tbl()
  *         0 : no
  */
 int check_index(struct ireq *iq, void *trans, int ixnum, blob_buffer_t *blobs, size_t maxblobs, int *opfailcode,
-                       int *ixfailnum, int *retrc, void *od_dta, size_t od_len, unsigned long long ins_keys)
+                int *ixfailnum, int *retrc, void *od_dta, size_t od_len, unsigned long long ins_keys)
 {
     int ixkeylen;
     int rc;
@@ -245,7 +244,7 @@ int check_index(struct ireq *iq, void *trans, int ixnum, blob_buffer_t *blobs, s
 int track_record_index(struct ireq *iq, int ixnum, void *key, int ixkeylen)
 {
     int is_dup;
-    char * store_key;
+    char *store_key;
 
     is_dup = 0;
     store_key = calloc(sizeof(int) + sizeof(int) + MAXKEYLEN, sizeof(char));
@@ -254,7 +253,7 @@ int track_record_index(struct ireq *iq, int ixnum, void *key, int ixkeylen)
     memcpy(store_key + sizeof(int), &ixnum, sizeof(int));
     memcpy(store_key + sizeof(int) + sizeof(int), key, ixkeylen);
 
-    char * s = hash_find(iq->vfy_idx_hash, store_key);
+    char *s = hash_find(iq->vfy_idx_hash, store_key);
     if (s) {
         is_dup = 1;
         free(store_key);
@@ -276,7 +275,7 @@ int check_for_upsert(struct ireq *iq, void *trans, blob_buffer_t *blobs, size_t 
     int rc = 0;
     int upsert_idx = rec_flags >> 8;
 
-   /* Perform the check for upsert index first. */
+    /* Perform the check for upsert index first. */
     if (upsert_idx != MAXINDEX + 1) {
 
         /* It must be a unique key. */
@@ -326,29 +325,24 @@ static inline void append_genid_to_key(dtikey_t *ditk, int ixkeylen)
     memcpy(&ditk->ixkey[ixkeylen], &ditk->genid, sizeof(ditk->genid));
 }
 
+#define REC_ERROR_LOG(fmt, ...)                                                                                                                          \
+    do {                                                                                                                                                 \
+        EVENTLOG_DEBUG(                                                                                                                                  \
+            uuidstr_t us;                                                                                                                                \
+            if (iq->sorese) {                                                                                                                            \
+                comdb2uuidstr(iq->sorese->uuid, us);                                                                                                     \
+            } else {                                                                                                                                     \
+                uuid_t u;                                                                                                                                \
+                comdb2uuid_clear(u);                                                                                                                     \
+                comdb2uuidstr(u, us);                                                                                                                    \
+            } eventlog_debug("%s:%d uuid %s tbl %s ix %d " fmt, __func__, __LINE__, us, iq->usedb ? iq->usedb->tablename : "???", ixnum, __VA_ARGS__);); \
+    } while (0)
 
-#define REC_ERROR_LOG(fmt, ...) do {            \
-    EVENTLOG_DEBUG (            \
-        uuidstr_t us;   \
-        if (iq->sorese) { \
-            comdb2uuidstr(iq->sorese->uuid, us); \
-        } \
-        else {  \
-            uuid_t u; \
-            comdb2uuid_clear(u); \
-            comdb2uuidstr(u, us); \
-        } \
-        eventlog_debug("%s:%d uuid %s tbl %s ix %d " fmt, __func__, __LINE__, us, iq->usedb ? iq->usedb->tablename : "???", ixnum, __VA_ARGS__);            \
-    );            \
-} while(0)
-
-
-#define ERR(_ret, fmt, ...)                                                               \
-    do {                                                                       \
-        REC_ERROR_LOG("err rc %d retrc %d errval %d errstr %s %s " fmt, rc, _ret, iq->errstat.errval, iq->errstat.errstr, fmt, __VA_ARGS__);    \
-        goto done; \
+#define ERR(_ret, fmt, ...)                                                                                                                  \
+    do {                                                                                                                                     \
+        REC_ERROR_LOG("err rc %d retrc %d errval %d errstr %s %s " fmt, rc, _ret, iq->errstat.errval, iq->errstat.errstr, fmt, __VA_ARGS__); \
+        goto done;                                                                                                                           \
     } while (0);
-
 
 int add_record_indices(struct ireq *iq, void *trans, blob_buffer_t *blobs,
                        size_t maxblobs, int *opfailcode, int *ixfailnum,
@@ -425,14 +419,13 @@ int add_record_indices(struct ireq *iq, void *trans, blob_buffer_t *blobs,
             ERR(rc, "", 0);
         }
 
-        EVENTLOG_DEBUG (
-            char kbuf[(MAXKEYLEN+1)*2+1];
+        EVENTLOG_DEBUG(
+            char kbuf[(MAXKEYLEN + 1) * 2 + 1];
             int klen = bdb_keylen(iq->usedb->handle, ixnum);
             if (klen >= sizeof(kbuf))
                 abort();
             util_tohex(kbuf, key, klen);
-            REC_ERROR_LOG("key %s", kbuf);
-        );
+            REC_ERROR_LOG("key %s", kbuf););
 
         /* light the prefault kill bit for this subop - newkeys */
         prefault_kill_bits(iq, ixnum, PFRQ_NEWKEY);
@@ -518,7 +511,7 @@ int add_record_indices(struct ireq *iq, void *trans, blob_buffer_t *blobs,
                 *opfailcode = OP_FAILED_UNIQ; /* really? */
 
                 // If this transaction has already added this key and adding this key again
-                // violates a duplicate key constraint, then this txn is uncommittable. 
+                // violates a duplicate key constraint, then this txn is uncommittable.
                 if (dup_txn_insert == 1) {
                     iq->dup_key_insert = 1;
                 }
@@ -595,9 +588,9 @@ int upd_record_indices(struct ireq *iq, void *trans, int *opfailcode,
     dtikey_t delditk = {0}; // will serve as the delete key obj
     dtikey_t ditk = {0};    // will serve as the add or upd key obj
     int reorder =
-        osql_is_index_reorder_on(iq->osql_flags) && 
+        osql_is_index_reorder_on(iq->osql_flags) &&
         iq->usedb->sc_from != iq->usedb &&
-        iq->usedb->ix_expr == 0 && /* dont reorder if we have idx on expr */
+        iq->usedb->ix_expr == 0 &&     /* dont reorder if we have idx on expr */
         iq->usedb->n_constraints == 0; /* dont reorder if foreign constrts */
 
     if (reorder) {
@@ -884,7 +877,7 @@ int del_record_indices(struct ireq *iq, void *trans, int *opfailcode, int *ixfai
     int reorder =
         osql_is_index_reorder_on(iq->osql_flags) &&
         iq->usedb->sc_from != iq->usedb &&
-        iq->usedb->ix_expr == 0 && /* dont reorder if we have idx on expr */
+        iq->usedb->ix_expr == 0 &&     /* dont reorder if we have idx on expr */
         iq->usedb->n_constraints == 0; /* dont reorder if foreign constrts */
 
     if (reorder) {

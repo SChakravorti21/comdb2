@@ -24,7 +24,8 @@ struct appsock_handler_arg {
     /* gethostinfo */
     struct timeval start;
     char *origin;
-    TAILQ_ENTRY(appsock_handler_arg) entry;
+    TAILQ_ENTRY(appsock_handler_arg)
+    entry;
 };
 
 void free_appsock_handler_arg(struct appsock_handler_arg *);
@@ -36,7 +37,7 @@ struct event_base *get_dispatch_event_base(void);
 struct event_base *get_main_event_base(void);
 void do_revconn_evbuffer(int fd, short what, void *data);
 
-typedef void(*run_on_base_fn)(void *);
+typedef void (*run_on_base_fn)(void *);
 void run_on_base(struct event_base *, run_on_base_fn, void *);
 
 extern unsigned long long total_appsock_conns;
@@ -47,22 +48,22 @@ int check_appsock_limit(int pending);
 
 #undef SKIP_CHECK_THD
 #ifdef SKIP_CHECK_THD
-#  define check_thd(...)
+#define check_thd(...)
 #else
-#  define check_thd(thd)                                                                    \
-    if (!pthread_equal(thd, pthread_self())) {                                              \
-        fprintf(stderr, "FATAL ERROR: %s EVENT NOT DISPATCHED on " #thd "\n", __func__);    \
-        abort();                                                                            \
+#define check_thd(thd)                                                                   \
+    if (!pthread_equal(thd, pthread_self())) {                                           \
+        fprintf(stderr, "FATAL ERROR: %s EVENT NOT DISPATCHED on " #thd "\n", __func__); \
+        abort();                                                                         \
     }
 #endif
 
-#define evtimer_once(a, b, c)                                                               \
-    ({                                                                                      \
-        int erc;                                                                            \
-        if ((erc = event_base_once(a, -1, EV_TIMEOUT, b, c, NULL)) != 0) {                  \
-            logmsg(LOGMSG_ERROR, "%s:%d event_base_once failed\n", __func__, __LINE__);     \
-        }                                                                                   \
-        erc;                                                                                \
+#define evtimer_once(a, b, c)                                                           \
+    ({                                                                                  \
+        int erc;                                                                        \
+        if ((erc = event_base_once(a, -1, EV_TIMEOUT, b, c, NULL)) != 0) {              \
+            logmsg(LOGMSG_ERROR, "%s:%d event_base_once failed\n", __func__, __LINE__); \
+        }                                                                               \
+        erc;                                                                            \
     })
 
 #ifndef container_of

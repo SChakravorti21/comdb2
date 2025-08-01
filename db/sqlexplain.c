@@ -78,8 +78,7 @@ static char opcode_to_sign(int opcode)
 static void print_field(Vdbe *v, struct cursor_info *cinfo, int num, char *buf)
 {
     if (cinfo->remote) {
-        sprintf(buf, "%s", fdb_sqlexplain_get_field_name(v, cinfo->rootpage,
-                                                         cinfo->ix, num));
+        sprintf(buf, "%s", fdb_sqlexplain_get_field_name(v, cinfo->rootpage, cinfo->ix, num));
         return;
     }
 
@@ -115,8 +114,8 @@ static void print_field(Vdbe *v, struct cursor_info *cinfo, int num, char *buf)
         }
         sprintf(buf, "\"%s\"", indexname);
         return;
-    } 
-    
+    }
+
     struct dbtable *db = NULL;
     if (cinfo->tbl < thedb->num_dbs) {
         assert(cinfo->tbl >= 0);
@@ -448,7 +447,7 @@ void explain_data_prepare(IndentInfo *p, Vdbe *v)
 
     const int opNext[] = {OP_Next, OP_Prev, /* OP_VPrev, */ OP_VNext,
                           OP_SorterNext, 0};
-    const int opYield[] = {OP_Yield,      OP_SeekLT, OP_SeekGT,
+    const int opYield[] = {OP_Yield, OP_SeekLT, OP_SeekGT,
                            OP_RowSetRead, OP_Rewind, 0};
     const int opGoto[] = {OP_Goto, 0};
 
@@ -563,7 +562,7 @@ void get_one_explain_line(sqlite3 *hndl, strbuf *out, Vdbe *v, int indent,
         strbuf_appendf(out, "R%d = %d", op->p2, op->p1);
         break;
     case OP_Int64:
-        strbuf_appendf(out, "R%d = %lld", op->p2, (long long) *op->p4.pI64);
+        strbuf_appendf(out, "R%d = %lld", op->p2, (long long)*op->p4.pI64);
         break;
     case OP_Real:
         strbuf_appendf(out, "R%d = %f", op->p2, *op->p4.pReal);
@@ -892,11 +891,11 @@ void get_one_explain_line(sqlite3 *hndl, strbuf *out, Vdbe *v, int indent,
         strbuf_appendf(out, "Close cursor [%d]", op->p1);
         break;
     case OP_SeekScan: {
-        if (pc+1 >= v->nOp) {
+        if (pc + 1 >= v->nOp) {
             strbuf_appendf(out, "Huh?  SeekScan not followed by OP_Seek*?\n");
             return;
         }
-        Op *seek = &v->aOp[pc+1];
+        Op *seek = &v->aOp[pc + 1];
         strbuf_appendf(out, "Walk the next %d rows of cursor [%d] to see if it matches the key in [R%d..R%d]\n", op->p2, seek->p1, seek->p3, seek->p4);
         break;
     }
@@ -1212,16 +1211,15 @@ void get_one_explain_line(sqlite3 *hndl, strbuf *out, Vdbe *v, int indent,
                        op->p4.comdb2func, op->p2);
         break;
     case OP_OpFuncNext:
-        strbuf_appendf(out, "if R%d has been fully read then continue, else jump to %d" ,
+        strbuf_appendf(out, "if R%d has been fully read then continue, else jump to %d",
                        op->p1, op->p2);
         break;
     case OP_OpFuncExec:
-        strbuf_appendf(out, "Exec OpFunc in R%d" , op->p1);
+        strbuf_appendf(out, "Exec OpFunc in R%d", op->p1);
         break;
     case OP_OpFuncString:
         strbuf_appendf(out, "Next String of R%d into R%d", op->p1, op->p2);
         break;
-
 
     case OP_TableLock:
     case OP_VBegin:
@@ -1229,12 +1227,12 @@ void get_one_explain_line(sqlite3 *hndl, strbuf *out, Vdbe *v, int indent,
     case OP_VDestroy:
     case OP_VOpen:
         strbuf_appendf(out, "Open %s cursor [%d] on ",
-                (op->opcode != OP_OpenWrite ? "read" : "write"), op->p1);
+                       (op->opcode != OP_OpenWrite ? "read" : "write"), op->p1);
         strbuf_appendf(out, "virtual table %s", op->p4.pVtab->pMod->zName);
         break;
     case OP_VColumn:
         /* zComment is of the form <systbl_name>.<systbl_columnname>*/
-        strbuf_appendf(out, "R[%d] = %s",op->p3, op->zComment);
+        strbuf_appendf(out, "R[%d] = %s", op->p3, op->zComment);
         break;
     case OP_VNext:
         strbuf_appendf(
@@ -1243,7 +1241,7 @@ void get_one_explain_line(sqlite3 *hndl, strbuf *out, Vdbe *v, int indent,
         break;
     case OP_VFilter:
         strbuf_appendf(
-            out, "Jump to %d if the filtered result set on cursor [%d] is empty", 
+            out, "Jump to %d if the filtered result set on cursor [%d] is empty",
             op->p2, op->p1);
         break;
     case OP_VRename:
@@ -1278,12 +1276,13 @@ int newsql_dump_query_plan(struct sqlclntstate *clnt, sqlite3 *hndl)
     int rc;
     clnt->prep_rc = rc = sqlite3_prepare_v2(hndl, newSql, -1, &stmt,
                                             (const char **)&eos);
-    if( newSql ) sqlite3_free(newSql);
+    if (newSql)
+        sqlite3_free(newSql);
     sqlite3WhereTrace = 0;
-    if (f) 
+    if (f)
         io_override_set_std(NULL);
     if (rc || !stmt) {
-        char * errstr = (char *)sqlite3_errmsg(hndl);
+        char *errstr = (char *)sqlite3_errmsg(hndl);
         write_response(clnt, RESPONSE_ERROR_PREPARE, errstr, 0);
         return rc || 1;
     }
@@ -1314,10 +1313,10 @@ int newsql_dump_query_plan(struct sqlclntstate *clnt, sqlite3 *hndl)
             indent = 0;
         int skipCount = 0;
         get_one_explain_line(
-            hndl, out, v, indent, maxwidth, pc, cur, &skipCount
-        );
-        if (skipCount != 0) pc += skipCount;
-        char *row[] = {(char*)strbuf_buf(out)};
+            hndl, out, v, indent, maxwidth, pc, cur, &skipCount);
+        if (skipCount != 0)
+            pc += skipCount;
+        char *row[] = {(char *)strbuf_buf(out)};
         write_response(clnt, RESPONSE_ROW_STR, row, 1);
         strbuf_clear(out);
     }
@@ -1328,7 +1327,7 @@ int newsql_dump_query_plan(struct sqlclntstate *clnt, sqlite3 *hndl)
         char buf[32]; /* small stack size in appsock thd */
         while (fgets(buf, sizeof(buf), f))
             strbuf_appendf(out, "%s", buf);
-        char *row[] = {(char*)strbuf_buf(out)};
+        char *row[] = {(char *)strbuf_buf(out)};
         write_response(clnt, RESPONSE_ROW_STR, row, 1);
         fclose(f);
     }
@@ -1341,4 +1340,3 @@ int newsql_dump_query_plan(struct sqlclntstate *clnt, sqlite3 *hndl)
     write_response(clnt, RESPONSE_ROW_LAST, NULL, 0);
     return 0;
 }
-

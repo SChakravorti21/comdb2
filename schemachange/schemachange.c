@@ -250,7 +250,7 @@ int start_schema_change_tran(struct ireq *iq, tran_type *trans)
         }
     } else {
         seed = bdb_get_a_genid(thedb->bdb_env);
-        logmsg(LOGMSG_WARN, 
+        logmsg(LOGMSG_WARN,
                "Starting schema change: table %s kind %s new seed 0x%llx\n",
                s->tablename, schema_change_kind(s), seed);
     }
@@ -398,7 +398,8 @@ int start_schema_change(struct schema_change_type *s)
         return -1;
     }
     init_fake_ireq(thedb, iq);
-    if (s->already_locked) iq->sc_locked = 1;
+    if (s->already_locked)
+        iq->sc_locked = 1;
     iq->sc = s;
     s->iq = iq;
     if (s->db == NULL) {
@@ -858,7 +859,8 @@ int live_sc_post_update_int(struct ireq *iq, void *trans,
                                          newblobs);
     }
 
-    if (iq->debug) reqpopprefixes(iq, 1);
+    if (iq->debug)
+        reqpopprefixes(iq, 1);
 
     return rc;
 }
@@ -1115,7 +1117,8 @@ int sc_timepart_add_table(const char *existingTableName,
     sc.newcsc2 = schemabuf;
 
     /* make table odh, compression, ipu, instantsc the same for the new table */
-    if (db->odh) sc.headers = 1;
+    if (db->odh)
+        sc.headers = 1;
     if (get_db_compress(db, &sc.compress)) {
         xerr->errval = SC_VIEW_ERR_BUG;
         snprintf(xerr->errstr, sizeof(xerr->errstr),
@@ -1136,7 +1139,8 @@ int sc_timepart_add_table(const char *existingTableName,
                  "could not get ipu for table '%s'\n", existingTableName);
         goto error;
     }
-    if (db->instant_schema_change) sc.instant_sc = 1;
+    if (db->instant_schema_change)
+        sc.instant_sc = 1;
 
     /* still one schema change at a time */
     if (thedb->master != gbl_myhostname) {
@@ -1330,7 +1334,8 @@ int start_table_upgrade(struct dbenv *dbenv, const char *tbl,
 {
     struct schema_change_type *sc =
         calloc(1, sizeof(struct schema_change_type));
-    if (sc == NULL) return ENOMEM;
+    if (sc == NULL)
+        return ENOMEM;
 
     if ((full == 0 && partial == 0) || (full != 0 && partial != 0)) {
         free(sc);
@@ -1411,7 +1416,7 @@ void handle_setcompr(SBUF2 *sb)
         sbuf2printf(sb, "SUCCESS\n");
     else
     out:
-    sbuf2printf(sb, "FAILED\n");
+        sbuf2printf(sb, "FAILED\n");
 
     sbuf2flush(sb);
 }
@@ -1514,38 +1519,69 @@ void sc_errf(struct schema_change_type *s, const char *fmt, ...)
 
 const char *schema_change_kind(struct schema_change_type *s)
 {
-    switch(s->kind) {
-    case SC_LEGACY_QUEUE: return "SC_LEGACY_QUEUE";
-    case SC_LEGACY_MORESTRIPE: return "SC_LEGACY_MORESTRIPE";
-    case SC_ADD_QDB_FILE: return "SC_ADD_QDB_FILE";
-    case SC_DEL_QDB_FILE: return "SC_DEL_QDB_FILE";
-    case SC_ADD_VIEW: return "SC_ADD_VIEW";
-    case SC_DROP_VIEW: return "SC_DROP_VIEW";
-    case SC_ADDSP: return "SC_ADDSP";
-    case SC_DELSP: return "SC_DELSP";
-    case SC_DEFAULTSP: return "SC_DEFAULTSP";
-    case SC_SHOWSP: return "SC_SHOWSP";
-    case SC_DEFAULTCONS: return "SC_DEFAULTCONS";
-    case SC_ADD_TRIGGER: return "SC_ADD_TRIGGER";
-    case SC_DEL_TRIGGER: return "SC_DEL_TRIGGER";
-    case SC_ADD_SFUNC: return "SC_ADD_SFUNC";
-    case SC_DEL_SFUNC: return "SC_DEL_SFUNC";
-    case SC_ADD_AFUNC: return "SC_ADD_AFUNC";
-    case SC_DEL_AFUNC: return "SC_DEL_AFUNC";
-    case SC_FULLUPRECS: return "SC_FULLUPRECS";
-    case SC_PARTIALUPRECS: return "SC_PARTIALUPRECS";
-    case SC_DROPTABLE: return "SC_DROPTABLE";
-    case SC_TRUNCATETABLE: return "SC_TRUNCATETABLE";
-    case SC_ADDTABLE: return "SC_ADDTABLE";
-    case SC_RENAMETABLE: return "SC_RENAMETABLE";
-    case SC_ALIASTABLE: return "SC_ALIASTABLE";
-    case SC_ALTERTABLE: return "SC_ALTERTABLE";
-    case SC_ALTERTABLE_PENDING: return "SC_ALTERTABLE_PENDING";
-    case SC_REBUILDTABLE: return "SC_REBUILDTABLE";
-    case SC_ALTERTABLE_INDEX: return "SC_ALTERTABLE_INDEX";
-    case SC_DROPTABLE_INDEX: return "SC_DROPTABLE_INDEX";
-    case SC_REBUILDTABLE_INDEX: return "SC_REBUILDTABLE_INDEX";
-    case SC_BULK_IMPORT: return "SC_BULK_IMPORT";
+    switch (s->kind) {
+    case SC_LEGACY_QUEUE:
+        return "SC_LEGACY_QUEUE";
+    case SC_LEGACY_MORESTRIPE:
+        return "SC_LEGACY_MORESTRIPE";
+    case SC_ADD_QDB_FILE:
+        return "SC_ADD_QDB_FILE";
+    case SC_DEL_QDB_FILE:
+        return "SC_DEL_QDB_FILE";
+    case SC_ADD_VIEW:
+        return "SC_ADD_VIEW";
+    case SC_DROP_VIEW:
+        return "SC_DROP_VIEW";
+    case SC_ADDSP:
+        return "SC_ADDSP";
+    case SC_DELSP:
+        return "SC_DELSP";
+    case SC_DEFAULTSP:
+        return "SC_DEFAULTSP";
+    case SC_SHOWSP:
+        return "SC_SHOWSP";
+    case SC_DEFAULTCONS:
+        return "SC_DEFAULTCONS";
+    case SC_ADD_TRIGGER:
+        return "SC_ADD_TRIGGER";
+    case SC_DEL_TRIGGER:
+        return "SC_DEL_TRIGGER";
+    case SC_ADD_SFUNC:
+        return "SC_ADD_SFUNC";
+    case SC_DEL_SFUNC:
+        return "SC_DEL_SFUNC";
+    case SC_ADD_AFUNC:
+        return "SC_ADD_AFUNC";
+    case SC_DEL_AFUNC:
+        return "SC_DEL_AFUNC";
+    case SC_FULLUPRECS:
+        return "SC_FULLUPRECS";
+    case SC_PARTIALUPRECS:
+        return "SC_PARTIALUPRECS";
+    case SC_DROPTABLE:
+        return "SC_DROPTABLE";
+    case SC_TRUNCATETABLE:
+        return "SC_TRUNCATETABLE";
+    case SC_ADDTABLE:
+        return "SC_ADDTABLE";
+    case SC_RENAMETABLE:
+        return "SC_RENAMETABLE";
+    case SC_ALIASTABLE:
+        return "SC_ALIASTABLE";
+    case SC_ALTERTABLE:
+        return "SC_ALTERTABLE";
+    case SC_ALTERTABLE_PENDING:
+        return "SC_ALTERTABLE_PENDING";
+    case SC_REBUILDTABLE:
+        return "SC_REBUILDTABLE";
+    case SC_ALTERTABLE_INDEX:
+        return "SC_ALTERTABLE_INDEX";
+    case SC_DROPTABLE_INDEX:
+        return "SC_DROPTABLE_INDEX";
+    case SC_REBUILDTABLE_INDEX:
+        return "SC_REBUILDTABLE_INDEX";
+    case SC_BULK_IMPORT:
+        return "SC_BULK_IMPORT";
     }
     return "UNKNOWN";
 }
@@ -1568,7 +1604,8 @@ int sc_list_create(sc_list_t *scl, void *vscs, uuid_t uuid)
     struct schema_change_type *sc;
     int i = 0, sc_protobuf = gbl_sc_protobuf;
 
-    LISTC_FOR_EACH(scs, sc, scs_lnk) {
+    LISTC_FOR_EACH(scs, sc, scs_lnk)
+    {
         if (sc_protobuf) {
             int rc = pack_schema_change_protobuf(sc, &packed_scs[i], &sizes[i]);
             if (rc) {
@@ -1592,10 +1629,11 @@ int sc_list_create(sc_list_t *scl, void *vscs, uuid_t uuid)
 
     /* offset first schema is past <version, count, scs total len, count X offsets> */
     int offset = sizeof(int) + sizeof(int) + sizeof(int) + scl->count * sizeof(int);
-    uint8_t *p_buf = (uint8_t*)scl->ser_scs;
+    uint8_t *p_buf = (uint8_t *)scl->ser_scs;
     uint8_t *p_buf_end = p_buf + sizes[0];
     i = 0;
-    LISTC_FOR_EACH(scs, sc, scs_lnk) {
+    LISTC_FOR_EACH(scs, sc, scs_lnk)
+    {
         /* save offset */
         scl->offsets[i] = offset;
         /* save schema change */

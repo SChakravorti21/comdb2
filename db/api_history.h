@@ -27,12 +27,12 @@ typedef struct api_driver {
 
 typedef struct api_history api_history_t;
 
-void acquire_api_history_lock(api_history_t*, int);
-void release_api_history_lock(api_history_t*);
+void acquire_api_history_lock(api_history_t *, int);
+void release_api_history_lock(api_history_t *);
 api_history_t *init_api_history();
-int free_api_history(api_history_t*);
-api_driver_t *get_next_api_history_entry(api_history_t*, void**, unsigned int*);
-int get_num_api_history_entries(api_history_t*);
-int update_api_history(api_history_t*, char*, char*);
+int free_api_history(api_history_t *);
+api_driver_t *get_next_api_history_entry(api_history_t *, void **, unsigned int *);
+int get_num_api_history_entries(api_history_t *);
+int update_api_history(api_history_t *, char *, char *);
 
 #endif

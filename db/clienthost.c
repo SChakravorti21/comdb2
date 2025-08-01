@@ -19,7 +19,8 @@
 #include <sys_wrap.h>
 
 static pthread_mutex_t clienthost_lk = PTHREAD_MUTEX_INITIALIZER;
-LISTC_T(struct clienthost) clienthost_list;
+LISTC_T(struct clienthost)
+clienthost_list;
 
 void clienthost_lock(void)
 {

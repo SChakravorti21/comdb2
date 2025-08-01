@@ -45,7 +45,6 @@
 
 #include <logmsg.h>
 
-
 /* like perror(), but takes the error number as an argument (useful for
  * pthreads) */
 void perror_errnum(const char *s, int errnum)
@@ -56,7 +55,7 @@ void perror_errnum(const char *s, int errnum)
     */
     char *errmsg;
 
-/* we use the deprecated sys_errlist, as strerror_r isnt available
+    /* we use the deprecated sys_errlist, as strerror_r isnt available
    on the version of sunos we use (5.9) */
 
 #ifdef _LINUX_SOURCE
@@ -138,7 +137,7 @@ char *load_text_file(const char *filename)
     fd = open(filename, O_RDONLY);
     if (fd < 0) {
         logmsg(LOGMSG_ERROR, "load_text_file: '%s' cannot open: %s\n", filename,
-                strerror(errno));
+               strerror(errno));
         free(buf);
         return NULL;
     }
@@ -193,19 +192,19 @@ int rewrite_lrl_remove_tables(const char *lrlname)
 
     fdold = open(lrlname, O_RDONLY);
     if (fdold == -1) {
-        logmsg(LOGMSG_ERROR, 
-                "rewrite_lrl_remove_tables: cannot open '%s' for reading "
-                "%d %s\n",
-                lrlname, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "rewrite_lrl_remove_tables: cannot open '%s' for reading "
+               "%d %s\n",
+               lrlname, errno, strerror(errno));
         return -1;
     }
 
     fdnew = open(newlrlname, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fdnew == -1) {
-        logmsg(LOGMSG_ERROR, 
-                "rewrite_lrl_remove_tables: cannot open '%s' for writing "
-                "%d %s\n",
-                lrlname, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "rewrite_lrl_remove_tables: cannot open '%s' for writing "
+               "%d %s\n",
+               lrlname, errno, strerror(errno));
         Close(fdold);
         return -1;
     }
@@ -263,32 +262,33 @@ int rewrite_lrl_remove_tables(const char *lrlname)
     sbuf2close(sbnew);
 
     if (rename(lrlname, savlrlname) == -1) {
-        logmsg(LOGMSG_ERROR, 
-                "rewrite_lrl_remove_tables: rename %s -> %s failed %d %s\n",
-                lrlname, savlrlname, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "rewrite_lrl_remove_tables: rename %s -> %s failed %d %s\n",
+               lrlname, savlrlname, errno, strerror(errno));
         err++;
     }
     if (rename(newlrlname, lrlname) == -1) {
-        logmsg(LOGMSG_ERROR, 
-                "rewrite_lrl_remove_tables: rename %s -> %s failed %d %s\n",
-                newlrlname, lrlname, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "rewrite_lrl_remove_tables: rename %s -> %s failed %d %s\n",
+               newlrlname, lrlname, errno, strerror(errno));
         err++;
     }
 
     return err ? -1 : 0;
 }
 
-#define print_lua_funcs(pfx)                                                   \
-    do {                                                                       \
-        int num = listc_size(&thedb->lua_##pfx##funcs);                        \
-        if (num) {                                                             \
-            sbuf2printf(sb_out, #pfx "funcs %d", num);                         \
-            struct lua_func_t * func;                                          \
-            LISTC_FOR_EACH(&thedb->lua_##pfx##funcs, func, lnk) {              \
-                sbuf2printf(sb_out, " %s", func->name);                        \
-            }                                                                  \
-            sbuf2printf(sb_out, "\n");                                         \
-        }                                                                      \
+#define print_lua_funcs(pfx)                                    \
+    do {                                                        \
+        int num = listc_size(&thedb->lua_##pfx##funcs);         \
+        if (num) {                                              \
+            sbuf2printf(sb_out, #pfx "funcs %d", num);          \
+            struct lua_func_t *func;                            \
+            LISTC_FOR_EACH(&thedb->lua_##pfx##funcs, func, lnk) \
+            {                                                   \
+                sbuf2printf(sb_out, " %s", func->name);         \
+            }                                                   \
+            sbuf2printf(sb_out, "\n");                          \
+        }                                                       \
     } while (0)
 
 /* Create a new lrl file with the table defs added back in (the reverse of
@@ -307,14 +307,14 @@ int rewrite_lrl_un_llmeta(const char *p_lrl_fname_in, const char *p_lrl_fname_ou
     fd_in = open(p_lrl_fname_in, O_RDONLY);
     if (fd_in == -1) {
         logmsg(LOGMSG_ERROR, "%s: cannot open '%s' for reading %d %s\n", __func__,
-                p_lrl_fname_in, errno, strerror(errno));
+               p_lrl_fname_in, errno, strerror(errno));
         return -1;
     }
 
     fd_out = open(p_lrl_fname_out, O_WRONLY | O_CREAT | O_EXCL, 0666);
     if (fd_out == -1) {
         logmsg(LOGMSG_ERROR, "%s: cannot open '%s' for writing %d %s\n", __func__,
-                p_lrl_fname_out, errno, strerror(errno));
+               p_lrl_fname_out, errno, strerror(errno));
         Close(fd_in);
         return -1;
     }
@@ -339,7 +339,7 @@ int rewrite_lrl_un_llmeta(const char *p_lrl_fname_in, const char *p_lrl_fname_ou
         tok = segtok(line, sizeof(line), &st, &ltok);
         if (ltok && tokcmp(tok, ltok, "table") == 0) {
             logmsg(LOGMSG_ERROR, "%s: skipping line containing table def: %s\n",
-                    __func__, line);
+                   __func__, line);
             continue;
         }
         sbuf2printf(sb_out, "%s", line);
@@ -402,17 +402,17 @@ int rewrite_lrl_table(const char *lrlname, const char *tablename,
 
     fdold = open(lrlname, O_RDONLY);
     if (fdold == -1) {
-        logmsg(LOGMSG_ERROR, 
-                "rewrite_lrl_table: cannot open '%s' for reading %d %s\n",
-                lrlname, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "rewrite_lrl_table: cannot open '%s' for reading %d %s\n",
+               lrlname, errno, strerror(errno));
         return -1;
     }
 
     fdnew = open(newlrlname, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fdnew == -1) {
-        logmsg(LOGMSG_ERROR, 
-                "rewrite_lrl_table: cannot open '%s' for writing %d %s\n",
-                lrlname, errno, strerror(errno));
+        logmsg(LOGMSG_ERROR,
+               "rewrite_lrl_table: cannot open '%s' for writing %d %s\n",
+               lrlname, errno, strerror(errno));
         Close(fdold);
         return -1;
     }
@@ -463,19 +463,19 @@ int rewrite_lrl_table(const char *lrlname, const char *tablename,
 
     if (ntables != 1) {
         logmsg(LOGMSG_ERROR, "rewrite_lrl_table: something confused me because I "
-                        "wrote %d lines instead of 1\n",
-                ntables);
+                             "wrote %d lines instead of 1\n",
+               ntables);
         return -1;
     }
 
     if (rename(lrlname, savlrlname) == -1) {
         logmsg(LOGMSG_ERROR, "rewrite_lrl_table: rename %s -> %s failed %d %s\n",
-                lrlname, savlrlname, errno, strerror(errno));
+               lrlname, savlrlname, errno, strerror(errno));
         err++;
     }
     if (rename(newlrlname, lrlname) == -1) {
         logmsg(LOGMSG_ERROR, "rewrite_lrl_table: rename %s -> %s failed %d %s\n",
-                newlrlname, lrlname, errno, strerror(errno));
+               newlrlname, lrlname, errno, strerror(errno));
         err++;
     }
 
@@ -543,4 +543,3 @@ char *get_full_filename(char *path, int pathlen, enum dirtype type, char *name,
     va_end(args);
     return ret;
 }
-

@@ -43,13 +43,14 @@ typedef struct {
 struct lua_func_t {
     char *name;
     int flags;
-    LINKC_T(struct lua_func_t) lnk;
+    LINKC_T(struct lua_func_t)
+    lnk;
 };
-int lua_func_list_free(void * list);
+int lua_func_list_free(void *list);
 
-void get_sfuncs(listc_t* funcs);
-void get_afuncs(listc_t* funcs);
- 
+void get_sfuncs(listc_t *funcs);
+void get_afuncs(listc_t *funcs);
+
 int find_lua_sfunc(const char *);
 int find_lua_afunc(const char *);
 
@@ -59,10 +60,10 @@ void lua_step(struct sqlite3_context *, int, struct sqlite3_value **);
 void lua_final(struct sqlite3_context *);
 
 int osql_delrec_qdb(struct sqlclntstate *, char *, uint64_t);
-int lua_sfunc_used(const char *func, char**tbl);
+int lua_sfunc_used(const char *func, char **tbl);
 
 int resolve_sfuncs_for_table(struct sqlite3 *db, struct dbtable *tbl);
-int resolve_sfuncs_for_db(struct dbenv* thedb);
+int resolve_sfuncs_for_db(struct dbenv *thedb);
 
 void start_stat4dump_thread(void);
 

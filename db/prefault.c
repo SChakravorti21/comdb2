@@ -102,7 +102,7 @@ int start_prefault_io_threads(struct dbenv *dbenv, int numthreads, int maxq)
 
     for (i = 0; i < numthreads; i++) {
         Pthread_create(&(dbenv->prefaultiopool.threads[i]), &attr,
-                            prefault_io_thread, (void *)dbenv);
+                       prefault_io_thread, (void *)dbenv);
         dbenv->prefaultiopool.numthreads++;
     }
     started = 1;
@@ -524,7 +524,7 @@ static void *prefault_io_thread(void *arg)
                     pfk_bitmap = dbenv->prefault_helper.threads[i].pfk_bitmap;
                     op_bitmap = pfk_bitmap + req->opnum * 8;
 
-/*
+                    /*
 fprintf(stderr, "opnum %d btst(%x, %d)\n",
    req->opnum, op_bitmap, 64 + req->index);
 */
@@ -565,7 +565,7 @@ fprintf(stderr, "opnum %d btst(%x, %d)\n",
 
                 if ((req->index < 0) || (req->index > 49)) {
                     logmsg(LOGMSG_ERROR, "PFRQ_OLDKEY ix %d out of bounds\n",
-                            req->index);
+                           req->index);
                     break;
                 }
 
@@ -621,7 +621,7 @@ fprintf(stderr, "opnum %d btst(%x, %d)\n",
 
                 if ((req->index < 0) || (req->index > 49)) {
                     logmsg(LOGMSG_ERROR, "PFRQ_NEWKEY ix %d out of bounds\n",
-                            req->index);
+                           req->index);
                     break;
                 }
 
@@ -641,7 +641,7 @@ fprintf(stderr, "opnum %d btst(%x, %d)\n",
                     pfk_bitmap = dbenv->prefault_helper.threads[i].pfk_bitmap;
                     op_bitmap = pfk_bitmap + req->opnum * 8;
 
-/*
+                    /*
 fprintf(stderr, "opnum %d btst(%x, %d)\n",
    req->opnum, op_bitmap, 64 + req->index);
 */
@@ -758,7 +758,7 @@ fprintf(stderr, "opnum %d btst(%x, %d)\n",
                 break;
             }
 
-            /*
+                /*
                this op peforms 1 i/o faulting in a dta record by genid.
                it then enqueues n ops to fault in each key formed from that
                dta record
@@ -963,39 +963,39 @@ fprintf(stderr, "opnum %d btst(%x, %d)\n",
 void prefault_stats(struct dbenv *dbenv)
 {
     logmsg(LOGMSG_USER, "num_add_record %d\n",
-            dbenv->prefault_stats.num_add_record);
+           dbenv->prefault_stats.num_add_record);
     logmsg(LOGMSG_USER, "num_del_record %d\n",
-            dbenv->prefault_stats.num_del_record);
+           dbenv->prefault_stats.num_del_record);
     logmsg(LOGMSG_USER, "num_upd_record %d\n",
-            dbenv->prefault_stats.num_upd_record);
+           dbenv->prefault_stats.num_upd_record);
 
     logmsg(LOGMSG_USER, "num_prfq_data %d\n", dbenv->prefault_stats.num_prfq_data);
     logmsg(LOGMSG_USER, "num_prfq_key %d\n", dbenv->prefault_stats.num_prfq_key);
     logmsg(LOGMSG_USER, "num_prfq_data_keys %d\n",
-            dbenv->prefault_stats.num_prfq_data_keys);
+           dbenv->prefault_stats.num_prfq_data_keys);
     logmsg(LOGMSG_USER, "num_prfq_data_keys_newkeys %d\n",
-            dbenv->prefault_stats.num_prfq_data_keys_newkeys);
+           dbenv->prefault_stats.num_prfq_data_keys_newkeys);
 
     logmsg(LOGMSG_USER, "num_prfq_data_broadcast %d\n",
-            dbenv->prefault_stats.num_prfq_data_broadcast);
+           dbenv->prefault_stats.num_prfq_data_broadcast);
     logmsg(LOGMSG_USER, "num_prfq_key_broadcast %d\n",
-            dbenv->prefault_stats.num_prfq_key_broadcast);
+           dbenv->prefault_stats.num_prfq_key_broadcast);
     logmsg(LOGMSG_USER, "num_prfq_data_keys_broadcast %d\n",
-            dbenv->prefault_stats.num_prfq_data_keys_broadcast);
+           dbenv->prefault_stats.num_prfq_data_keys_broadcast);
     logmsg(LOGMSG_USER, "num_prfq_data_keys_newkeys_broadcast %d\n",
-            dbenv->prefault_stats.num_prfq_data_keys_newkeys_broadcast);
+           dbenv->prefault_stats.num_prfq_data_keys_newkeys_broadcast);
 
     logmsg(LOGMSG_USER, "num_prfq_data_received %d\n",
-            dbenv->prefault_stats.num_prfq_data_received);
+           dbenv->prefault_stats.num_prfq_data_received);
     logmsg(LOGMSG_USER, "num_prfq_key_received %d\n",
-            dbenv->prefault_stats.num_prfq_key_received);
+           dbenv->prefault_stats.num_prfq_key_received);
     logmsg(LOGMSG_USER, "num_prfq_data_keys_received %d\n",
-            dbenv->prefault_stats.num_prfq_data_keys_received);
+           dbenv->prefault_stats.num_prfq_data_keys_received);
     logmsg(LOGMSG_USER, "num_prfq_data_keys_newkeys_received %d\n",
-            dbenv->prefault_stats.num_prfq_data_keys_newkeys_received);
+           dbenv->prefault_stats.num_prfq_data_keys_newkeys_received);
 
     logmsg(LOGMSG_USER, "num_prfq_data_keys_newkeys_no_olddta %d\n",
-            dbenv->prefault_stats.num_prfq_data_keys_newkeys_no_olddta);
+           dbenv->prefault_stats.num_prfq_data_keys_newkeys_no_olddta);
 
     logmsg(LOGMSG_USER, "num_ioq_full %d\n", dbenv->prefault_stats.num_ioq_full);
     logmsg(LOGMSG_USER, "num_nohelpers %d\n", dbenv->prefault_stats.num_nohelpers);

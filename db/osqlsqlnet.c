@@ -44,7 +44,8 @@ void init_bplog_net(osql_target_t *target)
 /**
  * Handle to registration of thread for net multiplex purposes
  *
- */ /* loop in caller */
+ */
+/* loop in caller */
 int osql_begin_net(struct sqlclntstate *clnt, int type, int keep_rqid)
 {
     osqlstate_t *osql = &clnt->osql;

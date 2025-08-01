@@ -58,7 +58,7 @@ int views_sqlite_update(timepart_views_t *views, sqlite3 *db,
                 rc = views_sqlite_del_view(view, db, err);
                 if (rc != VIEW_NOERR) {
                     logmsg(LOGMSG_ERROR, "%s: failed to remove old view\n",
-                            __func__);
+                           __func__);
                     goto done;
                 }
             } else {
@@ -317,7 +317,7 @@ static int _view_delete_if_missing(const char *name, sqlite3 *db, void *arg)
         rc = _views_sqlite_del_view(name, db, &err);
         if (rc != VIEW_NOERR) {
             logmsg(LOGMSG_ERROR, "%s: failed to clear old view %s rc=%d str=%s\n",
-                    __func__, name, rc, err.errstr);
+                   __func__, name, rc, err.errstr);
         }
         return 1;
     }
@@ -440,7 +440,7 @@ static void dbg_verbose_sqlite(const char *fmt, ...)
 {
     va_list va;
 
-    if(!bdb_attr_get(thedb->bdb_attr, BDB_ATTR_DEBUG_TIMEPART_SQLITE))
+    if (!bdb_attr_get(thedb->bdb_attr, BDB_ATTR_DEBUG_TIMEPART_SQLITE))
         return;
 
     va_start(va, fmt);

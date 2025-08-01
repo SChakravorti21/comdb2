@@ -114,9 +114,9 @@ void lrucache_destroy(struct lrucache *cache)
 
     used_count = cache->used.count;
     if (used_count != 0) {
-        logmsg(LOGMSG_WARN, 
-            "trying to destroy cache with in-use entries: %d entries on list\n",
-            used_count);
+        logmsg(LOGMSG_WARN,
+               "trying to destroy cache with in-use entries: %d entries on list\n",
+               used_count);
         return;
     }
 
@@ -147,7 +147,7 @@ void lrucache_release(struct lrucache *cache, void *key)
     lent->ref--;
     if (lent->ref < 0) {
         logmsg(LOGMSG_ERROR, "key released more often than found, ref %d\n",
-                lent->ref);
+               lent->ref);
         return;
     } else if (lent->ref == 0) {
         listc_rfl(&cache->used, ent);

@@ -29,7 +29,8 @@ extern int gbl_osql_verify_retries_max;
 typedef struct srs_tran_query {
     int iscommit;
     void *stmt;
-    LINKC_T(struct srs_tran_query) lnk; /* next query */
+    LINKC_T(struct srs_tran_query)
+    lnk; /* next query */
 } srs_tran_query_t;
 
 static void *save_stmt(struct sqlclntstate *clnt)
@@ -53,7 +54,8 @@ static char *print_stmt(struct sqlclntstate *clnt, srs_tran_query_t *item)
 }
 
 typedef struct srs_tran {
-    LISTC_T(struct srs_tran_query) lst; /* list of queries up to this point */
+    LISTC_T(struct srs_tran_query)
+    lst; /* list of queries up to this point */
 } srs_tran_t;
 
 /**
@@ -75,7 +77,8 @@ void srs_tran_print_history(struct sqlclntstate *clnt, int indent)
     if (history == NULL)
         return;
     int num = 0;
-    LISTC_FOR_EACH(&history->lst, item, lnk) {
+    LISTC_FOR_EACH(&history->lst, item, lnk)
+    {
         logmsg(LOGMSG_WARN, "%*c %3d) %s\n", indent, ' ', num++, print_stmt(clnt, item));
     }
 }
@@ -302,7 +305,7 @@ static int srs_tran_replay_int(struct sqlclntstate *clnt, int(dispatch_fn)(struc
                 return -1;
             }
         } else {
-            osql_shadtbl_close(clnt); 
+            osql_shadtbl_close(clnt);
         }
 
         if (clnt->verify_retries == gbl_osql_verify_retries_max + 1) {
@@ -368,7 +371,8 @@ static int srs_tran_replay_int(struct sqlclntstate *clnt, int(dispatch_fn)(struc
     }
     if (rc && clnt->verify_retries < gbl_osql_verify_retries_max) {
         logmsg(LOGMSG_ERROR, "Uncommittable transaction %d retried %d times,  "
-               "rc=%d [global retr=%lld] nq=%d tnq=%d\n", clnt->queryid,
+                             "rc=%d [global retr=%lld] nq=%d tnq=%d\n",
+               clnt->queryid,
                clnt->verify_retries, rc, gbl_verify_tran_replays, nq, tnq);
     }
 

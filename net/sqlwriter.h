@@ -31,7 +31,7 @@ struct sqlclntstate;
 struct sqlwriter;
 struct ssl_data;
 
-int  sql_flush(struct sqlwriter *);
+int sql_flush(struct sqlwriter *);
 
 void sql_enable_heartbeat(struct sqlwriter *);
 void sql_disable_heartbeat(struct sqlwriter *);

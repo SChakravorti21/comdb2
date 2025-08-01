@@ -20,7 +20,10 @@
 extern int gbl_check_access_controls;
 
 /* Authentication types for users */
-enum { AUTH_READ = 1, AUTH_WRITE = 2, AUTH_OP = 3, AUTH_USERSCHEMA = 4 };
+enum { AUTH_READ = 1,
+       AUTH_WRITE = 2,
+       AUTH_OP = 3,
+       AUTH_USERSCHEMA = 4 };
 
 enum PRIVILEGE_TYPE {
     PRIV_INVALID,

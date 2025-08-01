@@ -105,7 +105,7 @@ static int recv_fd_int(int sockfd, void *data, size_t nbytes, int *fd_recvd)
             if (*fd_recvd != -1) {
                 if (close(recvfd) == -1) {
                     logmsg(LOGMSG_ERROR, "%s: error closing second fd %d: %d %s\n",
-                            __func__, recvfd, errno, strerror(errno));
+                           __func__, recvfd, errno, strerror(errno));
                 }
                 return PASSFD_2FDS;
             }
@@ -120,7 +120,7 @@ static int recv_fd_int(int sockfd, void *data, size_t nbytes, int *fd_recvd)
             if (*fd_recvd != -1) {
                 if (close(recvfd) == -1) {
                     logmsg(LOGMSG_ERROR, "%s: error closing second fd %d: %d %s\n",
-                            __func__, recvfd, errno, strerror(errno));
+                           __func__, recvfd, errno, strerror(errno));
                 }
                 return PASSFD_2FDS;
             }
@@ -144,7 +144,7 @@ int recv_fd(int sockfd, void *data, size_t nbytes, int *fd_recvd)
         int errno_save = errno;
         if (close(*fd_recvd) == -1) {
             logmsg(LOGMSG_ERROR, "%s: close(%d) error: %d %s\n", __func__, *fd_recvd,
-                    errno, strerror(errno));
+                   errno, strerror(errno));
         }
         *fd_recvd = -1;
         errno = errno_save;

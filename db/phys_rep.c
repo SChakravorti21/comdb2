@@ -43,15 +43,15 @@ typedef struct DB_Connection {
     char *hostname;
     char *dbname;
     uint32_t seed;
-    int is_up; // was the db available for connection. Default non-zero if not
-               // connected before
+    int is_up;          // was the db available for connection. Default non-zero if not
+                        // connected before
     time_t last_cnct;   // when was the last time we connected
     time_t last_failed; // when was the last time a connection failed
 } DB_Connection;
 
-#define physrep_logmsg(lvl, ...)                                               \
-    do {                                                                       \
-        logmsg(lvl, "physrep: " __VA_ARGS__);                                  \
+#define physrep_logmsg(lvl, ...)              \
+    do {                                      \
+        logmsg(lvl, "physrep: " __VA_ARGS__); \
     } while (0)
 
 int gbl_physrep_debug = 0;
@@ -228,15 +228,16 @@ static void close_repl_connection(DB_Connection *cnct, cdb2_hndl_tp *repl_db,
 }
 
 // Append the list of nodes in the local cluster to the specified buffer.
-static int append_quoted_local_hosts(char *buf, int buf_len, const char *separator) {
+static int append_quoted_local_hosts(char *buf, int buf_len, const char *separator)
+{
     const char *nodes[REPMAX];
     bdb_state_type *bdb_state = gbl_bdb_state;
     int bytes_written = 0;
 
     int num_nodes = net_get_sanctioned_node_list(bdb_state->repinfo->netinfo, REPMAX, nodes);
     for (int i = 0; i < num_nodes; ++i) {
-        bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written,
-                                  "%s'%s'", (i>0) ? separator : "", nodes[i]);
+        bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written,
+                                  "%s'%s'", (i > 0) ? separator : "", nodes[i]);
         if (bytes_written >= buf_len) {
             goto err;
         }
@@ -251,13 +252,14 @@ err:
   This information would be used by the registrar to tell which source
   node(s) would the replicant be replicating off of.
 */
-static int append_quoted_source_hosts(char *buf, int buf_len, int *rc) {
+static int append_quoted_source_hosts(char *buf, int buf_len, int *rc)
+{
     int bytes_written = 0;
 
     // Source db plays the role of 'replication metadb', if latter is not
     // explicitly specified.
-    assert (gbl_physrep_source_dbname);
-    assert (gbl_physrep_source_host);
+    assert(gbl_physrep_source_dbname);
+    assert(gbl_physrep_source_host);
 
     *rc = 0;
 
@@ -269,9 +271,10 @@ static int append_quoted_source_hosts(char *buf, int buf_len, int *rc) {
         char *hosts = gbl_physrep_source_host;
 
         char *host = strtok_r(hosts, ",", &saveptr);
-        while (host != NULL)  {
-            if (host[0] == '@') ++host;
-            bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written, "%s'%s'", (count == 0) ? "" : ", ", host);
+        while (host != NULL) {
+            if (host[0] == '@')
+                ++host;
+            bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written, "%s'%s'", (count == 0) ? "" : ", ", host);
             ++count;
 
             host = strtok_r(NULL, ",", &saveptr);
@@ -324,7 +327,7 @@ static int append_quoted_source_hosts(char *buf, int buf_len, int *rc) {
     int count = 0;
     while ((*rc = cdb2_next_record(comdb2db)) == CDB2_OK) {
         const char *host = (const char *)cdb2_column_value(comdb2db, 0);
-        bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written, "%s'%s'", (count == 0) ? "" : ", ", host);
+        bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written, "%s'%s'", (count == 0) ? "" : ", ", host);
         ++count;
     }
     if (*rc == CDB2_OK_DONE)
@@ -338,7 +341,8 @@ err:
     return -1;
 }
 
-static int get_local_hndl(cdb2_hndl_tp **hndl) {
+static int get_local_hndl(cdb2_hndl_tp **hndl)
+{
     int rc = cdb2_open(hndl, gbl_dbname, "local", 0);
     if (rc != 0) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Failed to connect to %s@%s (rc: %d)\n",
@@ -355,11 +359,11 @@ static int get_local_hndl(cdb2_hndl_tp **hndl) {
 static char **physrep_metadb_hosts = NULL;
 static int physrep_metadb_host_count = 0;
 
-static int get_metadb_hndl(cdb2_hndl_tp **hndl) {
+static int get_metadb_hndl(cdb2_hndl_tp **hndl)
+{
     // Source db becomes 'replication metadb', if latter is not specified
     char *dbname = (gbl_physrep_metadb_name) ? gbl_physrep_metadb_name : gbl_physrep_source_dbname;
     char *host = (gbl_physrep_metadb_host) ? gbl_physrep_metadb_host : gbl_physrep_source_host;
-
 
     if (!is_valid_mach_class(host)) {
         static pthread_mutex_t physrep_metadb_hosts_mu = PTHREAD_MUTEX_INITIALIZER; // Protects physrep_metadb_hosts
@@ -373,11 +377,12 @@ static int get_metadb_hndl(cdb2_hndl_tp **hndl) {
 
             physrep_metadb_host_count = 0;
 
-            while (hst != NULL)  {
-                if (hst[0] == '@') ++hst;
+            while (hst != NULL) {
+                if (hst[0] == '@')
+                    ++hst;
                 ++physrep_metadb_host_count;
-                physrep_metadb_hosts = realloc(physrep_metadb_hosts, sizeof(char *)*physrep_metadb_host_count);
-                physrep_metadb_hosts[physrep_metadb_host_count-1] = strdup(hst);
+                physrep_metadb_hosts = realloc(physrep_metadb_hosts, sizeof(char *) * physrep_metadb_host_count);
+                physrep_metadb_hosts[physrep_metadb_host_count - 1] = strdup(hst);
 
                 hst = strtok_r(NULL, ",", &saveptr);
             }
@@ -393,7 +398,7 @@ static int get_metadb_hndl(cdb2_hndl_tp **hndl) {
             int rc = cdb2_open(hndl, dbname, direct_host, CDB2_DIRECT_CPU);
             if (rc != 0) {
                 physrep_logmsg(LOGMSG_ERROR, "%s:%d Failed to connect to %s@%s (rc: %d, attempt: %d)\n",
-                               __func__, __LINE__, dbname, direct_host, rc, i+1);
+                               __func__, __LINE__, dbname, direct_host, rc, i + 1);
                 cdb2_close(*hndl);
 
                 // Try to connect to other hosts in the list (if any)
@@ -410,7 +415,8 @@ static int get_metadb_hndl(cdb2_hndl_tp **hndl) {
                 sleep(1);
                 continue;
             }
-            while (cdb2_next_record(*hndl) == CDB2_OK) {}
+            while (cdb2_next_record(*hndl) == CDB2_OK) {
+            }
 
             if (gbl_physrep_debug) {
                 physrep_logmsg(LOGMSG_USER, "%s:%d Returning handle for: %s@%s\n",
@@ -440,9 +446,11 @@ static int get_metadb_hndl(cdb2_hndl_tp **hndl) {
     return 0;
 }
 
-int physrep_get_metadb_or_local_hndl(cdb2_hndl_tp **hndl) {
+int physrep_get_metadb_or_local_hndl(cdb2_hndl_tp **hndl)
+{
     return (gbl_physrep_metadb_name || gbl_physrep_source_dbname)
-      ?  get_metadb_hndl(hndl) : get_local_hndl(hndl);
+               ? get_metadb_hndl(hndl)
+               : get_local_hndl(hndl);
 }
 
 static int update_registry(cdb2_hndl_tp *repl_metadb, const char *remote_dbname, const char *remote_host)
@@ -511,15 +519,15 @@ static int update_registry_periodic(const char *remote_dbname, const char *remot
 
 static int send_reset_nodes(const char *state)
 {
-    const size_t nodes_list_sz = REPMAX * (255+1) + 3;
-    char cmd[120+nodes_list_sz];
+    const size_t nodes_list_sz = REPMAX * (255 + 1) + 3;
+    char cmd[120 + nodes_list_sz];
     int bytes_written = 0;
     int rc = 0;
 
     char *buf = cmd;
     size_t buf_len = sizeof(cmd);
 
-    bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written,
+    bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written,
                               "exec procedure sys.physrep.reset_nodes('%s', \"", gbl_dbname);
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
@@ -528,16 +536,16 @@ static int send_reset_nodes(const char *state)
 
     /* Only master can reset all the nodes in the cluster */
     if (thedb->master != gbl_myhostname) {
-        bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written, "'%s'", gbl_myhostname);
+        bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written, "'%s'", gbl_myhostname);
     } else {
-        bytes_written += append_quoted_local_hosts(buf+bytes_written, buf_len-bytes_written, " ");
+        bytes_written += append_quoted_local_hosts(buf + bytes_written, buf_len - bytes_written, " ");
     }
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return 1;
     }
 
-    bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written, "\", '%s')", state);
+    bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written, "\", '%s')", state);
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return 1;
@@ -666,7 +674,7 @@ static LOG_INFO handle_record(cdb2_hndl_tp *repl_db, LOG_INFO prev_info)
             } else {
                 if (gbl_physrep_debug) {
                     physrep_logmsg(LOGMSG_USER, "%s:%d: Got ACKs, (waited: %d ms)\n",
-                                   __func__, __LINE__, comdb2_time_epochms()-start);
+                                   __func__, __LINE__, comdb2_time_epochms() - start);
                 }
             }
         }
@@ -691,8 +699,8 @@ static LOG_INFO handle_record(cdb2_hndl_tp *repl_db, LOG_INFO prev_info)
 
 static int register_self(cdb2_hndl_tp *repl_metadb)
 {
-    const size_t nodes_list_sz = REPMAX * (255+1) + 3;
-    char cmd[120+nodes_list_sz];
+    const size_t nodes_list_sz = REPMAX * (255 + 1) + 3;
+    char cmd[120 + nodes_list_sz];
     int bytes_written = 0;
     int rc;
 
@@ -720,15 +728,15 @@ static int register_self(cdb2_hndl_tp *repl_metadb)
     size_t buf_len = sizeof(cmd);
     LOG_INFO info = get_last_lsn(thedb->bdb_env);
 
-    bytes_written = snprintf(buf+bytes_written, buf_len-bytes_written,
-                  "exec procedure sys.physrep.register_replicant('%s', '%s', '%u:%u', '%s', \"",
-                  gbl_dbname, gbl_myhostname, info.file, info.offset, gbl_physrep_source_dbname);
+    bytes_written = snprintf(buf + bytes_written, buf_len - bytes_written,
+                             "exec procedure sys.physrep.register_replicant('%s', '%s', '%u:%u', '%s', \"",
+                             gbl_dbname, gbl_myhostname, info.file, info.offset, gbl_physrep_source_dbname);
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return 1;
     }
 
-    bytes_written += append_quoted_source_hosts(buf+bytes_written, buf_len-bytes_written, &rc);
+    bytes_written += append_quoted_source_hosts(buf + bytes_written, buf_len - bytes_written, &rc);
     if (rc != 0 || bytes_written >= buf_len) {
         if (rc != 0) {
             physrep_logmsg(LOGMSG_ERROR, "%s:%d Failed to append source host(s)!\n", __func__, __LINE__);
@@ -738,7 +746,7 @@ static int register_self(cdb2_hndl_tp *repl_metadb)
         return 1;
     }
 
-    bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written, "\")");
+    bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written, "\")");
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return 1;
@@ -760,7 +768,7 @@ static int register_self(cdb2_hndl_tp *repl_metadb)
 
                 add_replicant_host(hostname, dbname);
 
-                ++ candidate_leaders_count;
+                ++candidate_leaders_count;
             }
             last_register = time(NULL);
 
@@ -794,7 +802,8 @@ static int seedsort(const void *arg1, const void *arg2)
     return 0;
 }
 
-static DB_Connection *find_new_repl_db(cdb2_hndl_tp *repl_metadb, cdb2_hndl_tp **repl_db) {
+static DB_Connection *find_new_repl_db(cdb2_hndl_tp *repl_metadb, cdb2_hndl_tp **repl_db)
+{
     int rc, count = 0;
     DB_Connection *cnct;
 
@@ -908,7 +917,7 @@ static int add_replicant_host(char *hostname, char *dbname)
     cnct->seed = rand();
 
     repl_dbs = realloc(repl_dbs, (repl_dbs_sz + 1) * sizeof(DB_Connection *));
-    repl_dbs[repl_dbs_sz ++] = cnct;
+    repl_dbs[repl_dbs_sz++] = cnct;
 
     if (gbl_physrep_debug) {
         physrep_logmsg(LOGMSG_USER, "%s:%d Adding %s:%s\n", __func__, __LINE__, hostname, dbname);
@@ -975,7 +984,8 @@ static int send_keepalive(void)
 
     rc = cdb2_run_statement(repl_metadb, cmd);
     if (rc == CDB2_OK) {
-        while (cdb2_next_record(repl_metadb) == CDB2_OK) {}
+        while (cdb2_next_record(repl_metadb) == CDB2_OK) {
+        }
     } else if (gbl_physrep_debug)
         physrep_logmsg(LOGMSG_USER, "%s:%d Failed to send keepalive\n", __func__, __LINE__);
 
@@ -983,13 +993,15 @@ static int send_keepalive(void)
     return rc;
 }
 
-unsigned int physrep_min_filenum() {
+unsigned int physrep_min_filenum()
+{
     return physrep_min_logfile;
 }
 
 extern int gbl_reverse_hosts_v2;
 
-static int check_for_reverse_conn(cdb2_hndl_tp *hndl) {
+static int check_for_reverse_conn(cdb2_hndl_tp *hndl)
+{
     int rc;
     char cmd[400];
     int do_wait = 0;
@@ -1016,7 +1028,7 @@ static int check_for_reverse_conn(cdb2_hndl_tp *hndl) {
             do_wait = (val != 0) ? 1 : 0;
             if (gbl_physrep_debug) {
                 physrep_logmsg(LOGMSG_USER, "%s:%d Will %s for connection from source node(s)\n",
-                               __func__, __LINE__, (do_wait) ?  "wait" : "not wait");
+                               __func__, __LINE__, (do_wait) ? "wait" : "not wait");
             }
         }
         if (rc == CDB2_OK_DONE)
@@ -1025,7 +1037,8 @@ static int check_for_reverse_conn(cdb2_hndl_tp *hndl) {
     return (rc == 0) ? do_wait : -1;
 }
 
-void physrep_update_low_file_num(int *lowfilenum, int *local_lowfilenum) {
+void physrep_update_low_file_num(int *lowfilenum, int *local_lowfilenum)
+{
     unsigned int physrep_minfilenum;
     if ((get_dbtable_by_name("comdb2_physreps")) == NULL) {
         return;
@@ -1041,7 +1054,7 @@ void physrep_update_low_file_num(int *lowfilenum, int *local_lowfilenum) {
         if (physrep_minfilenum <= *lowfilenum) {
             if (gbl_physrep_debug) {
                 physrep_logmsg(LOGMSG_USER, "%s:%d: lowfilenum %d being changed "
-                               "physical replicant(s) (physrep_minfilenum: %d)\n",
+                                            "physical replicant(s) (physrep_minfilenum: %d)\n",
                                __func__, __LINE__, *lowfilenum, physrep_minfilenum);
             }
             *lowfilenum = physrep_minfilenum - 1;
@@ -1057,7 +1070,8 @@ void physrep_update_low_file_num(int *lowfilenum, int *local_lowfilenum) {
     }
 }
 
-static int slow_replicants_count(unsigned int *count) {
+static int slow_replicants_count(unsigned int *count)
+{
     char query[400];
     int rc = 0;
 
@@ -1081,7 +1095,7 @@ static int slow_replicants_count(unsigned int *count) {
     if (rc == CDB2_OK) {
         while ((rc = cdb2_next_record(repl_metadb)) == CDB2_OK) {
             int64_t *val = (int64_t *)cdb2_column_value(repl_metadb, 0);
-            *count = (unsigned int) *val;
+            *count = (unsigned int)*val;
         }
         if (rc == CDB2_OK_DONE)
             rc = 0;
@@ -1093,9 +1107,10 @@ static int slow_replicants_count(unsigned int *count) {
     return rc;
 }
 
-static int update_min_logfile(void) {
-    const size_t nodes_list_sz = REPMAX * (255+1) + 3;
-    char cmd[120+nodes_list_sz];
+static int update_min_logfile(void)
+{
+    const size_t nodes_list_sz = REPMAX * (255 + 1) + 3;
+    char cmd[120 + nodes_list_sz];
     char *buf;
     size_t buf_len;
     int bytes_written;
@@ -1109,31 +1124,31 @@ static int update_min_logfile(void) {
     buf_len = sizeof(cmd);
 
     bytes_written +=
-        snprintf(buf+bytes_written, buf_len-bytes_written,
-                "WITH RECURSIVE replication_tree(dbname, host, file) AS "
-                "    (SELECT dbname, host, file FROM comdb2_physreps "
-                "         WHERE dbname='%s' AND host IN (",
-                gbl_dbname);
+        snprintf(buf + bytes_written, buf_len - bytes_written,
+                 "WITH RECURSIVE replication_tree(dbname, host, file) AS "
+                 "    (SELECT dbname, host, file FROM comdb2_physreps "
+                 "         WHERE dbname='%s' AND host IN (",
+                 gbl_dbname);
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return 1;
     }
 
-    bytes_written += append_quoted_local_hosts(buf+bytes_written, buf_len-bytes_written, ",");
+    bytes_written += append_quoted_local_hosts(buf + bytes_written, buf_len - bytes_written, ",");
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return 1;
     }
 
     bytes_written +=
-        snprintf(buf+bytes_written, buf_len-bytes_written,
-                "     ) "
-                "     UNION "
-                "     SELECT p.dbname, p.host, p.file FROM comdb2_physreps p, "
-                "         comdb2_physrep_connections c, replication_tree t "
-                "         WHERE p.state = 'ACTIVE' AND p.file <> 0 AND "
-                "             t.dbname = c.source_dbname AND c.dbname = p.dbname) "
-                "    SELECT file FROM replication_tree WHERE file IS NOT NULL ORDER BY file LIMIT 1");
+        snprintf(buf + bytes_written, buf_len - bytes_written,
+                 "     ) "
+                 "     UNION "
+                 "     SELECT p.dbname, p.host, p.file FROM comdb2_physreps p, "
+                 "         comdb2_physrep_connections c, replication_tree t "
+                 "         WHERE p.state = 'ACTIVE' AND p.file <> 0 AND "
+                 "             t.dbname = c.source_dbname AND c.dbname = p.dbname) "
+                 "    SELECT file FROM replication_tree WHERE file IS NOT NULL ORDER BY file LIMIT 1");
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return 1;
@@ -1168,7 +1183,8 @@ static int update_min_logfile(void) {
   Check whether we need to wait for a connection from one of the nodes
   in the source db.
 */
-static int do_wait_for_reverse_conn(cdb2_hndl_tp *repl_metadb) {
+static int do_wait_for_reverse_conn(cdb2_hndl_tp *repl_metadb)
+{
     int do_wait = check_for_reverse_conn(repl_metadb);
 
     if (do_wait == -1) {
@@ -1505,7 +1521,7 @@ repl_loop:
             close_repl_connection(repl_db_cnct, repl_db, __func__, __LINE__);
             do_truncate = 1;
         }
-sleep_and_retry:
+    sleep_and_retry:
         sleep(1);
     }
 
@@ -1520,7 +1536,8 @@ sleep_and_retry:
     return NULL;
 }
 
-static int stop_physrep_worker_thread() {
+static int stop_physrep_worker_thread()
+{
     int rc = 0;
 
     if (physrep_worker_running == 0) {
@@ -1544,7 +1561,8 @@ static int stop_physrep_worker_thread() {
     return 0;
 }
 
-static int check_and_log_slow_replicants() {
+static int check_and_log_slow_replicants()
+{
     bdb_state_type *bdb_state = gbl_bdb_state;
     // Perform this check only on the master
     if (bdb_state->repinfo->master_host != bdb_state->repinfo->myhost)
@@ -1566,9 +1584,10 @@ static int check_and_log_slow_replicants() {
    This function checks whether this replicant is potentially hung. It
    does so by comparing it's lsn with that of source node(s).
 */
-static void am_i_hung(time_t cur_time) {
-    const size_t nodes_list_sz = REPMAX * (255+1) + 3;
-    char query[120+nodes_list_sz];
+static void am_i_hung(time_t cur_time)
+{
+    const size_t nodes_list_sz = REPMAX * (255 + 1) + 3;
+    char query[120 + nodes_list_sz];
     int bytes_written = 0;
     int rc;
 
@@ -1587,7 +1606,7 @@ static void am_i_hung(time_t cur_time) {
     char *buf = query;
     size_t buf_len = sizeof(query);
 
-    bytes_written = snprintf(buf+bytes_written, buf_len-bytes_written,
+    bytes_written = snprintf(buf + bytes_written, buf_len - bytes_written,
                              "select file, offset from comdb2_physreps where "
                              "dbname='%s' and host in (",
                              gbl_physrep_source_dbname);
@@ -1596,7 +1615,7 @@ static void am_i_hung(time_t cur_time) {
         return;
     }
 
-    bytes_written += append_quoted_source_hosts(buf+bytes_written, buf_len-bytes_written, &rc);
+    bytes_written += append_quoted_source_hosts(buf + bytes_written, buf_len - bytes_written, &rc);
     if (rc != 0 || bytes_written >= buf_len) {
         if (rc != 0) {
             physrep_logmsg(LOGMSG_ERROR, "%s:%d Failed to append source host(s)!\n", __func__, __LINE__);
@@ -1606,7 +1625,7 @@ static void am_i_hung(time_t cur_time) {
         return;
     }
 
-    bytes_written += snprintf(buf+bytes_written, buf_len-bytes_written, ") limit 1");
+    bytes_written += snprintf(buf + bytes_written, buf_len - bytes_written, ") limit 1");
     if (bytes_written >= buf_len) {
         physrep_logmsg(LOGMSG_ERROR, "%s:%d Buffer is not long enough!\n", __func__, __LINE__);
         return;
@@ -1644,7 +1663,8 @@ static void am_i_hung(time_t cur_time) {
     cdb2_close(repl_metadb);
 }
 
-static void *physrep_watcher(void *args) {
+static void *physrep_watcher(void *args)
+{
     static int physrep_source_nodes_last_refreshed;
     static int physrep_slow_replicant_last_checked;
     static int physrep_keepalive_last_sent;
@@ -1715,7 +1735,8 @@ static void *physrep_watcher(void *args) {
     return NULL;
 }
 
-static int stop_physrep_watcher_thread() {
+static int stop_physrep_watcher_thread()
+{
     int rc = 0;
 
     if (physrep_watcher_running == 0) {
@@ -1735,8 +1756,9 @@ static int stop_physrep_watcher_thread() {
     return 0;
 }
 
-static int is_a_physrep_source_or_dest() {
-    if (gbl_physrep_i_am_metadb == 1) {                   // Is not a physical replication metadb
+static int is_a_physrep_source_or_dest()
+{
+    if (gbl_physrep_i_am_metadb == 1) { // Is not a physical replication metadb
         return 0;
     }
 
@@ -1761,7 +1783,8 @@ static int is_a_physrep_source_or_dest() {
          This thread runs exclusively on replication source/root nodes to
          enable cross-tier replication. (See db/reverse_conn.c)
 */
-int start_physrep_threads() {
+int start_physrep_threads()
+{
     int rc;
 
     if (!is_a_physrep_source_or_dest()) {
@@ -1772,7 +1795,7 @@ int start_physrep_threads() {
     // try and connect to the replicants in the lower tier. (See db/reverse_conn.c)
     // This task is done by 'Reverse connections' manager thread.
     if ((rc = start_reverse_connections_manager()) != 0) {
-        physrep_logmsg(LOGMSG_ERROR, "Couldn't start 'reverse connections' manager (rc: %d)\n" ,rc);
+        physrep_logmsg(LOGMSG_ERROR, "Couldn't start 'reverse connections' manager (rc: %d)\n", rc);
         return -1;
     }
     physrep_logmsg(LOGMSG_USER, "'reverse connections' manager thread has started!\n");
@@ -1791,8 +1814,7 @@ int start_physrep_threads() {
     }
 
     // Start physical replication watcher
-    if (gbl_physrep_source_dbname != NULL || gbl_physrep_metadb_name != NULL
-        || get_dbtable_by_name("comdb2_physreps") != NULL) {
+    if (gbl_physrep_source_dbname != NULL || gbl_physrep_metadb_name != NULL || get_dbtable_by_name("comdb2_physreps") != NULL) {
         if (physrep_watcher_running == 1) {
             physrep_logmsg(LOGMSG_ERROR, "Watcher thread is already running!\n");
         } else {
@@ -1811,12 +1833,13 @@ int start_physrep_threads() {
     return 0;
 }
 
-int stop_physrep_threads() {
+int stop_physrep_threads()
+{
     if (!is_a_physrep_source_or_dest() || !gbl_started_physrep_threads) {
         if (gbl_physrep_debug && !gbl_started_physrep_threads)
             physrep_logmsg(LOGMSG_USER, "%s:%d: This node is neither a physical replication "
                                         "source nor a replicant, nothing to stop here\n",
-                                        __func__, __LINE__);
+                           __func__, __LINE__);
         return 0;
     }
 
@@ -1829,7 +1852,8 @@ int stop_physrep_threads() {
     return 0;
 }
 
-void physrep_cleanup() {
+void physrep_cleanup()
+{
     if (!is_a_physrep_source_or_dest()) {
         return;
     }
@@ -1845,6 +1869,7 @@ void physrep_cleanup() {
     free(physrep_metadb_hosts);
 }
 
-int physrep_exited() {
+int physrep_exited()
+{
     return (physrep_worker_running == 1) ? 0 : 1;
 }

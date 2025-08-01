@@ -34,7 +34,6 @@ static char *_gen_col_expr(Vdbe *v, Expr *expr, SrcList *srcs,
 
 static dohsql_node_t *gen_select(Vdbe *v, Select *p);
 
-
 static char *generate_columns(Vdbe *v, ExprList *c, SrcList *srcs,
                               struct params_info **pParamsOut)
 {
@@ -191,9 +190,9 @@ char *sqlite_struct_to_string(Vdbe *v, Select *p, Expr *extraRows,
     if (p->pHaving)
         return NULL; /* no having */
     if (p->pGroupBy)
-        return NULL; /* no group by */
+        return NULL;                                /* no group by */
     if ((!gbl_dohsql_joins && p->pSrc->nSrc > 1) || /* disable joins */
-        (p->pSrc->nSrc > 1 && p->pOrderBy)) /* ordered joins are not working now */
+        (p->pSrc->nSrc > 1 && p->pOrderBy))         /* ordered joins are not working now */
         return NULL;
 
     if (p->pPrior && p->op != TK_ALL)
@@ -265,16 +264,16 @@ char *sqlite_struct_to_string(Vdbe *v, Select *p, Expr *extraRows,
             if (p->pSrc->a[i].zDatabase) {
                 if (p->pSrc->a[i].zAlias) {
                     tbl = sqlite3_mprintf("%s\"%w\".\"%w\" as \"%w\"", tmp,
-                            p->pSrc->a[i].zDatabase, p->pSrc->a[i].zName,
-                            p->pSrc->a[i].zAlias);
+                                          p->pSrc->a[i].zDatabase, p->pSrc->a[i].zName,
+                                          p->pSrc->a[i].zAlias);
                 } else {
                     tbl = sqlite3_mprintf("%s\"%w\".\"%w\"", tmp,
-                            p->pSrc->a[i].zDatabase, p->pSrc->a[i].zName);
+                                          p->pSrc->a[i].zDatabase, p->pSrc->a[i].zName);
                 }
             } else {
                 if (p->pSrc->a[i].zAlias) {
                     tbl = sqlite3_mprintf("%s\"%w\" as \"%w\"", tmp,
-                            p->pSrc->a[i].zName, p->pSrc->a[i].zAlias);
+                                          p->pSrc->a[i].zName, p->pSrc->a[i].zAlias);
                 } else {
                     tbl = sqlite3_mprintf("%s\"%w\"", tmp, p->pSrc->a[i].zName);
                 }
@@ -290,8 +289,8 @@ char *sqlite_struct_to_string(Vdbe *v, Select *p, Expr *extraRows,
                 return NULL;
             }
             tbl = sqlite3_mprintf("%s(%s)%s%s", tmp, subnode->sql,
-                    p->pSrc->a[i].zAlias ? " ": "",
-                    p->pSrc->a[i].zAlias ? p->pSrc->a[i].zAlias : "");
+                                  p->pSrc->a[i].zAlias ? " " : "",
+                                  p->pSrc->a[i].zAlias ? p->pSrc->a[i].zAlias : "");
             node_free(&subnode, v->db);
         }
         sqlite3_free(tmp);
@@ -870,12 +869,12 @@ void ast_print(ast_t *ast)
         logmsg(LOGMSG_USER, "AST: [%d]\n", ast->nused);
         for (i = 0; i < ast->nused; i++)
             logmsg(LOGMSG_USER, "\t %d. %s \"%s\"\n", i,
-                    ast_type_str(ast->stack[i].op),
-                    ast_param_str(ast->stack[i].op, ast->stack[i].obj));
+                   ast_type_str(ast->stack[i].op),
+                   ast_param_str(ast->stack[i].op, ast->stack[i].obj));
     }
 }
 
-extern int comdb2IsPrepareOnly(Parse*);
+extern int comdb2IsPrepareOnly(Parse *);
 
 int comdb2_check_parallel(Parse *pParse)
 {
@@ -971,7 +970,7 @@ int comdb2_check_push_remote(Parse *pParse)
     if (has_parallel_sql(NULL) == 0)
         return 0;
 
-    ast_node_t * anode = _get_ast_node(pParse);
+    ast_node_t *anode = _get_ast_node(pParse);
     if (!anode)
         return 0;
 
@@ -981,7 +980,7 @@ int comdb2_check_push_remote(Parse *pParse)
     if (pParse->ast->nused > 1)
         return 0;
 
-    dohsql_node_t *node = (dohsql_node_t*)anode->obj;
+    dohsql_node_t *node = (dohsql_node_t *)anode->obj;
 
     if (node->remotedb > 1)
         if (!fdb_push_setup(pParse, node))
@@ -996,12 +995,12 @@ int comdb2_check_push_remote_write(Parse *pParse)
     if (!anode)
         return 0;
 
-    if (anode->op != AST_TYPE_INSERT && 
+    if (anode->op != AST_TYPE_INSERT &&
         anode->op != AST_TYPE_DELETE &&
         anode->op != AST_TYPE_UPDATE)
         return 0;
 
-    Table *pTab = (Table*)anode->obj;
+    Table *pTab = (Table *)anode->obj;
     if (!pTab)
         return 0;
 

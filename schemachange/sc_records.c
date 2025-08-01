@@ -46,7 +46,8 @@ extern int gbl_debug_omit_zap_on_rebuild;
 // place at any given time, currently from lkcounter_check() once per sec
 static inline void increase_max_threads(uint32_t *maxthreads, int sc_threads)
 {
-    if (*maxthreads >= sc_threads) return;
+    if (*maxthreads >= sc_threads)
+        return;
     ATOMIC_ADD32_PTR(maxthreads, 1);
 }
 
@@ -56,9 +57,11 @@ static inline void increase_max_threads(uint32_t *maxthreads, int sc_threads)
 // We also make certain that maxthreads does not go less than 1
 static inline void decrease_max_threads(uint32_t *maxthreads)
 {
-    if (*maxthreads <= 1) return;
+    if (*maxthreads <= 1)
+        return;
     /* ADDING -1 */
-    if (ATOMIC_ADD32_PTR(maxthreads, -1) < 1) XCHANGE32((*maxthreads), 1);
+    if (ATOMIC_ADD32_PTR(maxthreads, -1) < 1)
+        XCHANGE32((*maxthreads), 1);
 }
 
 // increment number of rebuild threads in use
@@ -66,7 +69,8 @@ static inline void decrease_max_threads(uint32_t *maxthreads)
 // if we were successful we return 0
 static inline int use_rebuild_thr(uint32_t *thrcount, uint32_t *maxthreads)
 {
-    if (*thrcount >= *maxthreads) return 1;
+    if (*thrcount >= *maxthreads)
+        return 1;
     ATOMIC_ADD32_PTR(thrcount, 1);
     return 0;
 }
@@ -112,7 +116,8 @@ static inline int print_aggregate_sc_stat(struct convert_record_data *data,
     uint32_t copy_total_lasttime = data->cmembers->total_lasttime;
 
     /* Do work without locking */
-    if (now < copy_total_lasttime + sc_report_freq) return 0;
+    if (now < copy_total_lasttime + sc_report_freq)
+        return 0;
 
     /* If time is up to print, atomically set total_lastime
      * if this thread successful in setting, it can continue
@@ -120,7 +125,8 @@ static inline int print_aggregate_sc_stat(struct convert_record_data *data,
      */
 
     int res = CAS32(data->cmembers->total_lasttime, copy_total_lasttime, now);
-    if (!res) return 0;
+    if (!res)
+        return 0;
 
     /* number of adds after schema cursor (by definition, all adds)
      * number of updates before cursor
@@ -136,7 +142,8 @@ static inline int print_aggregate_sc_stat(struct convert_record_data *data,
                   data->from->sc_adds + data->from->sc_updates);
 
     /* totals across all threads */
-    if (data->scanmode != SCAN_PARALLEL) return 1;
+    if (data->scanmode != SCAN_PARALLEL)
+        return 1;
 
     long long total_nrecs_diff =
         data->from->sc_nrecs - data->from->sc_prev_nrecs;
@@ -157,14 +164,16 @@ static inline void lkcounter_check(struct convert_record_data *data, int now)
     int lkcounter_freq = bdb_attr_get(data->from->dbenv->bdb_attr,
                                       BDB_ATTR_SC_CHECK_LOCKWAITS_SEC);
     /* Do work without locking */
-    if (now < copy_lasttime + lkcounter_freq) return;
+    if (now < copy_lasttime + lkcounter_freq)
+        return;
 
     /* If time is up to do work, atomically set total_lastime
      * if this thread successful in setting, it can continue
      * to adjust num threads. If it failed, another thread is doing that work.
      */
     int res = CAS32(data->cmembers->lkcountercheck_lasttime, copy_lasttime, now);
-    if (!res) return;
+    if (!res)
+        return;
 
     /* check lock waits -- there is no way to differentiate lock waits because
      * of writes, with the exception that if there were writes in the last n
@@ -294,7 +303,8 @@ static int convert_server_record_blobs(const void *inbufp, const char *from_tag,
     struct convert_failure reason;
     char err[1024];
 
-    if (from_tag == NULL) from_tag = ".ONDISK";
+    if (from_tag == NULL)
+        from_tag = ".ONDISK";
 
     int rc = stag_to_stag_buf_blobs(get_dbtable_by_name(db->table), from_tag, inbuf,
                                     db->tag, db->recbuf, &reason, blobs, maxblobs, 1);
@@ -583,8 +593,7 @@ static void throttle_sc_logbytes(int estimate)
         return;
 
     Pthread_mutex_lock(&sc_bps_lk);
-    do
-    {
+    do {
         int now = comdb2_time_epochms();
         if (sc_current_millisecond < now - 1000) {
             sc_current_millisecond = now;
@@ -596,8 +605,7 @@ static void throttle_sc_logbytes(int estimate)
             ts.tv_sec += 1;
             pthread_cond_timedwait(&sc_bps_cd, &sc_bps_lk, &ts);
         }
-    } 
-    while ((gbl_sc_logbytes_per_second > 0) && (sc_bytes_this_second > gbl_sc_logbytes_per_second));
+    } while ((gbl_sc_logbytes_per_second > 0) && (sc_bytes_this_second > gbl_sc_logbytes_per_second));
     sc_bytes_this_second += estimate;
     Pthread_mutex_unlock(&sc_bps_lk);
 }
@@ -781,7 +789,8 @@ static int convert_record(struct convert_record_data *data)
                 int bdberr;
                 rc = bdb_set_high_genid_stripe(NULL, data->to->tablename,
                                                data->stripe, -1ULL, &bdberr);
-                if (rc != 0) rc = -1; // convert_record expects -1
+                if (rc != 0)
+                    rc = -1; // convert_record expects -1
             }
             sc_printf(data->s,
                       "[%s] finished stripe %d, setting genid %llx, rc %d\n",
@@ -982,7 +991,8 @@ static int convert_record(struct convert_record_data *data)
     int addflags = RECFLAGS_NO_TRIGGERS | RECFLAGS_NO_CONSTRAINTS |
                    RECFLAGS_NEW_SCHEMA | RECFLAGS_KEEP_GENID;
 
-    if (data->to->plan && gbl_use_plan) addflags |= RECFLAGS_NO_BLOBS;
+    if (data->to->plan && gbl_use_plan)
+        addflags |= RECFLAGS_NO_BLOBS;
 
     char *tagname = ".NEW..ONDISK";
     uint8_t *p_tagname_buf = (uint8_t *)tagname;
@@ -1159,10 +1169,12 @@ err:
     ATOMIC_ADD64(data->from->sc_nrecs, 1);
 
     int now = comdb2_time_epoch();
-    if ((rc = report_sc_progress(data, now))) return rc;
+    if ((rc = report_sc_progress(data, now)))
+        return rc;
 
     // do the following check every second or so
-    if (data->cmembers->is_decrease_thrds) lkcounter_check(data, now);
+    if (data->cmembers->is_decrease_thrds)
+        lkcounter_check(data, now);
 
     return 1;
 }
@@ -1185,7 +1197,8 @@ static void *convert_records_thd(struct convert_record_data *data)
     enum thrtype oldtype = THRTYPE_UNKNOWN;
     int rc = 1;
 
-    if (data->isThread) thread_started("convert records");
+    if (data->isThread)
+        thread_started("convert records");
 
     if (thr_self) {
         oldtype = thrman_get_type(thr_self);
@@ -1316,13 +1329,15 @@ cleanup:
 
 cleanup_no_msg:
     convert_record_data_cleanup(data);
-    if (data->isThread) backend_thread_event(thedb, COMDB2_THR_EVENT_DONE_RDWR);
+    if (data->isThread)
+        backend_thread_event(thedb, COMDB2_THR_EVENT_DONE_RDWR);
 
     if (data->iq.debug)
         reqpopprefixes(&data->iq, 1);
 
     /* restore our  thread type to what it was before */
-    if (oldtype != THRTYPE_UNKNOWN) thrman_change_type(thr_self, oldtype);
+    if (oldtype != THRTYPE_UNKNOWN)
+        thrman_change_type(thr_self, oldtype);
 
     return NULL;
 }
@@ -1488,8 +1503,8 @@ int convert_all_records(struct dbtable *from, struct dbtable *to,
         rc = bdb_set_logical_live_sc(s->db->handle, 1 /* lock table */);
         if (rc) {
             logmsg(LOGMSG_ERROR,
-                    "%s:%d failed to set logical live sc, rc = %d\n",
-                    __func__, __LINE__, rc);
+                   "%s:%d failed to set logical live sc, rc = %d\n",
+                   __func__, __LINE__, rc);
             free(s->sc_convert_done);
             s->sc_convert_done = NULL;
             return -1;
@@ -1586,7 +1601,8 @@ int convert_all_records(struct dbtable *from, struct dbtable *to,
         for (ii = 0; ii < gbl_dtastripe; ++ii) {
             void *ret;
 
-            if (threadSkipped[ii]) continue;
+            if (threadSkipped[ii])
+                continue;
 
             /* if the threadid is NULL, skip this one */
             if (!threadData[ii].tid) {
@@ -1609,7 +1625,8 @@ int convert_all_records(struct dbtable *from, struct dbtable *to,
             }
 
             /* if thread's conversions failed return error code */
-            if (threadData[ii].outrc != 0) outrc = threadData[ii].outrc;
+            if (threadData[ii].outrc != 0)
+                outrc = threadData[ii].outrc;
         }
 
         /* destroy attr */
@@ -1833,7 +1850,8 @@ static int upgrade_records(struct convert_record_data *data)
             }
         }
 
-        if (inco_delay) poll(0, 0, inco_delay * mult);
+        if (inco_delay)
+            poll(0, 0, inco_delay * mult);
 
         /* if we're in commitdelay mode, magnify the delay by 5 here */
         if ((commitdelay = bdb_attr_get(data->from->dbenv->bdb_attr,
@@ -1902,7 +1920,8 @@ static void *upgrade_records_thd(void *vdata)
     enum thrtype oldtype = THRTYPE_UNKNOWN;
 
     // transfer thread type
-    if (data->isThread) thread_started("upgrade records");
+    if (data->isThread)
+        thread_started("upgrade records");
 
     if (thr_self) {
         oldtype = thrman_get_type(thr_self);
@@ -1961,9 +1980,11 @@ cleanup:
 
     convert_record_data_cleanup(data);
 
-    if (data->isThread) backend_thread_event(thedb, COMDB2_THR_EVENT_DONE_RDWR);
+    if (data->isThread)
+        backend_thread_event(thedb, COMDB2_THR_EVENT_DONE_RDWR);
 
-    if (oldtype != THRTYPE_UNKNOWN) thrman_change_type(thr_self, oldtype);
+    if (oldtype != THRTYPE_UNKNOWN)
+        thrman_change_type(thr_self, oldtype);
     return NULL;
 }
 
@@ -2045,7 +2066,8 @@ int upgrade_all_records(struct dbtable *db, unsigned long long *sc_genids,
                 }
 
                 /* if thread's conversions failed return error code */
-                if (thread_data[idx].outrc != 0) outrc = thread_data[idx].outrc;
+                if (thread_data[idx].outrc != 0)
+                    outrc = thread_data[idx].outrc;
             }
         }
 
@@ -2059,7 +2081,8 @@ int upgrade_all_records(struct dbtable *db, unsigned long long *sc_genids,
 
 struct blob_recs {
     unsigned long long genid;
-    LISTC_T(bdb_osql_log_rec_t) recs; /* list of undo records */
+    LISTC_T(bdb_osql_log_rec_t)
+    recs; /* list of undo records */
 };
 
 static void clear_recs_list(void *recs)
@@ -2459,7 +2482,7 @@ static void set_redo_genid(struct convert_record_data *data, unsigned long long 
     int bdberr = 0;
     int rc = bdb_newsc_set_redo_genid(data->trans, data->s->tablename, genid, lsn->file, lsn->offset, &bdberr);
     if (rc != 0) {
-        logmsg(LOGMSG_ERROR, "%"PRIxPTR": Error setting redo genid, %d bdberr=%d\n", (uintptr_t) pthread_self(), rc, bdberr);
+        logmsg(LOGMSG_ERROR, "%" PRIxPTR ": Error setting redo genid, %d bdberr=%d\n", (uintptr_t)pthread_self(), rc, bdberr);
     }
 
     struct redo_genid_lsns *r, *fnd;
@@ -2485,7 +2508,7 @@ static int get_redo_genid(struct convert_record_data *data, unsigned long long g
     if ((r = hash_find(data->redo_genids, &genid)) != NULL) {
         int rc2, bdberr;
         if ((rc2 = bdb_newsc_del_redo_genid(data->trans, data->s->tablename, genid, &bdberr)) != 0) {
-            logmsg(LOGMSG_ERROR, "%"PRIxPTR": %s del_redo_genid returns %d bdberr=%d\n", (uintptr_t)pthread_self(), __func__,
+            logmsg(LOGMSG_ERROR, "%" PRIxPTR ": %s del_redo_genid returns %d bdberr=%d\n", (uintptr_t)pthread_self(), __func__,
                    rc2, bdberr);
         }
         hash_del(data->redo_genids, r);
@@ -3048,7 +3071,7 @@ static int live_sc_redo_update(struct convert_record_data *data, DB_LOGC *logc,
             /* try to update the record in the new btree */
             rc = upd_new_record(&data->iq, data->trans, oldgenid, data->oldodh.recptr, genid, data->odh.recptr, -1ULL,
                                 -1ULL, updlen, updCols, data->wrblb, 0, data->freeblb, data->wrblb, 0);
-            logmsg(LOGMSG_USER, "%"PRIxPTR": Upd_new_record %llx to %llx returns %d\n", (uintptr_t)pthread_self(), oldgenid,
+            logmsg(LOGMSG_USER, "%" PRIxPTR ": Upd_new_record %llx to %llx returns %d\n", (uintptr_t)pthread_self(), oldgenid,
                    genid, rc);
         }
 #ifdef LOGICAL_LIVESC_DEBUG
@@ -3124,7 +3147,7 @@ done:
 
 static inline int is_logical_data_op(bdb_osql_log_rec_t *rec)
 {
-    assert (rec->type < 12000);
+    assert(rec->type < 12000);
     switch (rec->type) {
     case DB_llog_undo_add_dta:
     case DB_llog_undo_add_dta_lk:
@@ -3243,7 +3266,8 @@ static int live_sc_redo_logical_log(struct convert_record_data *data,
     u_int64_t logbytes = 0;
     DBT logdta = {0};
     logdta.flags = DB_DBT_REALLOC;
-    LISTC_T(bdb_osql_log_rec_t) recs; /* list of relevant undo records */
+    LISTC_T(bdb_osql_log_rec_t)
+    recs; /* list of relevant undo records */
     listc_init(&recs, offsetof(bdb_osql_log_rec_t, lnk));
 
     /* pre process recs */
@@ -3711,8 +3735,7 @@ void *live_sc_logical_redo_thd(struct convert_record_data *data)
             if (!serial) {
                 free(redo);
                 redo = NULL;
-            }
-            else if (log_compare(&curLsn, &serialLsn) > 0) {
+            } else if (log_compare(&curLsn, &serialLsn) > 0) {
                 sc_printf(s, "[%s] logical redo exits serial mode\n",
                           s->tablename);
                 serial = 0;

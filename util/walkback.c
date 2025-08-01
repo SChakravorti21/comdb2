@@ -33,7 +33,8 @@ static unsigned long long count = 0, ivcount = 0;
 /* Reset counter if we're enabling */
 void walkback_set_warnthresh(int thresh)
 {
-    if (gbl_warnthresh == 0 && thresh > 0) ivcount = count;
+    if (gbl_warnthresh == 0 && thresh > 0)
+        ivcount = count;
     gbl_warnthresh = thresh;
 }
 
@@ -131,7 +132,7 @@ struct pclist_add_arg_t {
 #define EGBLCORRUPT (11) /* Global memory corrupted        */
 #define EUNINIT (12)     /* Module uninitialized           */
 
-#define EUNWINDERRR(i)                                                         \
+#define EUNWINDERRR(i) \
     ((int)((uint32_t)(i) << 24 | (uint32_t)(__LINE__) << 8 | 7u))
 #define EUNWINDLINE(i) ((int)(int16_t)((uint32_t)(i) >> 8))
 #define EUNWINDCODE(i) ((int)(int8_t)((uint32_t)(i) >> 24))
@@ -172,7 +173,10 @@ static void dump_stack(void *min_stack_address, size_t nwords)
 *
 ******************************************************************************/
 
-int walkback_initialize_module(void) { return 0; }
+int walkback_initialize_module(void)
+{
+    return 0;
+}
 
 #if defined(__sparc)
 /******************************************************************************
@@ -206,7 +210,10 @@ static void __sparc_get_pc_and_sp(/*void *pc, void *sp */)
 }
 
 /* Flush the register windows. */
-static void flushWindow() { FLUSHWIN(); }
+static void flushWindow()
+{
+    FLUSHWIN();
+}
 
 static struct frame *nextFrame(struct frame *f)
 {
@@ -314,7 +321,6 @@ static int __sparc_stack_walkback(ucontext_t *context, unsigned maxframes,
 } /*    end of __sparc_stack_walkback()    */
 #endif
 
-
 #if defined(__linux__)
 
 /******************************************************************************
@@ -358,7 +364,6 @@ static int __apple_stack_walkback(ucontext_t *context, unsigned maxframes,
     return 0;
 }
 #endif
-
 
 /******************************************************************************
 *
@@ -503,12 +508,12 @@ static void pclist_add(void *address, void *arg)
 ******************************************************************************/
 
 int /* rcode */
-    stack_pc_getlist(
-        ucontext_t *context,  /* or NULL for current context */
-        void **pcArray,       /* output array of program counters */
-        unsigned pcArraySize, /* number of elements in pcArray */
-        unsigned *pcOutCount  /* number of program counters returned */
-        )
+stack_pc_getlist(
+    ucontext_t *context,  /* or NULL for current context */
+    void **pcArray,       /* output array of program counters */
+    unsigned pcArraySize, /* number of elements in pcArray */
+    unsigned *pcOutCount  /* number of program counters returned */
+)
 {
 
     struct pclist_add_arg_t arg;
@@ -648,4 +653,3 @@ void comdb2_cheapstack_sym_char_array(char *str, int maxln)
     if (strings)
         free(strings);
 }
-

@@ -59,12 +59,11 @@ XMACRO_OSQL_RPL_TYPES( MAX_OSQL_TYPES,         32, "OSQL_MAX")
 // clang-format on
 
 #ifdef XMACRO_OSQL_RPL_TYPES
-#   undef XMACRO_OSQL_RPL_TYPES
+#undef XMACRO_OSQL_RPL_TYPES
 #endif
 // the following will expand to enum OSQL_RPL_TYPE { OSQL_RPLINV = 0, OSQL_DONE = 1, ..., MAX_OSQL_TYPES = 29, };
 #define XMACRO_OSQL_RPL_TYPES(a, b, c) a = b,
 enum OSQL_RPL_TYPE { OSQL_RPL_TYPES };
 #undef XMACRO_OSQL_RPL_TYPES
-
 
 #endif

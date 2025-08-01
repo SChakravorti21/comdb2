@@ -526,7 +526,7 @@ int prefault_toblock(struct ireq *iq_in, void *ptr_in, int helper_thread,
             rc = del_record_prefault(iq, NULL, /*primkey*/
                                      delete_kless.rrn, delete_kless.genid,
                                      &err[numerrs].errcode, &err[numerrs].ixnum,
-                                     ii,               /*blkpos*/
+                                     ii,                       /*blkpos*/
                                      helper_thread, seqnum, 0, /* flags */
                                      flush);
             if (rc)

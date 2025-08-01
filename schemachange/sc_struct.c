@@ -71,7 +71,8 @@ struct schema_change_type *new_schemachange_type()
 
 void cleanup_strptr(char **schemabuf)
 {
-    if (*schemabuf) free(*schemabuf);
+    if (*schemabuf)
+        free(*schemabuf);
     *schemabuf = NULL;
 }
 
@@ -89,7 +90,7 @@ void free_schema_change_type(struct schema_change_type *s)
     if (!s)
         return;
 
-    if (s->partition.type == PARTITION_ADD_GENSHARD ) {
+    if (s->partition.type == PARTITION_ADD_GENSHARD) {
         if (s->partition.u.genshard.dbnames) {
             for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
                 free(s->partition.u.genshard.dbnames[i]);
@@ -104,7 +105,7 @@ void free_schema_change_type(struct schema_change_type *s)
         }
 
         if (s->partition.u.genshard.shardnames) {
-            for (int i=0;i<s->partition.u.genshard.numdbs;i++) {
+            for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
                 free(s->partition.u.genshard.shardnames[i]);
             }
             free(s->partition.u.genshard.shardnames);
@@ -300,7 +301,7 @@ int pack_schema_change_protobuf(struct schema_change_type *s, void **packed_sc, 
     sc.tablename_for_default_cons_q = s->tablename_for_default_cons_q;
     if (s->newcsc2_for_default_cons_q) {
         sc.has_newcsc2_for_default_cons_q = 1;
-        sc.newcsc2_for_default_cons_q.data = (uint8_t *) s->newcsc2_for_default_cons_q;
+        sc.newcsc2_for_default_cons_q.data = (uint8_t *)s->newcsc2_for_default_cons_q;
         sc.newcsc2_for_default_cons_q.len = s->newcsc2_for_default_cons_q_len;
     }
 
@@ -340,40 +341,40 @@ int pack_schema_change_protobuf(struct schema_change_type *s, void **packed_sc, 
         break;
     }
     case PARTITION_ADD_GENSHARD: {
-         sc.genshardtablename = s->partition.u.genshard.tablename;
-         sc.has_genshardnumdbs = 1;
-         sc.genshardnumdbs = s->partition.u.genshard.numdbs;
-         sc.has_genshardnumcols = 1;
-         sc.genshardnumcols = s->partition.u.genshard.numcols;
-         sc.n_gensharddbnames = s->partition.u.genshard.numdbs;
-         sc.n_genshardcolumns = s->partition.u.genshard.numcols;
-         sc.n_genshardshardnames = s->partition.u.genshard.numdbs;
-         sc.gensharddbnames = malloc(sizeof(char*) * sc.genshardnumdbs);
-         if (!sc.gensharddbnames) {
-             logmsg(LOGMSG_ERROR, "%s:%d oom\n", __func__, __LINE__);
-             return -1;
-         }
-         for(int i=0;i<sc.genshardnumdbs;i++) {
-             sc.gensharddbnames[i] = s->partition.u.genshard.dbnames[i];
-         }
-         sc.genshardcolumns = malloc(sizeof(char*) * sc.genshardnumcols);
-         if (!sc.genshardcolumns) {
-             logmsg(LOGMSG_ERROR, "%s:%d oom\n", __func__, __LINE__);
-             return -1;
-         }
-         for(int i=0;i<sc.genshardnumcols;i++) {
-             sc.genshardcolumns[i] = s->partition.u.genshard.columns[i];
-         }
-         sc.genshardshardnames = malloc(sizeof(char*) * sc.genshardnumdbs);
-         if (!sc.genshardshardnames) {
-             logmsg(LOGMSG_ERROR, "%s:%d oom\n", __func__, __LINE__);
-             return -1;
-         }
-         for(int i=0;i<sc.genshardnumdbs;i++) {
-             sc.genshardshardnames[i] = s->partition.u.genshard.shardnames[i];
-         }
-         break;
-     }
+        sc.genshardtablename = s->partition.u.genshard.tablename;
+        sc.has_genshardnumdbs = 1;
+        sc.genshardnumdbs = s->partition.u.genshard.numdbs;
+        sc.has_genshardnumcols = 1;
+        sc.genshardnumcols = s->partition.u.genshard.numcols;
+        sc.n_gensharddbnames = s->partition.u.genshard.numdbs;
+        sc.n_genshardcolumns = s->partition.u.genshard.numcols;
+        sc.n_genshardshardnames = s->partition.u.genshard.numdbs;
+        sc.gensharddbnames = malloc(sizeof(char *) * sc.genshardnumdbs);
+        if (!sc.gensharddbnames) {
+            logmsg(LOGMSG_ERROR, "%s:%d oom\n", __func__, __LINE__);
+            return -1;
+        }
+        for (int i = 0; i < sc.genshardnumdbs; i++) {
+            sc.gensharddbnames[i] = s->partition.u.genshard.dbnames[i];
+        }
+        sc.genshardcolumns = malloc(sizeof(char *) * sc.genshardnumcols);
+        if (!sc.genshardcolumns) {
+            logmsg(LOGMSG_ERROR, "%s:%d oom\n", __func__, __LINE__);
+            return -1;
+        }
+        for (int i = 0; i < sc.genshardnumcols; i++) {
+            sc.genshardcolumns[i] = s->partition.u.genshard.columns[i];
+        }
+        sc.genshardshardnames = malloc(sizeof(char *) * sc.genshardnumdbs);
+        if (!sc.genshardshardnames) {
+            logmsg(LOGMSG_ERROR, "%s:%d oom\n", __func__, __LINE__);
+            return -1;
+        }
+        for (int i = 0; i < sc.genshardnumdbs; i++) {
+            sc.genshardshardnames[i] = s->partition.u.genshard.shardnames[i];
+        }
+        break;
+    }
     }
     /* if (sc_version > 3) {
      *    sc.has_optional = 1;
@@ -551,22 +552,22 @@ int unpack_schema_change_protobuf(struct schema_change_type *s, void *packed_sc,
         break;
     }
     case PARTITION_ADD_GENSHARD: {
-         strncpy(s->partition.u.genshard.tablename,sc->genshardtablename, sizeof(s->partition.u.genshard.tablename));
-         s->partition.u.genshard.numdbs = sc->genshardnumdbs;
-         s->partition.u.genshard.dbnames = (char **)malloc(sizeof(char *) * s->partition.u.genshard.numdbs);
-         for(int i=0;i<s->partition.u.genshard.numdbs;i++){
-             s->partition.u.genshard.dbnames[i] = strdup(sc->gensharddbnames[i]);
-         }
-         s->partition.u.genshard.numcols = sc->genshardnumcols;
-         s->partition.u.genshard.columns = (char **)malloc(sizeof(char *) * s->partition.u.genshard.numcols);
-         for(int i=0;i<s->partition.u.genshard.numcols;i++){
-             s->partition.u.genshard.columns[i] = strdup(sc->genshardcolumns[i]);
-         }
-         s->partition.u.genshard.shardnames = (char **)malloc(sizeof(char *) * s->partition.u.genshard.numdbs);
-         for(int i=0;i<s->partition.u.genshard.numdbs;i++){
-             s->partition.u.genshard.shardnames[i] = strdup(sc->genshardshardnames[i]);
-         }
-         break;
+        strncpy(s->partition.u.genshard.tablename, sc->genshardtablename, sizeof(s->partition.u.genshard.tablename));
+        s->partition.u.genshard.numdbs = sc->genshardnumdbs;
+        s->partition.u.genshard.dbnames = (char **)malloc(sizeof(char *) * s->partition.u.genshard.numdbs);
+        for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
+            s->partition.u.genshard.dbnames[i] = strdup(sc->gensharddbnames[i]);
+        }
+        s->partition.u.genshard.numcols = sc->genshardnumcols;
+        s->partition.u.genshard.columns = (char **)malloc(sizeof(char *) * s->partition.u.genshard.numcols);
+        for (int i = 0; i < s->partition.u.genshard.numcols; i++) {
+            s->partition.u.genshard.columns[i] = strdup(sc->genshardcolumns[i]);
+        }
+        s->partition.u.genshard.shardnames = (char **)malloc(sizeof(char *) * s->partition.u.genshard.numdbs);
+        for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
+            s->partition.u.genshard.shardnames[i] = strdup(sc->genshardshardnames[i]);
+        }
+        break;
     }
     }
 
@@ -585,7 +586,7 @@ void *buf_get_schemachange_protobuf(struct schema_change_type *s, void *p_buf, v
     p_buf += plen;
     if (p_buf > p_buf_end) {
         logmsg(LOGMSG_ERROR, "%s: advanced %ld bytes past end of buffer\n",
-            __func__, (uintptr_t) p_buf - (uintptr_t) p_buf_end);
+               __func__, (uintptr_t)p_buf - (uintptr_t)p_buf_end);
         return NULL;
     }
     return p_buf;
@@ -593,7 +594,8 @@ void *buf_get_schemachange_protobuf(struct schema_change_type *s, void *p_buf, v
 
 void *buf_put_schemachange(struct schema_change_type *s, void *p_buf, void *p_buf_end)
 {
-    if (p_buf >= p_buf_end) return NULL;
+    if (p_buf >= p_buf_end)
+        return NULL;
 
     p_buf = buf_put(&s->kind, sizeof(s->kind), p_buf, p_buf_end);
 
@@ -713,29 +715,29 @@ void *buf_put_schemachange(struct schema_change_type *s, void *p_buf, void *p_bu
     }
     case PARTITION_MERGE: {
         p_buf = buf_no_net_put(s->partition.u.mergetable.tablename,
-                        sizeof(s->partition.u.mergetable.tablename), p_buf, p_buf_end);
+                               sizeof(s->partition.u.mergetable.tablename), p_buf, p_buf_end);
         p_buf = buf_put(&s->partition.u.mergetable.version,
                         sizeof(s->partition.u.mergetable.version), p_buf, p_buf_end);
         break;
     }
     case PARTITION_ADD_GENSHARD: {
         p_buf = buf_no_net_put(s->partition.u.genshard.tablename,
-                        sizeof(s->partition.u.genshard.tablename), p_buf, p_buf_end);
+                               sizeof(s->partition.u.genshard.tablename), p_buf, p_buf_end);
         p_buf = buf_put(&s->partition.u.genshard.numdbs,
                         sizeof(s->partition.u.genshard.numdbs), p_buf, p_buf_end);
         for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
             p_buf = buf_no_net_put(s->partition.u.genshard.dbnames[i],
-                    strlen(s->partition.u.genshard.dbnames[i]) + 1, p_buf, p_buf_end);
+                                   strlen(s->partition.u.genshard.dbnames[i]) + 1, p_buf, p_buf_end);
         }
         p_buf = buf_put(&s->partition.u.genshard.numcols,
                         sizeof(s->partition.u.genshard.numcols), p_buf, p_buf_end);
         for (int i = 0; i < s->partition.u.genshard.numcols; i++) {
             p_buf = buf_no_net_put(s->partition.u.genshard.columns[i],
-                    strlen(s->partition.u.genshard.columns[i]) + 1, p_buf, p_buf_end);
+                                   strlen(s->partition.u.genshard.columns[i]) + 1, p_buf, p_buf_end);
         }
         for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
             p_buf = buf_no_net_put(s->partition.u.genshard.shardnames[i],
-                    strlen(s->partition.u.genshard.shardnames[i]) + 1, p_buf, p_buf_end);
+                                   strlen(s->partition.u.genshard.shardnames[i]) + 1, p_buf, p_buf_end);
         }
         break;
     }
@@ -792,12 +794,13 @@ static const void *buf_get_dests(struct schema_change_type *s,
 void *buf_get_schemachange_v1(struct schema_change_type *s, void *p_buf,
                               void *p_buf_end)
 {
-    int type = 0,          fastinit = 0,   addonly = 0,    fulluprecs = 0,
-        partialuprecs = 0, alteronly = 0,  is_trigger = 0, drop_table = 0,
-        addsp = 0,         delsp = 0,      defaultsp = 0,  is_sfunc = 0,
-        is_afunc = 0,      rename = 0;
+    int type = 0, fastinit = 0, addonly = 0, fulluprecs = 0,
+        partialuprecs = 0, alteronly = 0, is_trigger = 0, drop_table = 0,
+        addsp = 0, delsp = 0, defaultsp = 0, is_sfunc = 0,
+        is_afunc = 0, rename = 0;
 
-    if (p_buf >= p_buf_end) return NULL;
+    if (p_buf >= p_buf_end)
+        return NULL;
 
     p_buf = (uint8_t *)buf_get(&s->rqid, sizeof(s->rqid), p_buf, p_buf_end);
 
@@ -848,11 +851,11 @@ void *buf_get_schemachange_v1(struct schema_change_type *s, void *p_buf,
 
     p_buf = (uint8_t *)buf_get(&s->live, sizeof(s->live), p_buf, p_buf_end);
 
-    p_buf = (uint8_t *)buf_get(&addonly, sizeof(addonly), p_buf, p_buf_end); /* s->addonly */
-    p_buf = (uint8_t *)buf_get(&fulluprecs, sizeof(fulluprecs), p_buf, p_buf_end); /* s->fulluprecs */
+    p_buf = (uint8_t *)buf_get(&addonly, sizeof(addonly), p_buf, p_buf_end);             /* s->addonly */
+    p_buf = (uint8_t *)buf_get(&fulluprecs, sizeof(fulluprecs), p_buf, p_buf_end);       /* s->fulluprecs */
     p_buf = (uint8_t *)buf_get(&partialuprecs, sizeof(partialuprecs), p_buf, p_buf_end); /* s->partialuprecs */
-    p_buf = (uint8_t *)buf_get(&alteronly, sizeof(alteronly), p_buf, p_buf_end); /* s->alteronly */
-    p_buf = (uint8_t *)buf_get(&is_trigger, sizeof(is_trigger), p_buf, p_buf_end); /* s->is_trigger */
+    p_buf = (uint8_t *)buf_get(&alteronly, sizeof(alteronly), p_buf, p_buf_end);         /* s->alteronly */
+    p_buf = (uint8_t *)buf_get(&is_trigger, sizeof(is_trigger), p_buf, p_buf_end);       /* s->is_trigger */
 
     p_buf = (uint8_t *)buf_get(&s->newcsc2_len, sizeof(s->newcsc2_len), p_buf,
                                p_buf_end);
@@ -864,7 +867,8 @@ void *buf_get_schemachange_v1(struct schema_change_type *s, void *p_buf,
         }
 
         s->newcsc2 = (char *)malloc(s->newcsc2_len);
-        if (!s->newcsc2) return NULL;
+        if (!s->newcsc2)
+            return NULL;
 
         p_buf = (uint8_t *)buf_no_net_get(s->newcsc2, s->newcsc2_len, p_buf,
                                           p_buf_end);
@@ -943,12 +947,12 @@ void *buf_get_schemachange_v1(struct schema_change_type *s, void *p_buf,
     p_buf =
         (uint8_t *)buf_no_net_get(s->spname, s->spname_len, p_buf, p_buf_end);
 
-    p_buf = (uint8_t *)buf_get(&addsp, sizeof(addsp), p_buf, p_buf_end); /* s->addsp */
-    p_buf = (uint8_t *)buf_get(&delsp, sizeof(delsp), p_buf, p_buf_end); /* s->delsp */
+    p_buf = (uint8_t *)buf_get(&addsp, sizeof(addsp), p_buf, p_buf_end);         /* s->addsp */
+    p_buf = (uint8_t *)buf_get(&delsp, sizeof(delsp), p_buf, p_buf_end);         /* s->delsp */
     p_buf = (uint8_t *)buf_get(&defaultsp, sizeof(defaultsp), p_buf, p_buf_end); /* s->defaultsp */
-    p_buf = (uint8_t *)buf_get(&is_sfunc, sizeof(is_sfunc), p_buf, p_buf_end); /* s->is_sfunc */
-    p_buf = (uint8_t *)buf_get(&is_afunc, sizeof(is_afunc), p_buf, p_buf_end); /* s->is_afunc */
-    p_buf = (uint8_t *)buf_get(&rename, sizeof(rename), p_buf, p_buf_end); /* s->rename */
+    p_buf = (uint8_t *)buf_get(&is_sfunc, sizeof(is_sfunc), p_buf, p_buf_end);   /* s->is_sfunc */
+    p_buf = (uint8_t *)buf_get(&is_afunc, sizeof(is_afunc), p_buf, p_buf_end);   /* s->is_afunc */
+    p_buf = (uint8_t *)buf_get(&rename, sizeof(rename), p_buf, p_buf_end);       /* s->rename */
 
     p_buf = (uint8_t *)buf_no_net_get(s->newtable, sizeof(s->newtable), p_buf,
                                       p_buf_end);
@@ -991,7 +995,8 @@ void *buf_get_schemachange_v2(struct schema_change_type *s,
                               void *p_buf, void *p_buf_end)
 {
 
-    if (p_buf >= p_buf_end) return NULL;
+    if (p_buf >= p_buf_end)
+        return NULL;
 
     p_buf = (uint8_t *)buf_get(&s->kind, sizeof(s->kind), p_buf, p_buf_end);
 
@@ -1050,7 +1055,8 @@ void *buf_get_schemachange_v2(struct schema_change_type *s,
         }
 
         s->newcsc2 = (char *)malloc(s->newcsc2_len);
-        if (!s->newcsc2) return NULL;
+        if (!s->newcsc2)
+            return NULL;
 
         p_buf = (uint8_t *)buf_no_net_get(s->newcsc2, s->newcsc2_len, p_buf,
                                           p_buf_end);
@@ -1164,19 +1170,19 @@ void *buf_get_schemachange_v2(struct schema_change_type *s,
                                           p_buf, p_buf_end);
         p_buf = (uint8_t *)buf_get(&s->partition.u.genshard.numdbs, sizeof(s->partition.u.genshard.numdbs), p_buf,
                                    p_buf_end);
-        s->partition.u.genshard.dbnames = malloc(s->partition.u.genshard.numdbs * sizeof(char*));
+        s->partition.u.genshard.dbnames = malloc(s->partition.u.genshard.numdbs * sizeof(char *));
         for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
             s->partition.u.genshard.dbnames[i] = strdup(p_buf);
             p_buf += strlen(s->partition.u.genshard.dbnames[i]) + 1;
         }
         p_buf = (uint8_t *)buf_get(&s->partition.u.genshard.numcols, sizeof(s->partition.u.genshard.numcols), p_buf,
                                    p_buf_end);
-        s->partition.u.genshard.columns = malloc(s->partition.u.genshard.numcols * sizeof(char*));
+        s->partition.u.genshard.columns = malloc(s->partition.u.genshard.numcols * sizeof(char *));
         for (int i = 0; i < s->partition.u.genshard.numcols; i++) {
             s->partition.u.genshard.columns[i] = strdup(p_buf);
             p_buf += strlen(s->partition.u.genshard.columns[i]) + 1;
         }
-        s->partition.u.genshard.shardnames = malloc(s->partition.u.genshard.numdbs * sizeof(char*));
+        s->partition.u.genshard.shardnames = malloc(s->partition.u.genshard.numdbs * sizeof(char *));
         for (int i = 0; i < s->partition.u.genshard.numdbs; i++) {
             s->partition.u.genshard.shardnames[i] = strdup(p_buf);
             p_buf += strlen(s->partition.u.genshard.shardnames[i]) + 1;
@@ -1538,7 +1544,8 @@ void print_schemachange_info(struct schema_change_type *s, struct dbtable *db,
     else
         sc_printf(s, info + 1);
 
-    if (get_db_compress(db, &olddb_compress)) olddb_compress = 0;
+    if (get_db_compress(db, &olddb_compress))
+        olddb_compress = 0;
     if (s->compress && !olddb_compress)
         info = ">Table records will be compressed.\n";
     else if (!s->compress && olddb_compress)
@@ -1834,7 +1841,8 @@ int reload_schema(char *table, const char *csc2, tran_type *tran)
         free(new_bdb_handle);
     }
 
-    if (get_db_bthash_tran(db, &bthashsz, tran) != 0) bthashsz = 0;
+    if (get_db_bthash_tran(db, &bthashsz, tran) != 0)
+        bthashsz = 0;
 
     if (bthashsz) {
         logmsg(LOGMSG_INFO,

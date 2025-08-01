@@ -38,15 +38,18 @@ int io_override_set_std(FILE *f)
     return 0;
 }
 
-FILE *io_override_get_std(void) { 
+FILE *io_override_get_std(void)
+{
     return ptr;
 }
 
-inline int logmsg_level_ok(loglvl lvl) {
+inline int logmsg_level_ok(loglvl lvl)
+{
     return (lvl >= level);
 }
 
-void logmsg_set_level(loglvl lvl) {
+void logmsg_set_level(loglvl lvl)
+{
     level = lvl;
 }
 
@@ -55,40 +58,50 @@ void logmsg_set_thd(int onoff)
     do_thread = onoff;
 }
 
-void logmsg_set_time(int onoff) {
+void logmsg_set_time(int onoff)
+{
     do_time = onoff;
 }
 
-void logmsg_set_syslog(int onoff) {
+void logmsg_set_syslog(int onoff)
+{
     do_syslog = onoff;
 }
 
-static int level_to_syslog(loglvl lvl) {
+static int level_to_syslog(loglvl lvl)
+{
     switch (lvl) {
-        case LOGMSG_DEBUG:
-            return LOG_DEBUG;
-        case LOGMSG_INFO:
-            return LOG_INFO;
-        case LOGMSG_WARN:
-            return LOG_WARNING;
-        case LOGMSG_ERROR:
-            return LOG_ERR;
-        case LOGMSG_FATAL:
-        default:
-            return LOG_CRIT;
+    case LOGMSG_DEBUG:
+        return LOG_DEBUG;
+    case LOGMSG_INFO:
+        return LOG_INFO;
+    case LOGMSG_WARN:
+        return LOG_WARNING;
+    case LOGMSG_ERROR:
+        return LOG_ERR;
+    case LOGMSG_FATAL:
+    default:
+        return LOG_CRIT;
     }
 }
 
 static char *logmsg_level_str(int lvl)
 {
     switch (lvl) {
-    case LOGMSG_DEBUG: return "DEBUG";
-    case LOGMSG_INFO: return "INFO";
-    case LOGMSG_WARN: return "WARNING";
-    case LOGMSG_ERROR: return "ERROR";
-    case LOGMSG_FATAL: return "FATAL";
-    case LOGMSG_USER: return "USER";
-    default: return "???";
+    case LOGMSG_DEBUG:
+        return "DEBUG";
+    case LOGMSG_INFO:
+        return "INFO";
+    case LOGMSG_WARN:
+        return "WARNING";
+    case LOGMSG_ERROR:
+        return "ERROR";
+    case LOGMSG_FATAL:
+        return "FATAL";
+    case LOGMSG_USER:
+        return "USER";
+    default:
+        return "???";
     }
 }
 
@@ -134,7 +147,8 @@ static unsigned long long epochms(void)
 
 int logmsgv(loglvl lvl, const char *fmt, va_list args)
 {
-    if (!fmt) return 0;
+    if (!fmt)
+        return 0;
 
     char *msg, *savmsg;
     char buffer[LOGMSG_STACK_BUFFER_SIZE];
@@ -170,7 +184,7 @@ int logmsgv(loglvl lvl, const char *fmt, va_list args)
     }
 
     va_copy(argscpy, args);
-    vsnprintf(msg, len+1, fmt, argscpy); 
+    vsnprintf(msg, len + 1, fmt, argscpy);
     va_end(argscpy);
 
     if (do_syslog && override == NULL) {
@@ -204,7 +218,7 @@ int logmsgv(loglvl lvl, const char *fmt, va_list args)
                          tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
         }
     }
-    while (do_time && ! override && ended_with_newline && *msg != 0) {
+    while (do_time && !override && ended_with_newline && *msg != 0) {
         char *s;
         ret += sprintf_auto_resize(&head, &off, sizeof(buffer), "%s", timestamp);
         s = strchr(msg, '\n');
@@ -217,9 +231,8 @@ int logmsgv(loglvl lvl, const char *fmt, va_list args)
                 ret += sprintf_auto_resize(&head, &off, sizeof(buffer), "[%s] ", logmsg_level_str(lvl));
             }
             ret += sprintf_auto_resize(&head, &off, sizeof(buffer), "%s\n", msg);
-            msg = s+1;
-        }
-        else {
+            msg = s + 1;
+        } else {
             ended_with_newline = 0;
             break;
         }
@@ -230,7 +243,7 @@ int logmsgv(loglvl lvl, const char *fmt, va_list args)
             ret += sprintf_auto_resize(&head, &off, sizeof(buffer), "[%s] ", logmsg_level_str(lvl));
         }
         ret += sprintf_auto_resize(&head, &off, sizeof(buffer), "%s", msg);
-        if (msg[strlen(msg)-1] == '\n')
+        if (msg[strlen(msg) - 1] == '\n')
             ended_with_newline = 1;
         else
             ended_with_newline = 0;
@@ -243,20 +256,21 @@ int logmsgv(loglvl lvl, const char *fmt, va_list args)
     return ret;
 }
 
-int logmsg(loglvl lvl, const char *fmt, ...) {
+int logmsg(loglvl lvl, const char *fmt, ...)
+{
     va_list args;
     va_start(args, fmt);
-#   ifndef BUILDING_TOOLS
+#ifndef BUILDING_TOOLS
     int ret = gbl_logmsg_ctrace ? ctracev(fmt, args) : logmsgv(lvl, fmt, args);
-#   else
+#else
     int ret = logmsgv(lvl, fmt, args);
-#   endif
+#endif
     va_end(args);
     return ret;
 }
 
-
-int logmsgvf(loglvl lvl, FILE *f, const char *fmt, va_list args) {
+int logmsgvf(loglvl lvl, FILE *f, const char *fmt, va_list args)
+{
     int ret;
     if (f == stdout || f == stderr)
         ret = logmsgv(lvl, fmt, args);
@@ -265,19 +279,21 @@ int logmsgvf(loglvl lvl, FILE *f, const char *fmt, va_list args) {
     return ret;
 }
 
-int logmsgf(loglvl lvl, FILE *f, const char *fmt, ...) {
+int logmsgf(loglvl lvl, FILE *f, const char *fmt, ...)
+{
     va_list args;
     va_start(args, fmt);
-#   ifndef BUILDING_TOOLS
+#ifndef BUILDING_TOOLS
     int ret = gbl_logmsg_ctrace ? ctracev(fmt, args) : logmsgvf(lvl, f, fmt, args);
-#   else
+#else
     int ret = logmsgvf(lvl, f, fmt, args);
-#   endif
+#endif
     va_end(args);
     return ret;
 }
 
-int logmsgperror(const char *s) {
+int logmsgperror(const char *s)
+{
     int ret;
     char *err = strerror(errno);
     ret = logmsg(LOGMSG_ERROR, "%s: %s\n", s, err);
@@ -301,7 +317,8 @@ void sqlite3DebugPrintf(const char *zFormat, ...)
 #endif
 }
 
-int logmsg_process_message(char *line, int llen) {
+int logmsg_process_message(char *line, int llen)
+{
     char *tok;
     int st = 0;
     int ltok = 0;

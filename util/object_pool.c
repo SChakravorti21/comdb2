@@ -40,43 +40,43 @@
 #define empty(op) ((op)->nobjs == 0)
 #define exhausted(op) ((op)->nactiveobjs == (op)->nobjs)
 #define nidles(op) ((op)->nobjs - (op)->nactiveobjs)
-#define idle_rate(op)                                                          \
+#define idle_rate(op) \
     (((op)->nobjs == 0) ? 0 : (nidles(op) * 100.0 / (op)->nobjs))
-#define idle_minus_1_rate(op)                                                  \
+#define idle_minus_1_rate(op) \
     (((op)->nobjs == 0) ? 0 : ((nidles(op) - 1) * 100.0 / (op)->nobjs))
-#define idle_plus_1_rate(op)                                                   \
+#define idle_plus_1_rate(op) \
     (((op)->nobjs == 0) ? 0 : ((nidles(op) + 1) * 100.0 / (op)->nobjs))
 
-#define reached_max_idle_criteria(op)                                          \
-    (((op)->max_idle_ratio == OPT_DISABLE)                                     \
-         ? reached_max_idles(op)                                               \
+#define reached_max_idle_criteria(op)      \
+    (((op)->max_idle_ratio == OPT_DISABLE) \
+         ? reached_max_idles(op)           \
          : (idle_plus_1_rate(op) > (op)->max_idle_ratio))
 
-#define reached_max_idles(op)                                                  \
+#define reached_max_idles(op) \
     (((op)->max_idles != OPT_DISABLE) ? (nidles(op) >= (op)->max_idles) : 0)
 
-#define reached_min_idle_criteria(op)                                          \
-    (((op)->min_idle_ratio == OPT_DISABLE)                                     \
-         ? reached_min_idles(op)                                               \
+#define reached_min_idle_criteria(op)      \
+    (((op)->min_idle_ratio == OPT_DISABLE) \
+         ? reached_min_idles(op)           \
          : (idle_minus_1_rate(op) < (op)->min_idle_ratio))
 
-#define reached_min_idles(op)                                                  \
+#define reached_min_idles(op) \
     (((op)->min_idles != OPT_DISABLE) ? (nidles(op) <= (op)->min_idles) : 0)
 
-#define eviction_disabled(op)                                                  \
+#define eviction_disabled(op) \
     (op->evict_intv_ms == OPT_DISABLE && op->evict_ratio == OPT_DISABLE)
 
-#define difftimems(begin, end)                                                 \
-    (((end).tv_sec * 1000L + (end).tv_nsec / 1000000L) -                       \
+#define difftimems(begin, end)                           \
+    (((end).tv_sec * 1000L + (end).tv_nsec / 1000000L) - \
      ((begin).tv_sec * 1000L + (begin).tv_nsec / 1000000L))
 
 #ifdef OBJ_POOL_DEBUG
-#define OP_DBG(op, msg)                                                        \
-    fprintf(stderr, "[object pool: %s] thd %x, addr %p, "                      \
-                    "cap %u, # %u, # active %u, # forced %u, waits %u, in "    \
-                    "%d, out %d, %s\n",                                        \
-            op->name, (unsigned)pthread_self(), op, op->capacity, op->nobjs,   \
-            op->nactiveobjs, op->nforcedobjs, op->nborrowwaits, op->in,        \
+#define OP_DBG(op, msg)                                                      \
+    fprintf(stderr, "[object pool: %s] thd %x, addr %p, "                    \
+                    "cap %u, # %u, # active %u, # forced %u, waits %u, in "  \
+                    "%d, out %d, %s\n",                                      \
+            op->name, (unsigned)pthread_self(), op, op->capacity, op->nobjs, \
+            op->nactiveobjs, op->nforcedobjs, op->nborrowwaits, op->in,      \
             op->out, msg);
 #else
 #define OP_DBG(op, msg)
@@ -89,7 +89,9 @@ typedef void (*typed_get_fn)(comdb2_objpool_t, void **);
 typedef void (*typed_evict_fn)(comdb2_objpool_t);
 typedef void (*typed_clear_fn)(comdb2_objpool_t);
 
-enum objpool_type { OP_LIFO, OP_FIFO, OP_RAND };
+enum objpool_type { OP_LIFO,
+                    OP_FIFO,
+                    OP_RAND };
 
 typedef struct pooled_object {
     void *object;
@@ -408,7 +410,10 @@ int comdb2_objpool_timedborrow(comdb2_objpool_t op, void **objp, long nanosecs)
     return objpool_borrow_int(op, objp, nanosecs, 0);
 }
 
-int comdb2_objpool_size(comdb2_objpool_t op) { return op->nobjs; }
+int comdb2_objpool_size(comdb2_objpool_t op)
+{
+    return op->nobjs;
+}
 
 int comdb2_objpool_stats(comdb2_objpool_t op)
 {
@@ -420,8 +425,7 @@ int comdb2_objpool_stats(comdb2_objpool_t op)
     logmsg(LOGMSG_USER, "  Status               : %s\n",
            op->stopped ? "STOPPED" : "running");
     logmsg(LOGMSG_USER, "  Current load         : %.f%%\n",
-           (op->nobjs == 0) ? 0 : 100.0 * (op->nborrowwaits + op->nactiveobjs) /
-                                      op->nobjs);
+           (op->nobjs == 0) ? 0 : 100.0 * (op->nborrowwaits + op->nactiveobjs) / op->nobjs);
     logmsg(LOGMSG_USER, "  # total objects      : %u\n", op->nforcedobjs + op->nobjs);
     logmsg(LOGMSG_USER, "  # peak               : %u\n",
            op->npeakobjs == 0 ? op->nobjs : op->npeakobjs);
@@ -908,7 +912,6 @@ retry:
     rec->active = 1;
     ++rec->nborrows;
     rec->tid = pthread_self();
-
 
     OP_DBG(op, "borrowed from pool");
     return rc;

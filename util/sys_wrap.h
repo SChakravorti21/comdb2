@@ -24,8 +24,8 @@
 #include "logmsg.h"
 
 #ifdef SYSWRAP_DEBUG
-#define SYSWRAPDBG_TRACE(STR, FUNC, OBJ)                                                                               \
-    logmsg(LOGMSG_USER, "%s:%d " #STR " " #FUNC "(0x%" PRIxPTR ") thd:%p\n", __func__, __LINE__, (uintptr_t)OBJ,       \
+#define SYSWRAPDBG_TRACE(STR, FUNC, OBJ)                                                                         \
+    logmsg(LOGMSG_USER, "%s:%d " #STR " " #FUNC "(0x%" PRIxPTR ") thd:%p\n", __func__, __LINE__, (uintptr_t)OBJ, \
            (void *)pthread_self())
 #else
 #define SYSWRAPDBG_TRACE(...)
@@ -33,32 +33,32 @@
 
 #define SYSWRAP_FIRST_(a, ...) a
 #define SYSWRAP_FIRST(...) SYSWRAP_FIRST_(__VA_ARGS__, 0)
-#define WRAP_SYSFUNC(FUNC, ...)                                                                                        \
-    do {                                                                                                               \
-        int rc;                                                                                                        \
-        SYSWRAPDBG_TRACE(TRY, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                                       \
-        if ((rc = FUNC(__VA_ARGS__)) != 0) {                                                                           \
-            logmsg(LOGMSG_FATAL, "%s:%d " #FUNC "(0x%" PRIxPTR ") rc:%d (%s) thd:%p\n", __func__, __LINE__,            \
-                   (uintptr_t)SYSWRAP_FIRST(__VA_ARGS__), rc, strerror(rc), (void *)pthread_self());                   \
-            abort();                                                                                                   \
-        }                                                                                                              \
-        SYSWRAPDBG_TRACE(GOT, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                                       \
+#define WRAP_SYSFUNC(FUNC, ...)                                                                             \
+    do {                                                                                                    \
+        int rc;                                                                                             \
+        SYSWRAPDBG_TRACE(TRY, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                            \
+        if ((rc = FUNC(__VA_ARGS__)) != 0) {                                                                \
+            logmsg(LOGMSG_FATAL, "%s:%d " #FUNC "(0x%" PRIxPTR ") rc:%d (%s) thd:%p\n", __func__, __LINE__, \
+                   (uintptr_t)SYSWRAP_FIRST(__VA_ARGS__), rc, strerror(rc), (void *)pthread_self());        \
+            abort();                                                                                        \
+        }                                                                                                   \
+        SYSWRAPDBG_TRACE(GOT, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                            \
     } while (0)
 
-#define WRAP_SYSFUNC_ABORT_ERRNO(FUNC, ABORTERRNO, ...)                                                                \
-    ({                                                                                                                 \
-        int rc, save_errno;                                                                                            \
-        SYSWRAPDBG_TRACE(TRY, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                                       \
-        rc = FUNC(__VA_ARGS__);                                                                                        \
-        save_errno = errno;                                                                                            \
-        if (rc != 0 && save_errno == ABORTERRNO) {                                                                     \
-            logmsg(LOGMSG_FATAL, "%s:%d " #FUNC "(0x%" PRIxPTR ") rc:%d (%s) thd:%p\n", __func__, __LINE__,            \
-                   (uintptr_t)SYSWRAP_FIRST(__VA_ARGS__), rc, strerror(rc), (void *)pthread_self());                   \
-            abort();                                                                                                   \
-        }                                                                                                              \
-        SYSWRAPDBG_TRACE(GOT, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                                       \
-        errno = save_errno;                                                                                            \
-        rc;                                                                                                            \
+#define WRAP_SYSFUNC_ABORT_ERRNO(FUNC, ABORTERRNO, ...)                                                     \
+    ({                                                                                                      \
+        int rc, save_errno;                                                                                 \
+        SYSWRAPDBG_TRACE(TRY, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                            \
+        rc = FUNC(__VA_ARGS__);                                                                             \
+        save_errno = errno;                                                                                 \
+        if (rc != 0 && save_errno == ABORTERRNO) {                                                          \
+            logmsg(LOGMSG_FATAL, "%s:%d " #FUNC "(0x%" PRIxPTR ") rc:%d (%s) thd:%p\n", __func__, __LINE__, \
+                   (uintptr_t)SYSWRAP_FIRST(__VA_ARGS__), rc, strerror(rc), (void *)pthread_self());        \
+            abort();                                                                                        \
+        }                                                                                                   \
+        SYSWRAPDBG_TRACE(GOT, FUNC, SYSWRAP_FIRST(__VA_ARGS__));                                            \
+        errno = save_errno;                                                                                 \
+        rc;                                                                                                 \
     })
 
 #define Pthread_attr_destroy(...) WRAP_SYSFUNC(pthread_attr_destroy, __VA_ARGS__)

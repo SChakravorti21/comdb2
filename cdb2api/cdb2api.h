@@ -336,8 +336,8 @@ cdb2_event *cdb2_register_event(cdb2_hndl_tp *hndl, cdb2_event_type types,
 int cdb2_unregister_event(cdb2_hndl_tp *hndl, cdb2_event *e);
 
 struct cdb2_identity {
-    void  (*resetIdentity_start)();
-    void  (*resetIdentity_end)(int);
+    void (*resetIdentity_start)();
+    void (*resetIdentity_end)(int);
     void *(*getIdentity)();
 };
 

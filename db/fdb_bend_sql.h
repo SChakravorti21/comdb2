@@ -102,4 +102,3 @@ int fdb_svc_cursor_update(struct sqlclntstate *clnt, char *tblname,
 struct sqlclntstate *fdb_svc_trans_get(char *tid);
 
 #endif
-

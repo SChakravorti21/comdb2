@@ -52,7 +52,7 @@ typedef struct fdb_access_elem {
 } fdb_access_elem_t;
 
 struct fdb_access {
-    hash_t *wlst_bydbname; /* presence in this list means implies all tables */
+    hash_t *wlst_bydbname;   /* presence in this list means implies all tables */
     hash_t *wlst_byfullname; /* presence in this list give per table access */
     listc_t lst;
 };
@@ -110,7 +110,7 @@ int fdb_access_control_create(struct sqlclntstate *clnt, char *str)
                     if (!created) {
                         /* remote access denied */
                         logmsg(LOGMSG_ERROR, "%s: deny all remote access \"%s\"!\n",
-                                __func__, str);
+                               __func__, str);
                         rc = _access_control_clear(acc);
                     } else {
                         /* structure remains empty, denial any remote access */
@@ -118,7 +118,7 @@ int fdb_access_control_create(struct sqlclntstate *clnt, char *str)
                 } else if (!added) {
                     /* specified type but missing tables? */
                     logmsg(LOGMSG_ERROR, "%s: missing table list in string \"%s\"\n",
-                            __func__, str);
+                           __func__, str);
                     rc = -1;
                 }
                 break;
@@ -140,9 +140,9 @@ int fdb_access_control_create(struct sqlclntstate *clnt, char *str)
                 free(fullname);
 
                 if (type == ACCESS_REMOTE_INV) {
-                    logmsg(LOGMSG_ERROR, 
-                            "%s: incorrect access type in string \"%s\"\n",
-                            __func__, str);
+                    logmsg(LOGMSG_ERROR,
+                           "%s: incorrect access type in string \"%s\"\n",
+                           __func__, str);
                     rc = -1;
                     break;
                 }
@@ -154,7 +154,7 @@ int fdb_access_control_create(struct sqlclntstate *clnt, char *str)
             rc = _access_control_add(acc, type, fullname);
             if (rc) {
                 logmsg(LOGMSG_ERROR, "%s: failure to add rights %x to %s\n", __func__,
-                        type, fullname);
+                       type, fullname);
                 free(fullname);
                 break;
             }
@@ -167,7 +167,7 @@ int fdb_access_control_create(struct sqlclntstate *clnt, char *str)
         int irc = fdb_access_control_destroy(clnt);
         if (irc) {
             logmsg(LOGMSG_ERROR, "%s: failed to destroy fdb access control rc=%d\n",
-                    __func__, irc);
+                   __func__, irc);
         }
     }
 

@@ -417,7 +417,7 @@ uint8_t *packedreq_hdr_put(const struct packedreq_hdr *p_packedreq_hdr,
 }
 
 const uint8_t *packedreq_hdr_get(struct packedreq_hdr *p_packedreq_hdr,
-                                 const uint8_t *p_buf, const uint8_t *p_buf_end, 
+                                 const uint8_t *p_buf, const uint8_t *p_buf_end,
                                  int comdbg_flags)
 {
     if (p_buf_end < p_buf || PACKEDREQ_HDR_LEN > (p_buf_end - p_buf))

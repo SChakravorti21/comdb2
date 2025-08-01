@@ -90,7 +90,8 @@ struct svc_cursor {
     int autocommit; /* set for no user controlled transactions */
 
     LINKC_T(
-        struct svc_cursor) lnk; /* list of cursors of the same transaction */
+        struct svc_cursor)
+    lnk; /* list of cursors of the same transaction */
     uuid_t ciduuid;
     uuid_t tiduuid;
 };
@@ -310,7 +311,7 @@ int fdb_svc_cursor_close(char *cid, struct sqlclntstate **pclnt)
         rc = cur->bdbc->close(cur->bdbc, &bdberr);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s: failed closing cursor rc=%d bdberr=%d\n",
-                    __func__, rc, bdberr);
+                   __func__, rc, bdberr);
         }
         cur->bdbc = NULL;
     }
@@ -326,7 +327,7 @@ int fdb_svc_cursor_close(char *cid, struct sqlclntstate **pclnt)
             tran_clnt = fdb_svc_trans_get(cur->tid);
             if (!tran_clnt) {
                 logmsg(LOGMSG_ERROR, "%s: missing client transaction %s!\n",
-                        __func__, us);
+                       __func__, us);
             } else {
                 /* link the guy in the transaction */
                 listc_rfl(&tran_clnt->dbtran.dtran->fdb_trans.top->cursors,
@@ -399,7 +400,7 @@ int fdb_svc_cursor_move(enum svc_move_types type, char *cid, char **data,
             irc = fdb_convert_data(cur, genid, data, datalen);
             if (irc) {
                 logmsg(LOGMSG_ERROR, "%s: failed to convert data rc=%d\n", __func__,
-                        irc);
+                       irc);
             }
 
             *datacopy = NULL; /* TODO: review datacopy */
@@ -417,7 +418,7 @@ int fdb_svc_cursor_move(enum svc_move_types type, char *cid, char **data,
         /* TODO: prefetching */
     } else {
         logmsg(LOGMSG_ERROR, "%s: unknown cursor id %llx\n", __func__,
-                *(unsigned long long *)cid);
+               *(unsigned long long *)cid);
         rc = -1;
     }
     return rc;
@@ -927,7 +928,7 @@ static int fdb_ondisk_to_packed_sqlite_tz(struct dbtable *db, struct schema *s,
     rc = fdb_ondisk_to_unpacked(db, s, cur, in, genid, m, nField + 1, &hdrsz,
                                 &datasz, &ncols);
 
-/*
+    /*
    fprintf( stderr, "%s:%d hdrsz=%d ncols=%d maxout=%d\n",
    __FILE__, __LINE__, hdrsz, ncols, maxout);*/
 
@@ -978,7 +979,7 @@ static int fdb_convert_data(svc_cursor_t *cur, unsigned long long *genid,
                                         cur->outbuflen, &reqlen, cur);
     if (rc == -2) {
         logmsg(LOGMSG_ERROR, "%s: preallocated buffer too small %d, needed %d\n",
-                __func__, cur->outbuflen, reqlen);
+               __func__, cur->outbuflen, reqlen);
         return -1;
     } else if (rc) {
         logmsg(LOGMSG_ERROR, "%s: failed ondisk_to_sqlite %d\n", __func__, rc);
@@ -1038,7 +1039,7 @@ int fdb_svc_cursor_find(char *cid, int keylen, char *key, int last,
             rc = fdb_packedsqlite_extract_genid(key, &use_keylen, cur->outbuf);
             if (rc < 0) {
                 logmsg(LOGMSG_ERROR, "%s:%d: failed to convert key rc=%d\n",
-                        __func__, __LINE__, rc);
+                       __func__, __LINE__, rc);
                 return -1;
             }
             use_key = cur->outbuf;
@@ -1051,7 +1052,7 @@ int fdb_svc_cursor_find(char *cid, int keylen, char *key, int last,
                                   &convfail, NULL);
             if (rc <= 0) {
                 logmsg(LOGMSG_ERROR, "%s: failed to convert key rc=%d\n", __func__,
-                        rc);
+                       rc);
                 return -1;
             }
 
@@ -1072,14 +1073,14 @@ int fdb_svc_cursor_find(char *cid, int keylen, char *key, int last,
         if (rc != IX_FND && rc != IX_NOTFND && rc != IX_PASTEOF &&
             rc != IX_EMPTY) {
             logmsg(LOGMSG_ERROR, "%s failed find%s rc=%d bdberr=%d\n", __func__,
-                    (last) ? "_last_dup" : "", rc, bdberr);
+                   (last) ? "_last_dup" : "", rc, bdberr);
             return -1;
         }
         if (rc == IX_FND || (rc == IX_NOTFND && cur->ixnum >= 0)) {
             irc = fdb_convert_data(cur, genid, data, datalen);
             if (irc) {
                 logmsg(LOGMSG_ERROR, "%s: failed to convert data rc=%d\n", __func__,
-                        irc);
+                       irc);
             }
             *datacopy = NULL;
             *datacopylen = 0;
@@ -1092,7 +1093,7 @@ int fdb_svc_cursor_find(char *cid, int keylen, char *key, int last,
         }
     } else {
         uuidstr_t us;
-        comdb2uuidstr((unsigned char*)cid, us);
+        comdb2uuidstr((unsigned char *)cid, us);
         logmsg(LOGMSG_ERROR, "%s: unknown cursor id %s\n", __func__, us);
     }
 

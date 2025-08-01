@@ -56,7 +56,7 @@ made throughout comdb2. */
 #define ALIGNMENT 8
 
 /* MAXINDEX HAS BECOME OBSOLETE - FOR NOW, JUST KLUDGE TO FIX */
-#define MAXKEYS 256  /* maximum # of keys with cases */
+#define MAXKEYS 256 /* maximum # of keys with cases */
 //#define MAXINDEX 256 /* max # of indices */
 
 #define EXPRMAX 1024    /* maximum pieces of an expression */
@@ -89,7 +89,8 @@ enum ct_flags {
     CT_DEL_SETNULL = 0x00000008,
 };
 
-enum ct_type { CT_FKEY, CT_CHECK };
+enum ct_type { CT_FKEY,
+               CT_CHECK };
 
 struct constraint {
     char *consname;
@@ -106,12 +107,12 @@ struct check_constraint {
 };
 
 struct symbol {
-    char *nm;   /* symbol name                     */
-    int dim[6]; /* # of elements in each dimension */
+    char *nm;          /* symbol name                     */
+    int dim[6];        /* # of elements in each dimension */
     char *dim_cnst[6]; /* if we have any constants in the symbol specs, store it */
-    int arr;         /* if this is an array, is it C or Fortran */
-    int size;        /* base size of variable           */
-    int szof;        /* size of whole varaible/array    */
+    int arr;           /* if this is an array, is it C or Fortran */
+    int size;          /* base size of variable           */
+    int szof;          /* size of whole varaible/array    */
     char *szof_cnst;
     int type;        /* type of variable                */
     int align;       /* alignment necessary for this var*/
@@ -121,7 +122,7 @@ struct symbol {
     int un_max_size; /* If in union, give size of that union  */
     int un_idx;      /* this will tell if we're in the nested union */
     int padb;        /* #of bytes needed to pad the symbol in the struct*/
-    int padex; /* #of pad bytes needed to pad this symbol on 8-byte boundary*/
+    int padex;       /* #of pad bytes needed to pad this symbol on 8-byte boundary*/
     int padaf;
     int padcs;  /* #of pad bytes necessary for the case (if symbol is in it) */
     int caseno; /* Case statement to which this symbol belongs -1=none*/
@@ -129,7 +130,7 @@ struct symbol {
     int padded; /* tells whether the symbol was padded for alignment  */
     short dpth_tree[MAX_DEPTH];
     int dpth;
-    int numfo; /* number of field options for this symbol */
+    int numfo;                         /* number of field options for this symbol */
     struct fieldopt fopts[FLDOPT_MAX]; /* field option structures */
 };
 
@@ -170,20 +171,19 @@ struct key {
     int exprtype;
     int exprarraysz;
     char *where;
-    struct partial_datacopy *pd;    /* partial datacopy fields (if any) */
+    struct partial_datacopy *pd; /* partial datacopy fields (if any) */
 };
 
 enum KEYFLAGS {
     DESCEND = 1 /* this key piece is descending */
 };
 
-
 enum INDEXFLAGS {
     DUPKEY = 0x00000001,  /* duplicate key flag */
     RECNUMS = 0x00000002, /* index has key sequence numbers (COMDB2) */
     PRIMARY = 0x00000004,
-    DATAKEY = 0x00000008, /* key flag to indicate index has data */
-    UNIQNULLS = 0x00000010, /* all NULL values are treated as UNIQUE */
+    DATAKEY = 0x00000008,       /* key flag to indicate index has data */
+    UNIQNULLS = 0x00000010,     /* all NULL values are treated as UNIQUE */
     PARTIALDATAKEY = 0x00000020 /* key flag to indicate index has some data */
 };
 
@@ -224,11 +224,11 @@ typedef struct macc_globals_t {
     int bufszb, bufszhw, bufszw; /* buffer size bytes/words */
     int maxrngsz;                /* the biggest range's size */
     int rngrrnoff[MAXRNGS];      /* rrn offset in rbuf for each range */
-    int current_case;  /* for determining which case (in rectype) the variable
+    int current_case;            /* for determining which case (in rectype) the variable
                           belongs to */
-    int current_union; /* for determining which union (if any) the variable is
+    int current_union;           /* for determining which union (if any) the variable is
                           in */
-    char *union_names[MAX]; /* array to store union names */
+    char *union_names[MAX];      /* array to store union names */
     int union_index;
     int union_level;
     int un_init; /* determines whether unions were computed  */
@@ -260,16 +260,16 @@ typedef struct macc_globals_t {
     char *opt_dbname;                       /* database+table name */
     char opt_maindbname[MAX_DBNAME_LENGTH]; /* database name */
     char opt_tblname[64];                   /* table name */
-    int opt_verbose;     /* 0=don't use verbose comments in .h */
-    int opt_copycsc;     /* 0=don't copy .csc to .inc */
-    char *opt_accname;   /* different name for acc routine/.f */
-    int opt_reclen;      /* optional record length */
-    int opt_sntoremb;    /* USE SNTOREMB OPTION*/
-    int opt_nicedbvalue; /* USE START NICE PROCMGR VALUE FOR DATABASE */
-    int opt_useglobals;  /* GENERATE STATIC RECORD/CONTROL STRUCTS IN ACC
+    int opt_verbose;                        /* 0=don't use verbose comments in .h */
+    int opt_copycsc;                        /* 0=don't copy .csc to .inc */
+    char *opt_accname;                      /* different name for acc routine/.f */
+    int opt_reclen;                         /* optional record length */
+    int opt_sntoremb;                       /* USE SNTOREMB OPTION*/
+    int opt_nicedbvalue;                    /* USE START NICE PROCMGR VALUE FOR DATABASE */
+    int opt_useglobals;                     /* GENERATE STATIC RECORD/CONTROL STRUCTS IN ACC
                             ROUTINE, ALONG WITH SHORTCUTS */
-    int opt_staticacc;   /* Create Access Routine to be static */
-    int opt_noprefix;    /* Don't generate prefixes for variables */
+    int opt_staticacc;                      /* Create Access Routine to be static */
+    int opt_noprefix;                       /* Don't generate prefixes for variables */
     /* int opt_threadsafe;   By default, access routine is thread-safe */
     int opt_macc2pack;
     int opt_usenames;
@@ -281,8 +281,8 @@ typedef struct macc_globals_t {
     int n_check_constraints;
 } macc_globals_t;
 
-extern int any_errors;              /* flag                              */
-extern int current_line;            /* for printing errors               */
+extern int any_errors;   /* flag                              */
+extern int current_line; /* for printing errors               */
 extern char *blankchar;
 extern struct constant constants[MAX];
 extern macc_globals_t *macc_globals;

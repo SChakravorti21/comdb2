@@ -94,8 +94,8 @@ static void sql_heartbeat_cb(int fd, short what, void *arg);
 
 void sql_enable_heartbeat(struct sqlwriter *writer)
 {
-    writer->pack_hb(writer, writer->clnt); /* newsql_pack_hb */
-    struct timeval heartbeat_time = {.tv_usec = 100000 }; // 100ms
+    writer->pack_hb(writer, writer->clnt);               /* newsql_pack_hb */
+    struct timeval heartbeat_time = {.tv_usec = 100000}; // 100ms
     event_add(writer->heartbeat_ev, &heartbeat_time);
 }
 
@@ -126,7 +126,8 @@ static void do_sql_disable_timeout(void *arg)
 
 void sql_disable_timeout(struct sqlwriter *writer)
 {
-    if (!writer->timeout_ev) return;
+    if (!writer->timeout_ev)
+        return;
     run_on_base(writer->timer_base, do_sql_disable_timeout, writer);
 }
 
@@ -183,16 +184,16 @@ static void update_writer_state(struct sqlwriter *writer, enum write_state state
  * error message. The 2 macros below make sure that we do not double-lock
  * wr_lock, and that we do not release wr_lock when we're not supposed to.
  */
-#define LOCK_WR_LOCK_ONLY_IF_NOT_PACKING(w)                                                                            \
-    do {                                                                                                               \
-        if (!(w)->packing)                                                                                             \
-            Pthread_mutex_lock(&(w)->wr_lock);                                                                         \
+#define LOCK_WR_LOCK_ONLY_IF_NOT_PACKING(w)    \
+    do {                                       \
+        if (!(w)->packing)                     \
+            Pthread_mutex_lock(&(w)->wr_lock); \
     } while (0)
 
-#define UNLOCK_WR_LOCK_ONLY_IF_NOT_PACKING(w)                                                                          \
-    do {                                                                                                               \
-        if (!(w)->packing)                                                                                             \
-            Pthread_mutex_unlock(&(w)->wr_lock);                                                                       \
+#define UNLOCK_WR_LOCK_ONLY_IF_NOT_PACKING(w)    \
+    do {                                         \
+        if (!(w)->packing)                       \
+            Pthread_mutex_unlock(&(w)->wr_lock); \
     } while (0)
 
 static void sql_flush_cb(int fd, short what, void *arg)
@@ -207,7 +208,8 @@ static void sql_flush_cb(int fd, short what, void *arg)
     int n;
     LOCK_WR_LOCK_ONLY_IF_NOT_PACKING(writer);
     while (evbuffer_get_length(writer->wr_buf)) {
-        if ((n = wr_evbuffer(writer, fd)) <= 0) break;
+        if ((n = wr_evbuffer(writer, fd)) <= 0)
+            break;
         writer->sent_at = time(NULL);
         update_writer_state(writer, WRITE_SUCCEEDED);
     }
@@ -348,7 +350,8 @@ int sql_write(struct sqlwriter *writer, void *arg, int flush)
     writer->packing = orig_packing;
     outstanding = evbuffer_get_length(writer->wr_buf);
     Pthread_mutex_unlock(&writer->wr_lock);
-    if (outstanding) return sql_flush(writer);
+    if (outstanding)
+        return sql_flush(writer);
     return 0;
 }
 
@@ -358,7 +361,8 @@ int sql_writev(struct sqlwriter *writer, struct iovec *v, int n)
     Pthread_mutex_lock(&writer->wr_lock);
     for (int i = 0; i < n; ++i) {
         rc = evbuffer_add(writer->wr_buf, v[i].iov_base, v[i].iov_len);
-        if (rc) break;
+        if (rc)
+            break;
     }
     Pthread_mutex_unlock(&writer->wr_lock);
     return rc;
@@ -421,7 +425,8 @@ static void sql_trickle_cb(int fd, short what, void *arg)
 static void sql_heartbeat_cb(int fd, short what, void *arg)
 {
     struct sqlwriter *writer = arg;
-    if (pthread_mutex_trylock(&writer->wr_lock)) return;
+    if (pthread_mutex_trylock(&writer->wr_lock))
+        return;
     if (writer->wr_continue) {
         int len = evbuffer_get_length(writer->wr_buf);
         time_t now = time(NULL);

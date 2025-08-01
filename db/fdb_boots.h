@@ -63,4 +63,3 @@ int fdb_get_rescpu_nodes(fdb_location_t *loc, int *locals);
 extern int gbl_fdb_track;
 
 #endif
-

@@ -64,14 +64,17 @@ struct sp_rec_blob {
 struct sp_field {
     int flags;
     char *name;
-    LINKC_T(struct sp_field) lnk;
+    LINKC_T(struct sp_field)
+    lnk;
 };
 
 struct sp_table {
     char *name;
     int flags;
-    LINKC_T(struct sp_table) lnk;
-    LISTC_T(struct sp_field) fields;
+    LINKC_T(struct sp_table)
+    lnk;
+    LISTC_T(struct sp_field)
+    fields;
 };
 
 struct stored_proc {
@@ -80,11 +83,15 @@ struct stored_proc {
 
     char *qname;
     int flags;
-    LISTC_T(struct sp_table) tables;
-    LINKC_T(struct stored_proc) lnk;
+    LISTC_T(struct sp_table)
+    tables;
+    LINKC_T(struct stored_proc)
+    lnk;
 };
-LISTC_T(struct stored_proc) stored_procs;
-LISTC_T(struct stored_proc) delayed_stored_procs;
+LISTC_T(struct stored_proc)
+stored_procs;
+LISTC_T(struct stored_proc)
+delayed_stored_procs;
 
 static pthread_rwlock_t splk = PTHREAD_RWLOCK_INITIALIZER;
 #define SP_READLOCK() Pthread_rwlock_rdlock(&splk)
@@ -172,25 +179,25 @@ void javasp_stat(const char *args)
 
     LISTC_FOR_EACH(&stored_procs, p, lnk)
     {
-       logmsg(LOGMSG_USER, "%s\n", p->name);
+        logmsg(LOGMSG_USER, "%s\n", p->name);
         LISTC_FOR_EACH(&p->tables, t, lnk)
         {
-           logmsg(LOGMSG_USER, "   %s\n", t->name);
+            logmsg(LOGMSG_USER, "   %s\n", t->name);
             LISTC_FOR_EACH(&t->fields, f, lnk)
             {
-               logmsg(LOGMSG_USER, "      %s ", f->name);
+                logmsg(LOGMSG_USER, "      %s ", f->name);
                 if (f->flags & JAVASP_TRANS_LISTEN_AFTER_ADD)
-                   logmsg(LOGMSG_USER, "add ");
+                    logmsg(LOGMSG_USER, "add ");
                 if (f->flags & JAVASP_TRANS_LISTEN_AFTER_DEL)
-                   logmsg(LOGMSG_USER, "del ");
+                    logmsg(LOGMSG_USER, "del ");
                 if (f->flags & JAVASP_TRANS_LISTEN_BEFORE_UPD)
-                   logmsg(LOGMSG_USER, "pre_upd ");
+                    logmsg(LOGMSG_USER, "pre_upd ");
                 if (f->flags & JAVASP_TRANS_LISTEN_AFTER_UPD)
-                   logmsg(LOGMSG_USER, "post_upd ");
-               logmsg(LOGMSG_USER, "\n");
+                    logmsg(LOGMSG_USER, "post_upd ");
+                logmsg(LOGMSG_USER, "\n");
             }
         }
-       logmsg(LOGMSG_USER, "\n");
+        logmsg(LOGMSG_USER, "\n");
     }
 
     SP_RELLOCK();
@@ -211,7 +218,10 @@ struct javasp_trans_state *javasp_trans_start(int debug)
 
     SP_READLOCK();
 
-    LISTC_FOR_EACH(&stored_procs, sp, lnk) { st->events |= sp->flags; }
+    LISTC_FOR_EACH(&stored_procs, sp, lnk)
+    {
+        st->events |= sp->flags;
+    }
 
     return st;
 }
@@ -219,7 +229,8 @@ struct javasp_trans_state *javasp_trans_start(int debug)
 void javasp_trans_set_trans(struct javasp_trans_state *javasp_trans_handle,
                             struct ireq *ireq, void *parent_trans, void *trans)
 {
-    if (javasp_trans_handle == NULL) return;
+    if (javasp_trans_handle == NULL)
+        return;
     javasp_trans_handle->iq = ireq;
     javasp_trans_handle->trans = trans;
     javasp_trans_handle->parent_trans = parent_trans;
@@ -227,7 +238,8 @@ void javasp_trans_set_trans(struct javasp_trans_state *javasp_trans_handle,
 
 void javasp_trans_release(struct javasp_trans_state *javasp_trans_handle)
 {
-    if (javasp_trans_handle == NULL) return;
+    if (javasp_trans_handle == NULL)
+        return;
     if (javasp_trans_handle->lockref) {
         SP_RELLOCK();
         javasp_trans_handle->lockref = 0;
@@ -236,7 +248,8 @@ void javasp_trans_release(struct javasp_trans_state *javasp_trans_handle)
 
 void javasp_trans_end(struct javasp_trans_state *javasp_trans_handle)
 {
-    if (javasp_trans_handle == NULL) return;
+    if (javasp_trans_handle == NULL)
+        return;
     if (javasp_trans_handle->lockref) {
         SP_RELLOCK();
         javasp_trans_handle->lockref = 0;
@@ -289,11 +302,11 @@ static void byte_buffer_append_zero(struct byte_buffer *b, int n)
     b->used += n;
 }
 
-#define append_flipped(bytes, v)                                               \
-    byte_buffer_reserve(bytes, sizeof(v));                                     \
-    if (!buf_put(&v, sizeof(v), bytes->bytes + bytes->used,                    \
-                 bytes->bytes + bytes->allocated))                             \
-        abort(); /* shouldn't happen */                                        \
+#define append_flipped(bytes, v)                            \
+    byte_buffer_reserve(bytes, sizeof(v));                  \
+    if (!buf_put(&v, sizeof(v), bytes->bytes + bytes->used, \
+                 bytes->bytes + bytes->allocated))          \
+        abort(); /* shouldn't happen */                     \
     bytes->used += sizeof(v);
 
 static void byte_buffer_append_int64(struct byte_buffer *bytes, long long v)
@@ -865,7 +878,7 @@ done:
 static int sp_trigger_skip(struct stored_proc *sp)
 {
     int rc = 0;
-    const char *prefix = Q_TAG "__m";   // identifier for migrated queues
+    const char *prefix = Q_TAG "__m"; // identifier for migrated queues
     size_t prefix_len = strlen(prefix);
     const char *qname = sp->qname;
     size_t qname_len = strlen(qname);
@@ -878,10 +891,12 @@ static int sp_trigger_skip(struct stored_proc *sp)
         strcat(migrated_qname, qname);
         struct dbtable *migrated_qdb = getqueuebyname(migrated_qname);
         free(migrated_qname);
-        if (gbl_disable_legacy_queues && migrated_qdb) rc = 1;
+        if (gbl_disable_legacy_queues && migrated_qdb)
+            rc = 1;
     } else if (qdb->dbtype == DBTYPE_QUEUEDB && qname_len > prefix_len) {
         struct dbtable *legacy_qdb = getqueuebyname(qname + prefix_len);
-        if (!gbl_disable_legacy_queues && legacy_qdb) rc = 1;
+        if (!gbl_disable_legacy_queues && legacy_qdb)
+            rc = 1;
     }
 
     return rc;
@@ -903,7 +918,8 @@ int javasp_trans_tagged_trigger(struct javasp_trans_state *javasp_trans_handle,
        off the table structure */
     LISTC_FOR_EACH(&stored_procs, p, lnk)
     {
-        if (sp_trigger_skip(p)) continue;
+        if (sp_trigger_skip(p))
+            continue;
 
         LISTC_FOR_EACH(&p->tables, t, lnk)
         {
@@ -916,8 +932,7 @@ int javasp_trans_tagged_trigger(struct javasp_trans_state *javasp_trans_handle,
                 goto nextproc;
             }
         }
-    nextproc:
-        ;
+    nextproc:;
     }
 
     return 0;
@@ -1203,20 +1218,23 @@ int javasp_load_procedure_int(const char *name, const char *param,
     if (!p->name) {
     oom:
         logmsg(LOGMSG_ERROR, "OOM %s\n", __func__);
-        if (p->qname) free(p->qname);
+        if (p->qname)
+            free(p->qname);
         free(p);
         rc = -1;
         goto done;
     }
     if (paramvalue) {
         p->qname = strdup(name);
-        if (!p->qname) goto oom;
+        if (!p->qname)
+            goto oom;
     }
     if (param)
         p->param = strdup(param);
     else
         p->param = strdup("<sc>");
-    if (!p->param) goto oom;
+    if (!p->param)
+        goto oom;
 
     listc_init(&p->tables, offsetof(struct sp_table, lnk));
 
@@ -1231,7 +1249,7 @@ int javasp_load_procedure_int(const char *name, const char *param,
         resource = (char *)getresourcepath(argv[0]);
         if (resource == NULL) {
             logmsg(LOGMSG_ERROR, "Can't load resource for stored procedure \"%s\"\n",
-                    name);
+                   name);
             rc = -1;
             goto done;
         }
@@ -1239,8 +1257,8 @@ int javasp_load_procedure_int(const char *name, const char *param,
         fd = open(resource, O_RDONLY);
         if (fd == -1) {
             logmsg(LOGMSG_ERROR, "Can't load comdb2translisten configuration from "
-                            "\"%s\" for stored procedure \"%s\" %d %s\n",
-                    argv[0], name, errno, strerror(errno));
+                                 "\"%s\" for stored procedure \"%s\" %d %s\n",
+                   argv[0], name, errno, strerror(errno));
             rc = -1;
             goto done;
         }
@@ -1256,9 +1274,9 @@ int javasp_load_procedure_int(const char *name, const char *param,
         int fd;
         f = tmpfile();
         if (f == NULL) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: can't create temp file for queue config %d %s\n",
-                    __func__, errno, strerror(errno));
+            logmsg(LOGMSG_ERROR,
+                   "%s: can't create temp file for queue config %d %s\n",
+                   __func__, errno, strerror(errno));
             rc = -1;
             goto done;
         }
@@ -1270,7 +1288,7 @@ int javasp_load_procedure_int(const char *name, const char *param,
         fclose(f);
         if (config == NULL) {
             logmsg(LOGMSG_ERROR, "%s: can't open temp file for queue config %d %s\n",
-                    __func__, errno, strerror(errno));
+                   __func__, errno, strerror(errno));
             rc = -1;
             goto done;
         }
@@ -1285,8 +1303,8 @@ int javasp_load_procedure_int(const char *name, const char *param,
 
         if (strcasecmp(s, "queue") == 0) {
             if (paramvalue) {
-                logmsg(LOGMSG_ERROR, 
-                        "queue parameter ignored for new queue definition\n");
+                logmsg(LOGMSG_ERROR,
+                       "queue parameter ignored for new queue definition\n");
             } else {
                 queue = strtok_r(NULL, toksep, &endp);
                 if (queue == NULL) {
@@ -1316,7 +1334,7 @@ int javasp_load_procedure_int(const char *name, const char *param,
                 rc = -1;
                 goto done;
             }
-#if 0 // temp disable check - can have two different sp for different operations
+#if 0 // temp disable check - can have two different sp for different operations \
       // on same table??
             LISTC_FOR_EACH(&p->tables, table, lnk) {
                 if (strcasecmp(table->name, tablename) == 0) {
@@ -1340,15 +1358,15 @@ int javasp_load_procedure_int(const char *name, const char *param,
 
             if (table == NULL) {
                 logmsg(LOGMSG_ERROR, "table declaration must precede field list "
-                                "(config file %s)\n",
-                        argv[0]);
+                                     "(config file %s)\n",
+                       argv[0]);
                 rc = -1;
                 goto done;
             }
             fieldname = strtok_r(NULL, toksep, &endp);
             if (fieldname == NULL) {
                 logmsg(LOGMSG_ERROR, "field name not specified (config file %s)\n",
-                        argv[0]);
+                       argv[0]);
                 rc = -1;
                 goto done;
             }
@@ -1356,9 +1374,9 @@ int javasp_load_procedure_int(const char *name, const char *param,
             LISTC_FOR_EACH(&table->fields, field, lnk)
             {
                 if (strcasecmp(field->name, fieldname) == 0) {
-                    logmsg(LOGMSG_ERROR, 
-                            "field %s already defined (config file %s)\n",
-                            field->name, argv[0]);
+                    logmsg(LOGMSG_ERROR,
+                           "field %s already defined (config file %s)\n",
+                           field->name, argv[0]);
                     rc = -1;
                     goto done;
                 }
@@ -1367,8 +1385,8 @@ int javasp_load_procedure_int(const char *name, const char *param,
             flagname = strtok_r(NULL, toksep, &endp);
             if (flagname == NULL) {
                 logmsg(LOGMSG_ERROR, "field %s at least one event type required "
-                                "(config file %s)\n",
-                        fieldname, argv[0]);
+                                     "(config file %s)\n",
+                       fieldname, argv[0]);
                 rc = -1;
                 goto done;
             }
@@ -1387,10 +1405,9 @@ int javasp_load_procedure_int(const char *name, const char *param,
                     flags |= JAVASP_TRANS_LISTEN_AFTER_UPD;
                     if (sp_field_is_a_blob(table->name, fieldname))
                         flags |= JAVASP_TRANS_LISTEN_SAVE_BLOBS_UPD;
-                }
-                else {
+                } else {
                     logmsg(LOGMSG_ERROR, "field %s unknown flag (config file %s)\n",
-                            fieldname, argv[0]);
+                           fieldname, argv[0]);
                     rc = -1;
                     goto done;
                 }
@@ -1403,9 +1420,9 @@ int javasp_load_procedure_int(const char *name, const char *param,
             listc_abl(&table->fields, field);
             p->flags |= flags;
         } else {
-            logmsg(LOGMSG_ERROR, 
-                "unknown translisten config directive %s (config file %s)\n", s,
-                param ? argv[0] : "<from comdb2sc>");
+            logmsg(LOGMSG_ERROR,
+                   "unknown translisten config directive %s (config file %s)\n", s,
+                   param ? argv[0] : "<from comdb2sc>");
             rc = -1;
             goto done;
         }
@@ -1455,45 +1472,63 @@ int javasp_exists(const char *name)
 int gbl_debug_sleep_in_trigger_info = 0;
 int gather_triggers(struct gather_triggers_arg *arg)
 {
-    if (gbl_debug_sleep_in_trigger_info && !(rand() % 5)) poll(NULL, 0, 10);
+    if (gbl_debug_sleep_in_trigger_info && !(rand() % 5))
+        poll(NULL, 0, 10);
     int bdberr;
     struct trigger_entry e;
     struct stored_proc *sp;
-    LISTC_FOR_EACH(&stored_procs, sp, lnk) {
+    LISTC_FOR_EACH(&stored_procs, sp, lnk)
+    {
         e.name = sp->name;
-        if (strncmp(e.name, Q_TAG, 3) == 0) e.name += 3;
+        if (strncmp(e.name, Q_TAG, 3) == 0)
+            e.name += 3;
         struct dbtable *qdb = getqueuebyname(sp->name);
-        if (!qdb) continue;
-        if (qdb->consumers[0] == NULL) continue;
+        if (!qdb)
+            continue;
+        if (qdb->consumers[0] == NULL)
+            continue;
         switch (dbqueue_consumer_type(qdb->consumers[0])) {
-        case CONSUMER_TYPE_LUA: e.type = "trigger"; break;
-        case CONSUMER_TYPE_DYNLUA: e.type = "consumer"; break;
-        case CONSUMER_TYPE_FSTSND: e.type = "legacy"; break;
-        default: continue;
+        case CONSUMER_TYPE_LUA:
+            e.type = "trigger";
+            break;
+        case CONSUMER_TYPE_DYNLUA:
+            e.type = "consumer";
+            break;
+        case CONSUMER_TYPE_FSTSND:
+            e.type = "legacy";
+            break;
+        default:
+            continue;
         }
         e.seq = bdb_queuedb_has_seq(qdb->handle) ? "Y" : "N";
         struct sp_table *tbl;
-        LISTC_FOR_EACH(&sp->tables, tbl, lnk) {
+        LISTC_FOR_EACH(&sp->tables, tbl, lnk)
+        {
             int rc = bdb_check_user_tbl_access_tran(thedb->bdb_env, arg->tran, arg->user, qdb->tablename, ACCESS_READ, &bdberr);
-            if (rc) continue;
+            if (rc)
+                continue;
             e.tbl_name = tbl->name;
             struct sp_field *col;
-            LISTC_FOR_EACH(&tbl->fields, col, lnk) {
+            LISTC_FOR_EACH(&tbl->fields, col, lnk)
+            {
                 e.col = col->name;
                 if (col->flags & JAVASP_TRANS_LISTEN_AFTER_ADD) {
                     e.event = "add";
                     rc = arg->func(arg, &e);
-                    if (rc) return rc;
+                    if (rc)
+                        return rc;
                 }
                 if (col->flags & JAVASP_TRANS_LISTEN_AFTER_DEL) {
                     e.event = "del";
                     rc = arg->func(arg, &e);
-                    if (rc) return rc;
+                    if (rc)
+                        return rc;
                 }
                 if (col->flags & JAVASP_TRANS_LISTEN_AFTER_UPD) {
                     e.event = "upd";
                     rc = arg->func(arg, &e);
-                    if (rc) return rc;
+                    if (rc)
+                        return rc;
                 }
             }
         }

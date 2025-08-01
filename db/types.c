@@ -72,8 +72,8 @@ extern int gbl_decimal_rounding;
 #define TYPES_INLINE inline
 #endif
 
-#define REAL_OUTOFRANGE(dbl, rng)                                              \
-    ((dbl) != 1.0 / 0.0 && (dbl) != -1.0 / 0.0 &&                              \
+#define REAL_OUTOFRANGE(dbl, rng)                 \
+    ((dbl) != 1.0 / 0.0 && (dbl) != -1.0 / 0.0 && \
      ((dbl) < -(rng) || (dbl) > (rng)))
 
 int gbl_fix_validate_cstr = 1;
@@ -85,7 +85,8 @@ int gbl_forbid_datetime_ms_us_s2s = 0;
 
 extern int gbl_forbid_ulonglong;
 
-enum { BLOB_ON_DISK_LEN = 5, VUTF8_ON_DISK_LEN = BLOB_ON_DISK_LEN };
+enum { BLOB_ON_DISK_LEN = 5,
+       VUTF8_ON_DISK_LEN = BLOB_ON_DISK_LEN };
 
 BB_COMPILE_TIME_ASSERT(server_datetime_size,
                        sizeof(struct server_datetime) == SERVER_DATETIME_LEN);
@@ -673,7 +674,10 @@ int null_bit = null_bit_low;
 
 int gbl_empty_strings_dont_convert_to_numbers = 1;
 
-void comdb2_types_set_null_bit(int n) { null_bit = n; }
+void comdb2_types_set_null_bit(int n)
+{
+    null_bit = n;
+}
 
 TYPES_INLINE int ieee8b_to_ieee8(ieee8b x, ieee8 *y)
 {
@@ -917,7 +921,8 @@ bytearray_copy(const void *in, int inlen, const struct field_conv_opts *inopts,
     *outdtsz = 0;
     int dbpad;
 
-    enum { DBPAD_NONE = -1, DBPAD_CONFLICT = -2 };
+    enum { DBPAD_NONE = -1,
+           DBPAD_CONFLICT = -2 };
 
     /* since only server fields can have a dbpad attribute we shouldn't have
      * a conflict here. */
@@ -958,11 +963,13 @@ bytearray_copy(const void *in, int inlen, const struct field_conv_opts *inopts,
 }
 
 #ifdef _LINUX_SOURCE
-#define CHECK_FLIP(opts, flip)                                                 \
-    if (!(opts && opts->flags & FLD_CONV_LENDIAN)) flip = 1;
+#define CHECK_FLIP(opts, flip)                     \
+    if (!(opts && opts->flags & FLD_CONV_LENDIAN)) \
+        flip = 1;
 #else
-#define CHECK_FLIP(opts, flip)                                                 \
-    if ((opts && opts->flags & FLD_CONV_LENDIAN)) flip = 1;
+#define CHECK_FLIP(opts, flip)                    \
+    if ((opts && opts->flags & FLD_CONV_LENDIAN)) \
+        flip = 1;
 #endif
 
 TYPES_INLINE int CLIENT_UINT_to_CLIENT_UINT(
@@ -4698,16 +4705,17 @@ TYPES_INLINE int SERVER_UINT_to_CLIENT_BYTEARRAY(
    conversion routines.
    DO_SERVER_TO_CLIENT does both conversions. */
 
-#define DO_SERVER_TO_CLIENT(sfrom, sto, cto)                                   \
-    void *tmpbuf;                                                              \
-    tmpbuf = alloca(inlen);                                                    \
-    *outnull = 0;                                                              \
-    SERVER_##sfrom##_to_CLIENT_##sto(in, inlen, inopts, inblob, tmpbuf,        \
-                                     inlen - 1, outnull, outdtsz, outopts,     \
-                                     outblob);                                 \
-    if (*outnull) return 0;                                                    \
-    return CLIENT_##sto##_to_CLIENT_##cto(tmpbuf, inlen - 1, outopts, inblob,  \
-                                          out, outlen, outdtsz, outopts,       \
+#define DO_SERVER_TO_CLIENT(sfrom, sto, cto)                                  \
+    void *tmpbuf;                                                             \
+    tmpbuf = alloca(inlen);                                                   \
+    *outnull = 0;                                                             \
+    SERVER_##sfrom##_to_CLIENT_##sto(in, inlen, inopts, inblob, tmpbuf,       \
+                                     inlen - 1, outnull, outdtsz, outopts,    \
+                                     outblob);                                \
+    if (*outnull)                                                             \
+        return 0;                                                             \
+    return CLIENT_##sto##_to_CLIENT_##cto(tmpbuf, inlen - 1, outopts, inblob, \
+                                          out, outlen, outdtsz, outopts,      \
                                           outblob);
 
 #define DO_SERVER_STR_TO_CLIENT(sfrom, sto, cto)                               \
@@ -4716,153 +4724,118 @@ TYPES_INLINE int SERVER_UINT_to_CLIENT_BYTEARRAY(
     *outnull = 0;                                                              \
     SERVER_##sfrom##_to_CLIENT_##sto(in, inlen, inopts, inblob, tmpbuf, inlen, \
                                      outnull, outdtsz, outopts, outblob);      \
-    if (*outnull) return 0;                                                    \
+    if (*outnull)                                                              \
+        return 0;                                                              \
     return CLIENT_##sto##_to_CLIENT_##cto(tmpbuf, inlen, outopts, inblob, out, \
                                           outlen, outdtsz, outopts, outblob);
 
 TYPES_INLINE int SERVER_BCSTR_to_CLIENT_INT(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_STR_TO_CLIENT(BCSTR, CSTR, INT)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_STR_TO_CLIENT(BCSTR, CSTR, INT)}
 
 TYPES_INLINE int SERVER_BCSTR_to_CLIENT_REAL(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_STR_TO_CLIENT(BCSTR, CSTR, REAL)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_STR_TO_CLIENT(BCSTR, CSTR, REAL)}
 
 TYPES_INLINE int SERVER_BCSTR_to_CLIENT_UINT(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_STR_TO_CLIENT(BCSTR, CSTR, UINT)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_STR_TO_CLIENT(BCSTR, CSTR, UINT)}
 
 TYPES_INLINE int SERVER_BINT_to_CLIENT_CSTR(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BINT, INT, CSTR)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BINT, INT, CSTR)}
 
 TYPES_INLINE int SERVER_BINT_to_CLIENT_PSTR(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BINT, INT, PSTR)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BINT, INT, PSTR)}
 
 TYPES_INLINE int SERVER_BINT_to_CLIENT_PSTR2(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BINT, INT, PSTR2)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BINT, INT, PSTR2)}
 
 TYPES_INLINE int SERVER_BINT_to_CLIENT_REAL(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BINT, INT, REAL)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BINT, INT, REAL)}
 
 TYPES_INLINE int SERVER_BINT_to_CLIENT_UINT(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BINT, INT, UINT)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BINT, INT, UINT)}
 
 TYPES_INLINE int SERVER_BREAL_to_CLIENT_CSTR(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BREAL, REAL, CSTR)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BREAL, REAL, CSTR)}
 
 TYPES_INLINE int SERVER_BREAL_to_CLIENT_INT(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BREAL, REAL, INT)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BREAL, REAL, INT)}
 
 TYPES_INLINE int SERVER_BREAL_to_CLIENT_PSTR2(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BREAL, REAL, PSTR2)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BREAL, REAL, PSTR2)}
 
 TYPES_INLINE int SERVER_BREAL_to_CLIENT_PSTR(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BREAL, REAL, PSTR)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BREAL, REAL, PSTR)}
 
 TYPES_INLINE int SERVER_BREAL_to_CLIENT_UINT(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(BREAL, REAL, UINT)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(BREAL, REAL, UINT)}
 
 TYPES_INLINE int SERVER_UINT_to_CLIENT_CSTR(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(UINT, UINT, CSTR)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(UINT, UINT, CSTR)}
 
 TYPES_INLINE int SERVER_UINT_to_CLIENT_INT(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(UINT, UINT, INT)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(UINT, UINT, INT)}
 
 TYPES_INLINE int SERVER_UINT_to_CLIENT_PSTR(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(UINT, UINT, PSTR)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(UINT, UINT, PSTR)}
 
 TYPES_INLINE int SERVER_UINT_to_CLIENT_PSTR2(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(UINT, UINT, PSTR2)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(UINT, UINT, PSTR2)}
 
 TYPES_INLINE int SERVER_UINT_to_CLIENT_REAL(
     const void *in, int inlen, const struct field_conv_opts *inopts,
     blob_buffer_t *inblob, void *out, int outlen, int *outnull, int *outdtsz,
-    const struct field_conv_opts *outopts, blob_buffer_t *outblob)
-{
-    DO_SERVER_TO_CLIENT(UINT, UINT, REAL)
-}
+    const struct field_conv_opts *outopts, blob_buffer_t *outblob){
+    DO_SERVER_TO_CLIENT(UINT, UINT, REAL)}
 
 TYPES_INLINE int CLIENT_BYTEARRAY_to_SERVER_BCSTR(
     const void *in, int inlen, int isnull, const struct field_conv_opts *inopts,
@@ -4947,53 +4920,53 @@ TYPES_INLINE int CLIENT_REAL_to_SERVER_BYTEARRAY(
    (int->bint).
    Convert to convertable client types first. DO_CLIENT_TO_SERVER macro does
    both conversions. */
-#define DO_CLIENT_TO_SERVER(cfrom, cto, sto)                                   \
-    void *tmpbuf;                                                              \
-    int rc;                                                                    \
-    if (isnull) {                                                              \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    } else {                                                                   \
-        struct field_conv_opts *inlcl;                                         \
-        struct field_conv_opts inval;                                          \
-        if (inopts) {                                                          \
-            inval = *inopts;                                                   \
-            inval.flags &= ~FLD_CONV_LENDIAN;                                  \
-            inlcl = &inval;                                                    \
-            UNSET_FLAG_ON_LINUX();                                             \
-        } else                                                                 \
-            inlcl = NULL;                                                      \
+#define DO_CLIENT_TO_SERVER(cfrom, cto, sto)                                     \
+    void *tmpbuf;                                                                \
+    int rc;                                                                      \
+    if (isnull) {                                                                \
+        set_null(out, outlen);                                                   \
+        return 0;                                                                \
+    } else {                                                                     \
+        struct field_conv_opts *inlcl;                                           \
+        struct field_conv_opts inval;                                            \
+        if (inopts) {                                                            \
+            inval = *inopts;                                                     \
+            inval.flags &= ~FLD_CONV_LENDIAN;                                    \
+            inlcl = &inval;                                                      \
+            UNSET_FLAG_ON_LINUX();                                               \
+        } else                                                                   \
+            inlcl = NULL;                                                        \
         /* If we're on linux, we already flipped the data to be native.  Don't \
-         * flip it again. */                                                   \
-        tmpbuf = alloca(outlen - 1);                                           \
-        rc = CLIENT_##cfrom##_to_CLIENT_##cto(in, inlen, inopts, inblob,       \
-                                              tmpbuf, outlen - 1, outdtsz,     \
-                                              outopts, outblob);               \
-        if (rc == -1)                                                          \
-            return -1;                                                         \
-        rc = CLIENT_##cto##_to_SERVER_##sto(tmpbuf, outlen - 1, isnull, inlcl, \
-                                            inblob, out, outlen, outdtsz,      \
-                                            outopts, outblob);                 \
-    }                                                                          \
+         * flip it again. */ \
+        tmpbuf = alloca(outlen - 1);                                             \
+        rc = CLIENT_##cfrom##_to_CLIENT_##cto(in, inlen, inopts, inblob,         \
+                                              tmpbuf, outlen - 1, outdtsz,       \
+                                              outopts, outblob);                 \
+        if (rc == -1)                                                            \
+            return -1;                                                           \
+        rc = CLIENT_##cto##_to_SERVER_##sto(tmpbuf, outlen - 1, isnull, inlcl,   \
+                                            inblob, out, outlen, outdtsz,        \
+                                            outopts, outblob);                   \
+    }                                                                            \
     return rc;
 
-#define DO_CLIENT_TO_SERVER_STR(cfrom, cto, sto)                               \
-    void *tmpbuf;                                                              \
-    int rc;                                                                    \
-    if (isnull) {                                                              \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    } else {                                                                   \
-        tmpbuf = alloca(outlen + 1);                                           \
-        rc = CLIENT_##cfrom##_to_CLIENT_##cto(in, inlen, inopts, inblob,       \
-                                              tmpbuf, outlen + 1, outdtsz,     \
-                                              outopts, outblob);               \
-        if (rc == -1)                                                          \
-            return -1;                                                         \
-        rc = CLIENT_##cto##_to_##SERVER_##sto(tmpbuf, outlen + 1, isnull,      \
-                                              inopts, inblob, out, outlen,     \
-                                              outdtsz, outopts, outblob);      \
-    }                                                                          \
+#define DO_CLIENT_TO_SERVER_STR(cfrom, cto, sto)                           \
+    void *tmpbuf;                                                          \
+    int rc;                                                                \
+    if (isnull) {                                                          \
+        set_null(out, outlen);                                             \
+        return 0;                                                          \
+    } else {                                                               \
+        tmpbuf = alloca(outlen + 1);                                       \
+        rc = CLIENT_##cfrom##_to_CLIENT_##cto(in, inlen, inopts, inblob,   \
+                                              tmpbuf, outlen + 1, outdtsz, \
+                                              outopts, outblob);           \
+        if (rc == -1)                                                      \
+            return -1;                                                     \
+        rc = CLIENT_##cto##_to_##SERVER_##sto(tmpbuf, outlen + 1, isnull,  \
+                                              inopts, inblob, out, outlen, \
+                                              outdtsz, outopts, outblob);  \
+    }                                                                      \
     return rc;
 
 TYPES_INLINE int CLIENT_CSTR_to_SERVER_BINT(
@@ -5379,8 +5352,8 @@ TYPES_INLINE int CLIENT_BYTEARRAY_to_SERVER_BLOB(
                     outblob->data = malloc(inlen);
                 if (!outblob->data) {
                     logmsg(LOGMSG_ERROR, "CLIENT_BYTEARRAY_to_SERVER_BLOB: "
-                                    "malloc %d failed\n",
-                            inlen);
+                                         "malloc %d failed\n",
+                           inlen);
                     return -1;
                 }
             } else
@@ -5582,9 +5555,9 @@ TYPES_INLINE int CLIENT_BYTEARRAY_to_SERVER_BLOB2(
             outblob->data = malloc(inlen);
 
         if (outblob->data == NULL) {
-            logmsg(LOGMSG_ERROR, 
-                    "CLIENT_BYTEARRAY_to_SERVER_BLOB2: malloc %u failed\n",
-                    inlen);
+            logmsg(LOGMSG_ERROR,
+                   "CLIENT_BYTEARRAY_to_SERVER_BLOB2: malloc %u failed\n",
+                   inlen);
             return -1;
         }
 
@@ -5647,7 +5620,7 @@ TYPES_INLINE int CLIENT_BYTEARRAY_to_SERVER_VUTF8(
 
         if (outblob->data == NULL) {
             logmsg(LOGMSG_ERROR, "CLIENT_BYTEARRAY_to_SERVER_VUTF8: malloc %u failed\n",
-                    inlen);
+                   inlen);
             return -1;
         }
 
@@ -5715,8 +5688,8 @@ static TYPES_INLINE int CLIENT_PSTR2_to_SERVER_VUTF8(
         if (inlen <= 0) {
             /* shouldn't happen */
             logmsg(LOGMSG_ERROR, "CLIENT_PSTR2_to_SERVER_VUTF8: invalid string "
-                            "length: %d\n",
-                    inlen);
+                                 "length: %d\n",
+                   inlen);
             return -1;
         }
 
@@ -5727,7 +5700,7 @@ static TYPES_INLINE int CLIENT_PSTR2_to_SERVER_VUTF8(
 
         if (outblob->data == NULL) {
             logmsg(LOGMSG_ERROR, "CLIENT_PSTR2_to_SERVER_VUTF8: malloc %u failed\n",
-                    inlen);
+                   inlen);
             return -1;
         }
 
@@ -6640,9 +6613,9 @@ static TYPES_INLINE int SERVER_BYTEARRAY_to_SERVER_BLOB(
             outblob->data = malloc(inlen - 1);
 
         if (outblob->data == NULL) {
-            logmsg(LOGMSG_ERROR, 
-                    "SERVER_BYTEARRAY_to_SERVER_BLOB: malloc %u failed\n",
-                    inlen);
+            logmsg(LOGMSG_ERROR,
+                   "SERVER_BYTEARRAY_to_SERVER_BLOB: malloc %u failed\n",
+                   inlen);
             return -1;
         }
 
@@ -6776,9 +6749,9 @@ static int _splitReal_3(const double in, long long *sec, unsigned short *frac);
 static int _splitReal_6(const double in, long long *sec, unsigned int *frac);
 
 /* some forwards to resolve warnings */
-#define S2S_FUNKY_ARGS                                                         \
-    const void *in, int inlen, const struct field_conv_opts *inopts,           \
-        blob_buffer_t *inblob, void *out, int outlen, int *outdtsz,            \
+#define S2S_FUNKY_ARGS                                               \
+    const void *in, int inlen, const struct field_conv_opts *inopts, \
+        blob_buffer_t *inblob, void *out, int outlen, int *outdtsz,  \
         const struct field_conv_opts *outopts, blob_buffer_t *outblob
 
 int SERVER_BREAL_to_SERVER_DATETIME(S2S_FUNKY_ARGS);
@@ -6797,13 +6770,16 @@ static TYPES_INLINE int SERVER_DATETIMEUS_to_SERVER_UINT(S2S_FUNKY_ARGS);
 static TYPES_INLINE int SERVER_DATETIMEUS_to_SERVER_BINT(S2S_FUNKY_ARGS);
 static TYPES_INLINE int SERVER_DATETIMEUS_to_SERVER_BREAL(S2S_FUNKY_ARGS);
 
-#define S2C_FUNKY_ARGS                                                         \
-    const void *in, int inlen, const struct field_conv_opts *inopts,           \
-        blob_buffer_t *inblob, void *out, int outlen, int *outnull,            \
-        int *outdtsz, const struct field_conv_opts *outopts,                   \
+#define S2C_FUNKY_ARGS                                               \
+    const void *in, int inlen, const struct field_conv_opts *inopts, \
+        blob_buffer_t *inblob, void *out, int outlen, int *outnull,  \
+        int *outdtsz, const struct field_conv_opts *outopts,         \
         blob_buffer_t *outblob
 
-static TYPES_INLINE int SERVER_to_CLIENT_NO_CONV(S2C_FUNKY_ARGS) { return -1; }
+static TYPES_INLINE int SERVER_to_CLIENT_NO_CONV(S2C_FUNKY_ARGS)
+{
+    return -1;
+}
 
 #define SERVER_DATETIME_to_CLIENT_BYTEARRAY SERVER_to_CLIENT_NO_CONV
 #define SERVER_DATETIME_to_CLIENT_BLOB SERVER_to_CLIENT_NO_CONV
@@ -6829,7 +6805,7 @@ TYPES_INLINE int SERVER_DATETIME_to_CLIENT_INT(S2C_FUNKY_ARGS)
     /* TMP BROKEN DATETIME */
     if (*(char *)in == 0) {
         return SERVER_UINT_to_CLIENT_INT(in, 9, NULL, NULL, out, outlen,
-                outnull, outdtsz, outopts, NULL);
+                                         outnull, outdtsz, outopts, NULL);
     }
 
     /* good datetime */
@@ -6843,7 +6819,7 @@ static TYPES_INLINE int SERVER_DATETIME_to_CLIENT_UINT(S2C_FUNKY_ARGS)
     /* TMP BROKEN DATETIME */
     if (*(char *)in == 0) {
         return SERVER_UINT_to_CLIENT_UINT(in, 9, NULL, NULL, out, outlen,
-                outnull, outdtsz, outopts, NULL);
+                                          outnull, outdtsz, outopts, NULL);
     }
 
     /* good datetime */
@@ -6859,7 +6835,8 @@ static TYPES_INLINE int SERVER_DATETIME_to_CLIENT_UINT(S2C_FUNKY_ARGS)
 
 /* Convert server datetime/datetimeus to client real */
 #define SERVER_DT_to_CLIENT_REAL_func_body(dt, UDT, prec, frac, fracdt)        \
-    SRV_TP(dt) sdt;                                                            \
+    SRV_TP(dt)                                                                 \
+    sdt;                                                                       \
     double tmp;                                                                \
     const uint8_t *p_in = in;                                                  \
     const uint8_t *p_in_end = (const uint8_t *)in + inlen;                     \
@@ -6889,7 +6866,7 @@ static TYPES_INLINE int SERVER_DATETIME_to_CLIENT_UINT(S2C_FUNKY_ARGS)
     *outnull = 0;                                                              \
                                                                                \
     return 0;                                                                  \
-/* END OF SERVER_DT_to_CLIENT_REAL_func_body */
+    /* END OF SERVER_DT_to_CLIENT_REAL_func_body */
 
 int SERVER_DATETIME_to_CLIENT_REAL(S2C_FUNKY_ARGS)
 {
@@ -6907,8 +6884,10 @@ int SERVER_DATETIMEUS_to_CLIENT_REAL(S2C_FUNKY_ARGS)
 #define SERVER_DT_to_CLIENT_DT_func_body(from_dt, FROM_UDT, from_prec,         \
                                          from_frac, from_fracdt, to_dt, TO_DT, \
                                          to_prec, to_frac, to_fracdt)          \
-    SRV_TP(from_dt) sdt;                                                       \
-    CLT_TP(to_dt) cdt;                                                         \
+    SRV_TP(from_dt)                                                            \
+    sdt;                                                                       \
+    CLT_TP(to_dt)                                                              \
+    cdt;                                                                       \
     struct field_conv_opts_tz *tzopts = (struct field_conv_opts_tz *)outopts;  \
                                                                                \
     const uint8_t *p_in = in;                                                  \
@@ -6969,7 +6948,7 @@ int SERVER_DATETIMEUS_to_CLIENT_REAL(S2C_FUNKY_ARGS)
     *outnull = 0;                                                              \
                                                                                \
     return 0;                                                                  \
-/* END OF SERVER_DT_to_CLIENT_DT_func_body */
+    /* END OF SERVER_DT_to_CLIENT_DT_func_body */
 
 int SERVER_DATETIME_to_CLIENT_DATETIME(S2C_FUNKY_ARGS)
 {
@@ -7003,20 +6982,20 @@ int SERVER_DATETIMEUS_to_CLIENT_DATETIMEUS(S2C_FUNKY_ARGS)
         datetimeus, DATETIMEUS, 6, usec, unsigned int /* to   */);
 }
 
-#define SRV_TYPE_TO_CLT_DATETIME(fff)                                          \
-    server_datetime_t sdt;                                                     \
-    int rc = 0;                                                                \
-    int tmp = 0;                                                               \
-                                                                               \
-    bzero(&sdt, sizeof(sdt));                                                  \
-                                                                               \
-    rc = SERVER_##fff##_to_SERVER_DATETIME(in, inlen, inopts, inblob, &sdt,    \
-                                           sizeof(sdt), &tmp, NULL, NULL);     \
-    if (rc)                                                                    \
-        return rc;                                                             \
-                                                                               \
-    return SERVER_DATETIME_to_CLIENT_DATETIME(&sdt, sizeof(sdt), NULL, NULL,   \
-                                              out, outlen, outnull, outdtsz,   \
+#define SRV_TYPE_TO_CLT_DATETIME(fff)                                        \
+    server_datetime_t sdt;                                                   \
+    int rc = 0;                                                              \
+    int tmp = 0;                                                             \
+                                                                             \
+    bzero(&sdt, sizeof(sdt));                                                \
+                                                                             \
+    rc = SERVER_##fff##_to_SERVER_DATETIME(in, inlen, inopts, inblob, &sdt,  \
+                                           sizeof(sdt), &tmp, NULL, NULL);   \
+    if (rc)                                                                  \
+        return rc;                                                           \
+                                                                             \
+    return SERVER_DATETIME_to_CLIENT_DATETIME(&sdt, sizeof(sdt), NULL, NULL, \
+                                              out, outlen, outnull, outdtsz, \
                                               outopts, outblob);
 
 int SERVER_UINT_to_CLIENT_DATETIME(S2C_FUNKY_ARGS)
@@ -7034,20 +7013,20 @@ int SERVER_BREAL_to_CLIENT_DATETIME(S2C_FUNKY_ARGS)
     SRV_TYPE_TO_CLT_DATETIME(BREAL);
 }
 
-#define SRV_TYPE_TO_CLT_DATETIMEUS(fff)                                        \
-    server_datetimeus_t sdt;                                                   \
-    int rc = 0;                                                                \
-    int tmp = 0;                                                               \
-                                                                               \
-    bzero(&sdt, sizeof(sdt));                                                  \
-                                                                               \
-    rc = SERVER_##fff##_to_SERVER_DATETIMEUS(in, inlen, inopts, inblob, &sdt,  \
-                                             sizeof(sdt), &tmp, NULL, NULL);   \
-    if (rc)                                                                    \
-        return rc;                                                             \
-                                                                               \
-    return SERVER_DATETIMEUS_to_CLIENT_DATETIMEUS(&sdt, sizeof(sdt), NULL,     \
-                                                  NULL, out, outlen, outnull,  \
+#define SRV_TYPE_TO_CLT_DATETIMEUS(fff)                                       \
+    server_datetimeus_t sdt;                                                  \
+    int rc = 0;                                                               \
+    int tmp = 0;                                                              \
+                                                                              \
+    bzero(&sdt, sizeof(sdt));                                                 \
+                                                                              \
+    rc = SERVER_##fff##_to_SERVER_DATETIMEUS(in, inlen, inopts, inblob, &sdt, \
+                                             sizeof(sdt), &tmp, NULL, NULL);  \
+    if (rc)                                                                   \
+        return rc;                                                            \
+                                                                              \
+    return SERVER_DATETIMEUS_to_CLIENT_DATETIMEUS(&sdt, sizeof(sdt), NULL,    \
+                                                  NULL, out, outlen, outnull, \
                                                   outdtsz, outopts, outblob);
 
 int SERVER_UINT_to_CLIENT_DATETIMEUS(S2C_FUNKY_ARGS)
@@ -7210,132 +7189,132 @@ static int _isISO8601(const char *str, int len)
     return 0;
 }
 
-#define string2structtm_ISO_func_body(dt, UDT, minlen, prec, frac, fracdt)     \
-    int offset = 0;                                                            \
-    int ltoken = 0;                                                            \
-    int year = 0, month = 0, day = 0, hh = 0, mm = 0, ss = 0, sss = 0;         \
-    int skipped = 0;                                                           \
-    int sign = 1;                                                              \
-                                                                               \
-    enum {                                                                     \
-        CONV_GEN_ERR = -1,                                                     \
-        CONV_WRONG_FRMT = -2,                                                  \
-        CONV_WRONG_WDAY = -3,                                                  \
-        CONV_WRONG_MON = -4,                                                   \
-        CONV_WRONG_MDAY = -5,                                                  \
-        CONV_WRONG_HOUR = -6,                                                  \
-        CONV_WRONG_MIN = -7,                                                   \
-        CONV_WRONG_SEC = -8,                                                   \
-        CONV_WRONG_MSEC = -9,                                                  \
-        CONV_WRONG_TIME = -10,                                                 \
-        CONV_WRONG_TZNM = -11,                                                 \
-        CONV_WRONG_YEAR = -12,                                                 \
-        CONV_WRONG_USEC = -13,                                                 \
-    };                                                                         \
-                                                                               \
-    /* maybe we should remove this */                                          \
-    if (_isISO8601(in, len) <= 0) {                                            \
-        logmsg(LOGMSG_ERROR,                                                   \
-                "Called string2structtm_ISO with a non ISO8601 string!\n");    \
-        return CONV_WRONG_YEAR;                                                \
-    }                                                                          \
-                                                                               \
-    if (in[0] == '-') {                                                        \
-        sign = -1;                                                             \
-        in++;                                                                  \
-        if (!in)                                                               \
-            return -1;                                                         \
-    } else                                                                     \
-        sign = 1;                                                              \
-                                                                               \
-    /*get year*/                                                               \
-    year = getInt(in, len, &offset, &ltoken, 1, 4, "-/", &skipped);            \
-    if (ltoken < 1 || ltoken > 4)                                              \
-        return CONV_WRONG_YEAR;                                                \
-                                                                               \
-    year *= sign;                                                              \
-                                                                               \
-    /*get month*/                                                              \
-    month = getInt(in, len, &offset, &ltoken, 1, 2, "-/", &skipped);           \
-    if (!ltoken || ltoken > 2)                                                 \
-        return CONV_WRONG_MON;                                                 \
-    /* (month<1 || month>12)*/                                                 \
-                                                                               \
-    /*get day*/                                                                \
-    day = getInt(in, len, &offset, &ltoken, 1, 2, "-T", &skipped);             \
-    if (!ltoken)                                                               \
-        return CONV_WRONG_MDAY;                                                \
-    /*(day <1 || !is_valid_days(year, month, day))*/                           \
-                                                                               \
-    /* get time */                                                             \
-    hh = getInt(in, len, &offset, &ltoken, 1, 2, ":", &skipped);               \
-    if (ltoken) {                                                              \
-        /* hh>=0 hh<=23 */                                                     \
-                                                                               \
-        mm = getInt(in, len, &offset, &ltoken, 1, 2, ":", &skipped);           \
-        if (ltoken) {                                                          \
-            /* mm>=0 && mm<60 */                                               \
-                                                                               \
-            ss = getInt(in, len, &offset, &ltoken, 1, 2, ":. ", &skipped);     \
-            if (ltoken) {                                                      \
-                /* ss >=0 && ss<60 */                                          \
-                                                                               \
+#define string2structtm_ISO_func_body(dt, UDT, minlen, prec, frac, fracdt)       \
+    int offset = 0;                                                              \
+    int ltoken = 0;                                                              \
+    int year = 0, month = 0, day = 0, hh = 0, mm = 0, ss = 0, sss = 0;           \
+    int skipped = 0;                                                             \
+    int sign = 1;                                                                \
+                                                                                 \
+    enum {                                                                       \
+        CONV_GEN_ERR = -1,                                                       \
+        CONV_WRONG_FRMT = -2,                                                    \
+        CONV_WRONG_WDAY = -3,                                                    \
+        CONV_WRONG_MON = -4,                                                     \
+        CONV_WRONG_MDAY = -5,                                                    \
+        CONV_WRONG_HOUR = -6,                                                    \
+        CONV_WRONG_MIN = -7,                                                     \
+        CONV_WRONG_SEC = -8,                                                     \
+        CONV_WRONG_MSEC = -9,                                                    \
+        CONV_WRONG_TIME = -10,                                                   \
+        CONV_WRONG_TZNM = -11,                                                   \
+        CONV_WRONG_YEAR = -12,                                                   \
+        CONV_WRONG_USEC = -13,                                                   \
+    };                                                                           \
+                                                                                 \
+    /* maybe we should remove this */                                            \
+    if (_isISO8601(in, len) <= 0) {                                              \
+        logmsg(LOGMSG_ERROR,                                                     \
+               "Called string2structtm_ISO with a non ISO8601 string!\n");       \
+        return CONV_WRONG_YEAR;                                                  \
+    }                                                                            \
+                                                                                 \
+    if (in[0] == '-') {                                                          \
+        sign = -1;                                                               \
+        in++;                                                                    \
+        if (!in)                                                                 \
+            return -1;                                                           \
+    } else                                                                       \
+        sign = 1;                                                                \
+                                                                                 \
+    /*get year*/                                                                 \
+    year = getInt(in, len, &offset, &ltoken, 1, 4, "-/", &skipped);              \
+    if (ltoken < 1 || ltoken > 4)                                                \
+        return CONV_WRONG_YEAR;                                                  \
+                                                                                 \
+    year *= sign;                                                                \
+                                                                                 \
+    /*get month*/                                                                \
+    month = getInt(in, len, &offset, &ltoken, 1, 2, "-/", &skipped);             \
+    if (!ltoken || ltoken > 2)                                                   \
+        return CONV_WRONG_MON;                                                   \
+    /* (month<1 || month>12)*/                                                   \
+                                                                                 \
+    /*get day*/                                                                  \
+    day = getInt(in, len, &offset, &ltoken, 1, 2, "-T", &skipped);               \
+    if (!ltoken)                                                                 \
+        return CONV_WRONG_MDAY;                                                  \
+    /*(day <1 || !is_valid_days(year, month, day))*/                             \
+                                                                                 \
+    /* get time */                                                               \
+    hh = getInt(in, len, &offset, &ltoken, 1, 2, ":", &skipped);                 \
+    if (ltoken) {                                                                \
+        /* hh>=0 hh<=23 */                                                       \
+                                                                                 \
+        mm = getInt(in, len, &offset, &ltoken, 1, 2, ":", &skipped);             \
+        if (ltoken) {                                                            \
+            /* mm>=0 && mm<60 */                                                 \
+                                                                                 \
+            ss = getInt(in, len, &offset, &ltoken, 1, 2, ":. ", &skipped);       \
+            if (ltoken) {                                                        \
+                /* ss >=0 && ss<60 */                                            \
+                                                                                 \
                 /* check if this is space, which marks the end of time info;   \
-                 */                                                            \
-                /* it will follow the TZ */                                    \
-                if (in[offset - 1] == '.') {                                   \
-                                                                               \
-                    sss = getInt(in, len, &offset, &ltoken, minlen, prec, "",  \
-                                 &skipped);                                    \
-                    if (!ltoken && minlen == prec)                             \
-                        return -1; /* strict mode */                           \
-                    if (!ltoken)                                               \
-                        sss = 0;                                               \
-                                                                               \
-                    /* lets skip redundant digits here */                      \
-                    if (!skipped) {                                            \
-                        while (offset < len && isdigit(in[offset]))            \
-                            offset++;                                          \
-                    }                                                          \
-                } else {                                                       \
-                    if (in[offset - 1] == ' ')                                 \
-                        offset--; /*incremented afterwards*/                   \
-                    sss = 0;                                                   \
-                }                                                              \
-                                                                               \
-            } else                                                             \
-                ss = 0;                                                        \
-        } else                                                                 \
-            mm = 0;                                                            \
-    } else                                                                     \
-        hh = 0;                                                                \
-                                                                               \
-    /* fill in the blanks*/                                                    \
-    out->tm.tm_year = year - 1900;                                             \
-    out->tm.tm_mon = month - 1;                                                \
-    out->tm.tm_mday = day;                                                     \
-    out->tm.tm_hour = hh;                                                      \
-    out->tm.tm_min = mm;                                                       \
-    out->tm.tm_sec = ss;                                                       \
-    out->frac = sss;                                                           \
-                                                                               \
-    if (len == offset) {                                                       \
-        out->tzname[0] = 0;                                                    \
-        return 0; /* tolerate for now no TZ, convopts will make up for it*/    \
-    }                                                                          \
-    if ((offset + 1 == len) && (in[offset] == 'z' || in[offset] == 'Z')) {     \
-        /* Zulu notation */                                                    \
-        strncpy(out->tzname, "UTC", 4);                                        \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    if (in[offset] && in[offset] != ' ')                                       \
-        return -1;                                                             \
-                                                                               \
-    offset++; /*jump over separator*/                                          \
-                                                                               \
-    return get_tzname(out->tzname, in + offset, len - offset);                 \
-/* END OF string2structtm_ISO_func_body */
+                 */ \
+                /* it will follow the TZ */                                      \
+                if (in[offset - 1] == '.') {                                     \
+                                                                                 \
+                    sss = getInt(in, len, &offset, &ltoken, minlen, prec, "",    \
+                                 &skipped);                                      \
+                    if (!ltoken && minlen == prec)                               \
+                        return -1; /* strict mode */                             \
+                    if (!ltoken)                                                 \
+                        sss = 0;                                                 \
+                                                                                 \
+                    /* lets skip redundant digits here */                        \
+                    if (!skipped) {                                              \
+                        while (offset < len && isdigit(in[offset]))              \
+                            offset++;                                            \
+                    }                                                            \
+                } else {                                                         \
+                    if (in[offset - 1] == ' ')                                   \
+                        offset--; /*incremented afterwards*/                     \
+                    sss = 0;                                                     \
+                }                                                                \
+                                                                                 \
+            } else                                                               \
+                ss = 0;                                                          \
+        } else                                                                   \
+            mm = 0;                                                              \
+    } else                                                                       \
+        hh = 0;                                                                  \
+                                                                                 \
+    /* fill in the blanks*/                                                      \
+    out->tm.tm_year = year - 1900;                                               \
+    out->tm.tm_mon = month - 1;                                                  \
+    out->tm.tm_mday = day;                                                       \
+    out->tm.tm_hour = hh;                                                        \
+    out->tm.tm_min = mm;                                                         \
+    out->tm.tm_sec = ss;                                                         \
+    out->frac = sss;                                                             \
+                                                                                 \
+    if (len == offset) {                                                         \
+        out->tzname[0] = 0;                                                      \
+        return 0; /* tolerate for now no TZ, convopts will make up for it*/      \
+    }                                                                            \
+    if ((offset + 1 == len) && (in[offset] == 'z' || in[offset] == 'Z')) {       \
+        /* Zulu notation */                                                      \
+        strncpy(out->tzname, "UTC", 4);                                          \
+        return 0;                                                                \
+    }                                                                            \
+                                                                                 \
+    if (in[offset] && in[offset] != ' ')                                         \
+        return -1;                                                               \
+                                                                                 \
+    offset++; /*jump over separator*/                                            \
+                                                                                 \
+    return get_tzname(out->tzname, in + offset, len - offset);                   \
+    /* END OF string2structtm_ISO_func_body */
 
 int string2structdatetime_ISO(char *in, int len, cdb2_client_datetime_t *out)
 {
@@ -7350,15 +7329,15 @@ int string2structdatetimeus_ISO(char *in, int len,
                                   unsigned int);
 }
 
-#define structtm2string_ISO_func_body(dt, UDT, prec, frac, fracdt)             \
-    if (in->tm.tm_year + 1900 > 9999 || in->tm.tm_year + 1900 < -9999)         \
-        return -1;                                                             \
-    snprintf(out, outlen, "%4.4d-%2.2u-%2.2uT%2.2u%2.2u%2.2u.%*.*u %s",        \
-             in->tm.tm_year + 1900, in->tm.tm_mon + 1, in->tm.tm_mday,         \
-             in->tm.tm_hour, in->tm.tm_min, in->tm.tm_sec, prec, prec,         \
-             in->frac, in->tzname);                                            \
-    return 0;                                                                  \
-/* END OF structm2string_ISO_func_body */
+#define structtm2string_ISO_func_body(dt, UDT, prec, frac, fracdt)      \
+    if (in->tm.tm_year + 1900 > 9999 || in->tm.tm_year + 1900 < -9999)  \
+        return -1;                                                      \
+    snprintf(out, outlen, "%4.4d-%2.2u-%2.2uT%2.2u%2.2u%2.2u.%*.*u %s", \
+             in->tm.tm_year + 1900, in->tm.tm_mon + 1, in->tm.tm_mday,  \
+             in->tm.tm_hour, in->tm.tm_min, in->tm.tm_sec, prec, prec,  \
+             in->frac, in->tzname);                                     \
+    return 0;                                                           \
+    /* END OF structm2string_ISO_func_body */
 
 int structdatetime2string_ISO(cdb2_client_datetime_t *in, char *out, int outlen)
 {
@@ -7372,84 +7351,86 @@ static int structdatetimeus2string_ISO(cdb2_client_datetimeus_t *in, char *out,
                                   unsigned int);
 }
 
-#define SERVER_BCSTR_to_CLIENT_DT_func_body(dt, UDT, prec, frac, fracdt)       \
-    int rc = 0;                                                                \
-    int to_little = 0;                                                         \
-                                                                               \
-    /* paranoia tests */                                                       \
-    if (!outopts || !(outopts->flags & FLD_CONV_TZONE))                        \
-        return -1;                                                             \
-    if (!in || !out)                                                           \
-        return -1;                                                             \
-                                                                               \
-    /* null? */                                                                \
-    if (stype_is_null(in)) {                                                   \
-        *outnull = 1;                                                          \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* Determine if the to-data is little endian. */                           \
-    if (outopts && outopts->flags & FLD_CONV_LENDIAN) {                        \
-        to_little = 1;                                                         \
-    }                                                                          \
-                                                                               \
-    rc = _isISO8601((char *)in + 1, inlen - 1);                                \
-    if (rc > 0) {                                                              \
-        CLT_TP(dt) cdt;                                                        \
-        int ret;                                                               \
-                                                                               \
-        uint8_t *p_out = out;                                                  \
-        const uint8_t *p_out_start = out;                                      \
-        const uint8_t *p_out_end = (const uint8_t *)out + outlen;              \
-                                                                               \
-        if ((ret = string2struct##dt##_ISO(((char *)in) + 1, inlen - 1,        \
-                                           &cdt)) != 0)                        \
-            return ret;                                                        \
-                                                                               \
-        if (!cdt.tzname[0])                                                    \
-            strncpy0(cdt.tzname,                                               \
-                     ((struct field_conv_opts_tz *)outopts)->tzname,           \
-                     sizeof(cdt.tzname));                                      \
+#define SERVER_BCSTR_to_CLIENT_DT_func_body(dt, UDT, prec, frac, fracdt)         \
+    int rc = 0;                                                                  \
+    int to_little = 0;                                                           \
+                                                                                 \
+    /* paranoia tests */                                                         \
+    if (!outopts || !(outopts->flags & FLD_CONV_TZONE))                          \
+        return -1;                                                               \
+    if (!in || !out)                                                             \
+        return -1;                                                               \
+                                                                                 \
+    /* null? */                                                                  \
+    if (stype_is_null(in)) {                                                     \
+        *outnull = 1;                                                            \
+        return 0;                                                                \
+    }                                                                            \
+                                                                                 \
+    /* Determine if the to-data is little endian. */                             \
+    if (outopts && outopts->flags & FLD_CONV_LENDIAN) {                          \
+        to_little = 1;                                                           \
+    }                                                                            \
+                                                                                 \
+    rc = _isISO8601((char *)in + 1, inlen - 1);                                  \
+    if (rc > 0) {                                                                \
+        CLT_TP(dt)                                                               \
+        cdt;                                                                     \
+        int ret;                                                                 \
+                                                                                 \
+        uint8_t *p_out = out;                                                    \
+        const uint8_t *p_out_start = out;                                        \
+        const uint8_t *p_out_end = (const uint8_t *)out + outlen;                \
+                                                                                 \
+        if ((ret = string2struct##dt##_ISO(((char *)in) + 1, inlen - 1,          \
+                                           &cdt)) != 0)                          \
+            return ret;                                                          \
+                                                                                 \
+        if (!cdt.tzname[0])                                                      \
+            strncpy0(cdt.tzname,                                                 \
+                     ((struct field_conv_opts_tz *)outopts)->tzname,             \
+                     sizeof(cdt.tzname));                                        \
         /* IF CLIENT THE TIMEZONELESS FIELD WAS STORED IN A DIFFERENT TIMEZONE \
-         */                                                                    \
-        /* THE PROVIDED CLIENT_DATETIME IS WRONG. THIS IS AS MUCH WE CAN DO */ \
-        /* GIVEN THE AMOUNT OF INFORMATION WE HAVE */                          \
-                                                                               \
-        /* all is good, fill the user value */                                 \
-        if (!(p_out = client_##dt##_put_switch(&cdt, p_out, p_out_end,         \
-                                               to_little))) {                  \
-            return -1;                                                         \
-        }                                                                      \
-        *outdtsz = p_out - p_out_start;                                        \
-        *outnull = 0;                                                          \
-                                                                               \
-        return 0;                                                              \
-    } else if (rc == 0) {                                                      \
+         */ \
+        /* THE PROVIDED CLIENT_DATETIME IS WRONG. THIS IS AS MUCH WE CAN DO */   \
+        /* GIVEN THE AMOUNT OF INFORMATION WE HAVE */                            \
+                                                                                 \
+        /* all is good, fill the user value */                                   \
+        if (!(p_out = client_##dt##_put_switch(&cdt, p_out, p_out_end,           \
+                                               to_little))) {                    \
+            return -1;                                                           \
+        }                                                                        \
+        *outdtsz = p_out - p_out_start;                                          \
+        *outnull = 0;                                                            \
+                                                                                 \
+        return 0;                                                                \
+    } else if (rc == 0) {                                                        \
         /* we have here a epoch seconds and a fractional part as msec or usec  \
-         */                                                                    \
-        double tmp;                                                            \
-        SRV_TP(dt) sdt;                                                        \
-                                                                               \
-        bzero(&sdt, sizeof(sdt));                                              \
-        bset(&sdt, data_bit);                                                  \
-                                                                               \
-        tmp = atof((char *)in + 1);                                            \
-                                                                               \
-        if (_splitReal_##prec(tmp, &sdt.sec, &sdt.frac))                       \
-            return -1;                                                         \
-                                                                               \
-        int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                             \
-        sdt.sec = flibc_htonll(sdt.sec);                                       \
-        sdt.frac = (sizeof(fracdt) == sizeof(uint16_t)) ? htons(sdt.frac)      \
-                                                        : htonl(sdt.frac);     \
-                                                                               \
-        return SERVER_##UDT##_to_CLIENT_##UDT(&sdt, sizeof(sdt), NULL, NULL,   \
-                                              out, outlen, outnull, outdtsz,   \
-                                              outopts, NULL);                  \
-    } else {                                                                   \
-        /*error */                                                             \
-        return -1;                                                             \
-    }                                                                          \
+         */ \
+        double tmp;                                                              \
+        SRV_TP(dt)                                                               \
+        sdt;                                                                     \
+                                                                                 \
+        bzero(&sdt, sizeof(sdt));                                                \
+        bset(&sdt, data_bit);                                                    \
+                                                                                 \
+        tmp = atof((char *)in + 1);                                              \
+                                                                                 \
+        if (_splitReal_##prec(tmp, &sdt.sec, &sdt.frac))                         \
+            return -1;                                                           \
+                                                                                 \
+        int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                               \
+        sdt.sec = flibc_htonll(sdt.sec);                                         \
+        sdt.frac = (sizeof(fracdt) == sizeof(uint16_t)) ? htons(sdt.frac)        \
+                                                        : htonl(sdt.frac);       \
+                                                                                 \
+        return SERVER_##UDT##_to_CLIENT_##UDT(&sdt, sizeof(sdt), NULL, NULL,     \
+                                              out, outlen, outnull, outdtsz,     \
+                                              outopts, NULL);                    \
+    } else {                                                                     \
+        /*error */                                                               \
+        return -1;                                                               \
+    }                                                                            \
     /* END OF SERVER_BCSTR_to_CLIENT_DT_func_body */
 
 int SERVER_BCSTR_to_CLIENT_DATETIME(S2C_FUNKY_ARGS)
@@ -7464,47 +7445,48 @@ int SERVER_BCSTR_to_CLIENT_DATETIMEUS(S2C_FUNKY_ARGS)
                                         unsigned int);
 }
 
-#define SERVER_DT_to_CLIENT_CSTR_func_body(dt, UDT, prec, frac, fracdt)        \
-    int ret;                                                                   \
-    CLT_TP(dt) cdt;                                                            \
-    uint8_t dt_buf[sizeof(cdt)];                                               \
-    int outdtsz_dup;                                                           \
-    int outnull_dup;                                                           \
-    int to_little = 0;                                                         \
-                                                                               \
-    uint8_t *p_dt_buf = dt_buf;                                                \
-    const uint8_t *p_dt_buf_end = dt_buf + sizeof(dt_buf);                     \
-                                                                               \
-    /* null? */                                                                \
-    if (stype_is_null(in)) {                                                   \
-        *outnull = 1;                                                          \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* Determine if the to-data is little endian. */                           \
-    if (outopts && outopts->flags & FLD_CONV_LENDIAN) {                        \
-        to_little = 1;                                                         \
-    }                                                                          \
-                                                                               \
-    ret = SERVER_##UDT##_to_CLIENT_##UDT(in, inlen, inopts, NULL, &dt_buf,     \
-                                         sizeof(dt_buf), &outnull_dup,         \
-                                         &outdtsz_dup, outopts, NULL);         \
-    if (ret) {                                                                 \
-        return ret;                                                            \
-    }                                                                          \
-                                                                               \
-    if (!client_##dt##_get_switch(&cdt, p_dt_buf, p_dt_buf_end, to_little))    \
-        return -1;                                                             \
-                                                                               \
-    ret = struct##dt##2string_ISO(&cdt, out, outlen);                          \
-    if (ret) {                                                                 \
-        return ret;                                                            \
-    }                                                                          \
-    *outdtsz = strlen(out) + 1;                                                \
-    *outnull = 0;                                                              \
-                                                                               \
-    return 0;                                                                  \
-/* END OF SERVER_DT_to_CLIENT_CSTR_func_body */
+#define SERVER_DT_to_CLIENT_CSTR_func_body(dt, UDT, prec, frac, fracdt)     \
+    int ret;                                                                \
+    CLT_TP(dt)                                                              \
+    cdt;                                                                    \
+    uint8_t dt_buf[sizeof(cdt)];                                            \
+    int outdtsz_dup;                                                        \
+    int outnull_dup;                                                        \
+    int to_little = 0;                                                      \
+                                                                            \
+    uint8_t *p_dt_buf = dt_buf;                                             \
+    const uint8_t *p_dt_buf_end = dt_buf + sizeof(dt_buf);                  \
+                                                                            \
+    /* null? */                                                             \
+    if (stype_is_null(in)) {                                                \
+        *outnull = 1;                                                       \
+        return 0;                                                           \
+    }                                                                       \
+                                                                            \
+    /* Determine if the to-data is little endian. */                        \
+    if (outopts && outopts->flags & FLD_CONV_LENDIAN) {                     \
+        to_little = 1;                                                      \
+    }                                                                       \
+                                                                            \
+    ret = SERVER_##UDT##_to_CLIENT_##UDT(in, inlen, inopts, NULL, &dt_buf,  \
+                                         sizeof(dt_buf), &outnull_dup,      \
+                                         &outdtsz_dup, outopts, NULL);      \
+    if (ret) {                                                              \
+        return ret;                                                         \
+    }                                                                       \
+                                                                            \
+    if (!client_##dt##_get_switch(&cdt, p_dt_buf, p_dt_buf_end, to_little)) \
+        return -1;                                                          \
+                                                                            \
+    ret = struct##dt##2string_ISO(&cdt, out, outlen);                       \
+    if (ret) {                                                              \
+        return ret;                                                         \
+    }                                                                       \
+    *outdtsz = strlen(out) + 1;                                             \
+    *outnull = 0;                                                           \
+                                                                            \
+    return 0;                                                               \
+    /* END OF SERVER_DT_to_CLIENT_CSTR_func_body */
 
 int SERVER_DATETIME_to_CLIENT_CSTR(S2C_FUNKY_ARGS)
 {
@@ -7518,20 +7500,20 @@ int SERVER_DATETIMEUS_to_CLIENT_CSTR(S2C_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define SERVER_DT_to_CLIENT_PSTR_func_body(dt, UDT, prec, frac, fracdt)        \
-    int ret = 0;                                                               \
-                                                                               \
-    ret = SERVER_##UDT##_to_CLIENT_CSTR(in, inlen, inopts, NULL, out, outlen,  \
-                                        outnull, outdtsz, outopts, NULL);      \
-    if (ret)                                                                   \
-        return ret;                                                            \
-    if (*outnull)                                                              \
-        return 0;                                                              \
-                                                                               \
-    /* convert out from CSTR to PSTR */                                        \
-    ((char *)out)[*outdtsz - 1] = ' ';                                         \
-    return 0;                                                                  \
-/* END OF SERVER_DT_to_CLIENT_PSTR_func_body */
+#define SERVER_DT_to_CLIENT_PSTR_func_body(dt, UDT, prec, frac, fracdt)       \
+    int ret = 0;                                                              \
+                                                                              \
+    ret = SERVER_##UDT##_to_CLIENT_CSTR(in, inlen, inopts, NULL, out, outlen, \
+                                        outnull, outdtsz, outopts, NULL);     \
+    if (ret)                                                                  \
+        return ret;                                                           \
+    if (*outnull)                                                             \
+        return 0;                                                             \
+                                                                              \
+    /* convert out from CSTR to PSTR */                                       \
+    ((char *)out)[*outdtsz - 1] = ' ';                                        \
+    return 0;                                                                 \
+    /* END OF SERVER_DT_to_CLIENT_PSTR_func_body */
 
 int SERVER_DATETIME_to_CLIENT_PSTR(S2C_FUNKY_ARGS)
 {
@@ -7545,21 +7527,21 @@ int SERVER_DATETIMEUS_to_CLIENT_PSTR(S2C_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define SERVER_DT_to_CLIENT_PSTR2_func_body(dt, UDT, prec, frac, fracdt)       \
-    int ret = 0;                                                               \
-                                                                               \
-    ret = SERVER_##UDT##_to_CLIENT_CSTR(in, inlen, inopts, NULL, out, outlen,  \
-                                        outnull, outdtsz, outopts, NULL);      \
-    if (ret)                                                                   \
-        return ret;                                                            \
-    if (*outnull)                                                              \
-        return 0;                                                              \
-                                                                               \
-    /* convert out from CSTR to PSTR */                                        \
-    for (ret = *outdtsz - 1; ret < outlen; ret++)                              \
-        ((char *)out)[ret] = ' ';                                              \
-    return 0;                                                                  \
-/* END OF SERVER_DT_to_CLIENT_PSTR2_func_body */
+#define SERVER_DT_to_CLIENT_PSTR2_func_body(dt, UDT, prec, frac, fracdt)      \
+    int ret = 0;                                                              \
+                                                                              \
+    ret = SERVER_##UDT##_to_CLIENT_CSTR(in, inlen, inopts, NULL, out, outlen, \
+                                        outnull, outdtsz, outopts, NULL);     \
+    if (ret)                                                                  \
+        return ret;                                                           \
+    if (*outnull)                                                             \
+        return 0;                                                             \
+                                                                              \
+    /* convert out from CSTR to PSTR */                                       \
+    for (ret = *outdtsz - 1; ret < outlen; ret++)                             \
+        ((char *)out)[ret] = ' ';                                             \
+    return 0;                                                                 \
+    /* END OF SERVER_DT_to_CLIENT_PSTR2_func_body */
 
 int SERVER_DATETIME_to_CLIENT_PSTR2(S2C_FUNKY_ARGS)
 {
@@ -7573,13 +7555,16 @@ int SERVER_DATETIMEUS_to_CLIENT_PSTR2(S2C_FUNKY_ARGS)
                                         unsigned int);
 }
 
-#define C2S_FUNKY_ARGS                                                         \
-    const void *in, int inlen, int isnull,                                     \
-        const struct field_conv_opts *inopts, blob_buffer_t *inblob,           \
-        void *out, int outlen, int *outdtsz,                                   \
+#define C2S_FUNKY_ARGS                                               \
+    const void *in, int inlen, int isnull,                           \
+        const struct field_conv_opts *inopts, blob_buffer_t *inblob, \
+        void *out, int outlen, int *outdtsz,                         \
         const struct field_conv_opts *outopts, blob_buffer_t *outblob
 
-static TYPES_INLINE int CLIENT_to_SERVER_NO_CONV(C2S_FUNKY_ARGS) { return -1; }
+static TYPES_INLINE int CLIENT_to_SERVER_NO_CONV(C2S_FUNKY_ARGS)
+{
+    return -1;
+}
 
 #define CLIENT_DATETIME_to_SERVER_BYTEARRAY CLIENT_to_SERVER_NO_CONV
 #define CLIENT_DATETIME_to_SERVER_BLOB CLIENT_to_SERVER_NO_CONV
@@ -7610,87 +7595,89 @@ int datetime_check_range(long long secs, int fracs)
     return 0;
 }
 
-#define CLIENT_DT_to_SERVER_DT_func_body(from_dt, FROM_UDT, from_prec,         \
-                                         from_frac, from_fracdt, to_dt,        \
-                                         TO_UDT, to_prec, to_frac, to_fracdt)  \
-    CLT_TP(from_dt) cdt;                                                       \
-    SRV_TP(to_dt) sdt;                                                         \
-    struct tm tm = {0};                                                        \
-    char *actualtzname = NULL;                                                 \
-                                                                               \
-    uint8_t *p_in = (uint8_t *)in;                                             \
-    const uint8_t *p_in_end = (const uint8_t *)in + inlen;                     \
-                                                                               \
-    uint8_t *p_out = out;                                                      \
-    const uint8_t *p_out_start = out;                                          \
-    const uint8_t *p_out_end = (const uint8_t *)out + outlen;                  \
-    int from_little = 0;                                                       \
-                                                                               \
-    /* paranoia testing */                                                     \
-    if (!in || !out)                                                           \
-        return -1;                                                             \
-                                                                               \
-    /* null? */                                                                \
-    if (isnull) {                                                              \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* Determine if the to-data is little endian. */                           \
-    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                          \
-        from_little = 1;                                                       \
-    }                                                                          \
-                                                                               \
-    /* unpack */                                                               \
-    if (!client_##from_dt##_get_switch(&cdt, p_in, p_in_end, from_little)) {   \
-        return -1;                                                             \
-    }                                                                          \
-                                                                               \
-    if (!cdt.tzname[0] && (!inopts || !(inopts->flags & FLD_CONV_TZONE))) {    \
-        return -1;                                                             \
-    }                                                                          \
-    actualtzname = (cdt.tzname[0])                                             \
-                       ? cdt.tzname                                            \
-                       : ((struct field_conv_opts_tz *)inopts)->tzname;        \
-                                                                               \
-    /* convert */                                                              \
-    memcpy(&tm, &cdt.tm, sizeof(cdt.tm));                                      \
-    if ((sdt.sec = db_struct2time(actualtzname, &tm)) == -1 && errno) {        \
-        return -1;                                                             \
-    }                                                                          \
-                                                                               \
-    /* check if the time was correct in the first place */                     \
-    if (cdt.tm.tm_isdst != tm.tm_isdst) {                                      \
-        /* we've been corrected by library, correct and do it again */         \
-        memcpy(&tm, &cdt.tm, sizeof(struct tm));                               \
-        tm.tm_isdst = (tm.tm_isdst) ? 0 : 1;                                   \
-                                                                               \
-        if ((sdt.sec = db_struct2time(actualtzname, &tm)) == -1 && errno) {    \
-            return -1;                                                         \
-        }                                                                      \
-    }                                                                          \
-                                                                               \
-    /* fill in */                                                              \
-    sdt.flag = 0;                                                              \
-    bset(&sdt, data_bit);                                                      \
-                                                                               \
-    /*normalize*/                                                              \
-    sdt.to_frac = (cdt.from_frac * IPOW10(to_prec) / IPOW10(from_prec)) %      \
-                  IPOW10(to_prec);                                             \
-    sdt.sec += (cdt.from_frac * IPOW10(to_prec) / IPOW10(from_prec)) /         \
-               IPOW10(to_prec);                                                \
-                                                                               \
-    if (datetime_check_range(sdt.sec, sdt.to_frac))                            \
-        return -1;                                                             \
-                                                                               \
-    int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                                 \
-    if (!(p_out = server_##to_dt##_put(&sdt, p_out, p_out_end))) {             \
-        return -1;                                                             \
-    }                                                                          \
-    *outdtsz = p_out - p_out_start;                                            \
-                                                                               \
-    return 0;                                                                  \
-/* END OF CLIENT_DT_to_SERVER_DT_func_body */
+#define CLIENT_DT_to_SERVER_DT_func_body(from_dt, FROM_UDT, from_prec,        \
+                                         from_frac, from_fracdt, to_dt,       \
+                                         TO_UDT, to_prec, to_frac, to_fracdt) \
+    CLT_TP(from_dt)                                                           \
+    cdt;                                                                      \
+    SRV_TP(to_dt)                                                             \
+    sdt;                                                                      \
+    struct tm tm = {0};                                                       \
+    char *actualtzname = NULL;                                                \
+                                                                              \
+    uint8_t *p_in = (uint8_t *)in;                                            \
+    const uint8_t *p_in_end = (const uint8_t *)in + inlen;                    \
+                                                                              \
+    uint8_t *p_out = out;                                                     \
+    const uint8_t *p_out_start = out;                                         \
+    const uint8_t *p_out_end = (const uint8_t *)out + outlen;                 \
+    int from_little = 0;                                                      \
+                                                                              \
+    /* paranoia testing */                                                    \
+    if (!in || !out)                                                          \
+        return -1;                                                            \
+                                                                              \
+    /* null? */                                                               \
+    if (isnull) {                                                             \
+        set_null(out, outlen);                                                \
+        return 0;                                                             \
+    }                                                                         \
+                                                                              \
+    /* Determine if the to-data is little endian. */                          \
+    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                         \
+        from_little = 1;                                                      \
+    }                                                                         \
+                                                                              \
+    /* unpack */                                                              \
+    if (!client_##from_dt##_get_switch(&cdt, p_in, p_in_end, from_little)) {  \
+        return -1;                                                            \
+    }                                                                         \
+                                                                              \
+    if (!cdt.tzname[0] && (!inopts || !(inopts->flags & FLD_CONV_TZONE))) {   \
+        return -1;                                                            \
+    }                                                                         \
+    actualtzname = (cdt.tzname[0])                                            \
+                       ? cdt.tzname                                           \
+                       : ((struct field_conv_opts_tz *)inopts)->tzname;       \
+                                                                              \
+    /* convert */                                                             \
+    memcpy(&tm, &cdt.tm, sizeof(cdt.tm));                                     \
+    if ((sdt.sec = db_struct2time(actualtzname, &tm)) == -1 && errno) {       \
+        return -1;                                                            \
+    }                                                                         \
+                                                                              \
+    /* check if the time was correct in the first place */                    \
+    if (cdt.tm.tm_isdst != tm.tm_isdst) {                                     \
+        /* we've been corrected by library, correct and do it again */        \
+        memcpy(&tm, &cdt.tm, sizeof(struct tm));                              \
+        tm.tm_isdst = (tm.tm_isdst) ? 0 : 1;                                  \
+                                                                              \
+        if ((sdt.sec = db_struct2time(actualtzname, &tm)) == -1 && errno) {   \
+            return -1;                                                        \
+        }                                                                     \
+    }                                                                         \
+                                                                              \
+    /* fill in */                                                             \
+    sdt.flag = 0;                                                             \
+    bset(&sdt, data_bit);                                                     \
+                                                                              \
+    /*normalize*/                                                             \
+    sdt.to_frac = (cdt.from_frac * IPOW10(to_prec) / IPOW10(from_prec)) %     \
+                  IPOW10(to_prec);                                            \
+    sdt.sec += (cdt.from_frac * IPOW10(to_prec) / IPOW10(from_prec)) /        \
+               IPOW10(to_prec);                                               \
+                                                                              \
+    if (datetime_check_range(sdt.sec, sdt.to_frac))                           \
+        return -1;                                                            \
+                                                                              \
+    int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                                \
+    if (!(p_out = server_##to_dt##_put(&sdt, p_out, p_out_end))) {            \
+        return -1;                                                            \
+    }                                                                         \
+    *outdtsz = p_out - p_out_start;                                           \
+                                                                              \
+    return 0;                                                                 \
+    /* END OF CLIENT_DT_to_SERVER_DT_func_body */
 
 int CLIENT_DATETIME_to_SERVER_DATETIME(C2S_FUNKY_ARGS)
 {
@@ -7756,19 +7743,19 @@ static TYPES_INLINE int CLIENT_DATETIME_to_SERVER_BREAL(C2S_FUNKY_ARGS)
     CLT_DATETIME_TO_SRV_TYPE(BREAL);
 }
 
-#define CLT_DATETIMEUS_TO_SRV_TYPE(to)                                         \
-    server_datetimeus_t sdt;                                                   \
-    int tmp;                                                                   \
-    int rc;                                                                    \
-                                                                               \
-    rc = CLIENT_DATETIMEUS_to_SERVER_DATETIMEUS(in, inlen, isnull, inopts,     \
-                                                inblob, &sdt, sizeof(sdt),     \
-                                                &tmp, NULL, NULL);             \
-    if (rc)                                                                    \
-        return rc;                                                             \
-                                                                               \
-    return SERVER_DATETIMEUS_to_SERVER_##to(&sdt, sizeof(sdt), NULL, NULL,     \
-                                            out, outlen, outdtsz, outopts,     \
+#define CLT_DATETIMEUS_TO_SRV_TYPE(to)                                     \
+    server_datetimeus_t sdt;                                               \
+    int tmp;                                                               \
+    int rc;                                                                \
+                                                                           \
+    rc = CLIENT_DATETIMEUS_to_SERVER_DATETIMEUS(in, inlen, isnull, inopts, \
+                                                inblob, &sdt, sizeof(sdt), \
+                                                &tmp, NULL, NULL);         \
+    if (rc)                                                                \
+        return rc;                                                         \
+                                                                           \
+    return SERVER_DATETIMEUS_to_SERVER_##to(&sdt, sizeof(sdt), NULL, NULL, \
+                                            out, outlen, outdtsz, outopts, \
                                             outblob);
 
 static TYPES_INLINE int CLIENT_DATETIMEUS_to_SERVER_UINT(C2S_FUNKY_ARGS)
@@ -7786,134 +7773,136 @@ static TYPES_INLINE int CLIENT_DATETIMEUS_to_SERVER_BREAL(C2S_FUNKY_ARGS)
     CLT_DATETIMEUS_TO_SRV_TYPE(BREAL);
 }
 
-#define CLIENT_CSTR_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)        \
-    int rc = 0;                                                                \
-                                                                               \
-    /* paranoia tests */                                                       \
-    /*if( !inopts || !(inopts->flags & FLD_CONV_TZONE)) return -1;*/           \
-    if (!in || !out)                                                           \
-        return -1;                                                             \
-                                                                               \
-    /* null? */                                                                \
-    if (isnull) {                                                              \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* patch: the string could contain actually a number */                    \
-    rc = _isISO8601((char *)in, inlen);                                        \
-    if (rc > 0) {                                                              \
-        int ret;                                                               \
-        CLT_TP(dt) cdt;                                                        \
-        uint8_t cdt_buf[sizeof(cdt)];                                          \
-        struct field_conv_opts_tz tzopts;                                      \
-                                                                               \
-        uint8_t *p_buf = cdt_buf;                                              \
-        const uint8_t *p_cdt_buf_end = cdt_buf + sizeof(cdt_buf);              \
-                                                                               \
-        bzero(&cdt, sizeof(cdt));                                              \
-                                                                               \
-        if ((ret = string2struct##dt##_ISO((char *)in, inlen, &cdt)) != 0) {   \
-            return ret;                                                        \
-        }                                                                      \
-                                                                               \
-        if (!cdt.tzname[0] &&                                                  \
-            (!inopts || !(inopts->flags & FLD_CONV_TZONE))) {                  \
-            return -1;                                                         \
-        }                                                                      \
-                                                                               \
-        if (!cdt.tzname[0])                                                    \
-            strncpy0(cdt.tzname,                                               \
-                     ((struct field_conv_opts_tz *)inopts)->tzname,            \
-                     sizeof(cdt.tzname));                                      \
-                                                                               \
-        if (inopts)                                                            \
-            memcpy(&tzopts, inopts, sizeof(*inopts));                          \
-                                                                               \
-        else                                                                   \
-            bzero(&tzopts, sizeof(tzopts));                                    \
-                                                                               \
-        tzopts.flags |= FLD_CONV_TZONE;                                        \
-                                                                               \
-        /* Remove the little-endian. */                                        \
-        tzopts.flags &= ~(FLD_CONV_LENDIAN);                                   \
-                                                                               \
-        memcpy(tzopts.tzname, cdt.tzname, DB_MAX_TZNAMEDB);                    \
-                                                                               \
-        if (!(p_buf = client_##dt##_put(&cdt, cdt_buf, p_cdt_buf_end))) {      \
-            return -1;                                                         \
-        }                                                                      \
-                                                                               \
-        if ((ret = CLIENT_##UDT##_to_SERVER_##UDT(                             \
-                 &cdt_buf, sizeof(cdt_buf), 0,                                 \
-                 (struct field_conv_opts *)&tzopts, NULL, out, outlen,         \
-                 outdtsz, outopts, NULL)) != 0) {                              \
-            return ret;                                                        \
-        }                                                                      \
-                                                                               \
-        /* hack to determine the correct setting for the tm.tm_isdst flag*/    \
-        if (!cdt.tm.tm_isdst) {                                                \
-            return 0;                                                          \
-        }                                                                      \
-                                                                               \
-        /* time was DST, and cdt is now changed, time transform again this */  \
-        /* time with DST set*/                                                 \
-        bzero(&cdt, sizeof(cdt));                                              \
-        if ((ret = string2struct##dt##_ISO((char *)in, inlen, &cdt)) != 0) {   \
-            return ret;                                                        \
-        }                                                                      \
-        cdt.tm.tm_isdst = 1;                                                   \
-        if (!cdt.tzname[0])                                                    \
-            strncpy0(cdt.tzname,                                               \
-                     ((struct field_conv_opts_tz *)inopts)->tzname,            \
-                     sizeof(cdt.tzname));                                      \
-                                                                               \
-        if (!(p_buf = client_##dt##_put(&cdt, cdt_buf, p_cdt_buf_end))) {      \
-            return -1;                                                         \
-        }                                                                      \
-                                                                               \
-        rc = CLIENT_##UDT##_to_SERVER_##UDT(                                   \
-            &cdt_buf, sizeof(cdt_buf), 0, (struct field_conv_opts *)&tzopts,   \
-            NULL, out, outlen, outdtsz, outopts, NULL);                        \
-                                                                               \
-        return rc;                                                             \
-    } else if (rc == 0) {                                                      \
-        /* we have here a epoch seconds and a fractional part as msec */       \
-        double tmp = 0;                                                        \
-        SRV_TP(dt) sdt;                                                        \
-        char nulterm[inlen + 1];                                               \
-                                                                               \
-        uint8_t *p_out = out;                                                  \
-        const uint8_t *p_out_start = out;                                      \
-        const uint8_t *p_out_end = (const uint8_t *)out + outlen;              \
-                                                                               \
-        if (outlen != sizeof(SRV_TP(dt)))                                      \
-            return -1;                                                         \
-                                                                               \
-        memcpy(nulterm, in, inlen);                                            \
-        nulterm[inlen] = 0;                                                    \
-        tmp = atof(nulterm);                                                   \
-        if (_splitReal_##prec(tmp, &sdt.sec, &sdt.frac))                       \
-            return -1;                                                         \
-                                                                               \
-        /* THIS ALWAYS WRITES CORRECT DATETIMES */                             \
-        sdt.flag = 0;                                                          \
-        bset(&sdt, data_bit);                                                  \
-                                                                               \
-        if (datetime_check_range(sdt.sec, sdt.frac))                           \
-            return -1;                                                         \
-                                                                               \
-        int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                             \
-        if (!(p_out = server_##dt##_put(&sdt, p_out, p_out_end))) {            \
-            return -1;                                                         \
-        }                                                                      \
-        *outdtsz = p_out - p_out_start;                                        \
-                                                                               \
-        return 0;                                                              \
-    } else {                                                                   \
-        /* error */                                                            \
-        return -1;                                                             \
-    }                                                                          \
+#define CLIENT_CSTR_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)       \
+    int rc = 0;                                                               \
+                                                                              \
+    /* paranoia tests */                                                      \
+    /*if( !inopts || !(inopts->flags & FLD_CONV_TZONE)) return -1;*/          \
+    if (!in || !out)                                                          \
+        return -1;                                                            \
+                                                                              \
+    /* null? */                                                               \
+    if (isnull) {                                                             \
+        set_null(out, outlen);                                                \
+        return 0;                                                             \
+    }                                                                         \
+                                                                              \
+    /* patch: the string could contain actually a number */                   \
+    rc = _isISO8601((char *)in, inlen);                                       \
+    if (rc > 0) {                                                             \
+        int ret;                                                              \
+        CLT_TP(dt)                                                            \
+        cdt;                                                                  \
+        uint8_t cdt_buf[sizeof(cdt)];                                         \
+        struct field_conv_opts_tz tzopts;                                     \
+                                                                              \
+        uint8_t *p_buf = cdt_buf;                                             \
+        const uint8_t *p_cdt_buf_end = cdt_buf + sizeof(cdt_buf);             \
+                                                                              \
+        bzero(&cdt, sizeof(cdt));                                             \
+                                                                              \
+        if ((ret = string2struct##dt##_ISO((char *)in, inlen, &cdt)) != 0) {  \
+            return ret;                                                       \
+        }                                                                     \
+                                                                              \
+        if (!cdt.tzname[0] &&                                                 \
+            (!inopts || !(inopts->flags & FLD_CONV_TZONE))) {                 \
+            return -1;                                                        \
+        }                                                                     \
+                                                                              \
+        if (!cdt.tzname[0])                                                   \
+            strncpy0(cdt.tzname,                                              \
+                     ((struct field_conv_opts_tz *)inopts)->tzname,           \
+                     sizeof(cdt.tzname));                                     \
+                                                                              \
+        if (inopts)                                                           \
+            memcpy(&tzopts, inopts, sizeof(*inopts));                         \
+                                                                              \
+        else                                                                  \
+            bzero(&tzopts, sizeof(tzopts));                                   \
+                                                                              \
+        tzopts.flags |= FLD_CONV_TZONE;                                       \
+                                                                              \
+        /* Remove the little-endian. */                                       \
+        tzopts.flags &= ~(FLD_CONV_LENDIAN);                                  \
+                                                                              \
+        memcpy(tzopts.tzname, cdt.tzname, DB_MAX_TZNAMEDB);                   \
+                                                                              \
+        if (!(p_buf = client_##dt##_put(&cdt, cdt_buf, p_cdt_buf_end))) {     \
+            return -1;                                                        \
+        }                                                                     \
+                                                                              \
+        if ((ret = CLIENT_##UDT##_to_SERVER_##UDT(                            \
+                 &cdt_buf, sizeof(cdt_buf), 0,                                \
+                 (struct field_conv_opts *)&tzopts, NULL, out, outlen,        \
+                 outdtsz, outopts, NULL)) != 0) {                             \
+            return ret;                                                       \
+        }                                                                     \
+                                                                              \
+        /* hack to determine the correct setting for the tm.tm_isdst flag*/   \
+        if (!cdt.tm.tm_isdst) {                                               \
+            return 0;                                                         \
+        }                                                                     \
+                                                                              \
+        /* time was DST, and cdt is now changed, time transform again this */ \
+        /* time with DST set*/                                                \
+        bzero(&cdt, sizeof(cdt));                                             \
+        if ((ret = string2struct##dt##_ISO((char *)in, inlen, &cdt)) != 0) {  \
+            return ret;                                                       \
+        }                                                                     \
+        cdt.tm.tm_isdst = 1;                                                  \
+        if (!cdt.tzname[0])                                                   \
+            strncpy0(cdt.tzname,                                              \
+                     ((struct field_conv_opts_tz *)inopts)->tzname,           \
+                     sizeof(cdt.tzname));                                     \
+                                                                              \
+        if (!(p_buf = client_##dt##_put(&cdt, cdt_buf, p_cdt_buf_end))) {     \
+            return -1;                                                        \
+        }                                                                     \
+                                                                              \
+        rc = CLIENT_##UDT##_to_SERVER_##UDT(                                  \
+            &cdt_buf, sizeof(cdt_buf), 0, (struct field_conv_opts *)&tzopts,  \
+            NULL, out, outlen, outdtsz, outopts, NULL);                       \
+                                                                              \
+        return rc;                                                            \
+    } else if (rc == 0) {                                                     \
+        /* we have here a epoch seconds and a fractional part as msec */      \
+        double tmp = 0;                                                       \
+        SRV_TP(dt)                                                            \
+        sdt;                                                                  \
+        char nulterm[inlen + 1];                                              \
+                                                                              \
+        uint8_t *p_out = out;                                                 \
+        const uint8_t *p_out_start = out;                                     \
+        const uint8_t *p_out_end = (const uint8_t *)out + outlen;             \
+                                                                              \
+        if (outlen != sizeof(SRV_TP(dt)))                                     \
+            return -1;                                                        \
+                                                                              \
+        memcpy(nulterm, in, inlen);                                           \
+        nulterm[inlen] = 0;                                                   \
+        tmp = atof(nulterm);                                                  \
+        if (_splitReal_##prec(tmp, &sdt.sec, &sdt.frac))                      \
+            return -1;                                                        \
+                                                                              \
+        /* THIS ALWAYS WRITES CORRECT DATETIMES */                            \
+        sdt.flag = 0;                                                         \
+        bset(&sdt, data_bit);                                                 \
+                                                                              \
+        if (datetime_check_range(sdt.sec, sdt.frac))                          \
+            return -1;                                                        \
+                                                                              \
+        int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                            \
+        if (!(p_out = server_##dt##_put(&sdt, p_out, p_out_end))) {           \
+            return -1;                                                        \
+        }                                                                     \
+        *outdtsz = p_out - p_out_start;                                       \
+                                                                              \
+        return 0;                                                             \
+    } else {                                                                  \
+        /* error */                                                           \
+        return -1;                                                            \
+    }                                                                         \
     /* END OF CLIENT_CSTR_to_SERVER_DT_func_body */
 
 int CLIENT_CSTR_to_SERVER_DATETIME(C2S_FUNKY_ARGS)
@@ -7956,33 +7945,33 @@ int CLIENT_PSTR2_to_SERVER_DATETIMEUS(C2S_FUNKY_ARGS)
                                             outblob);
 }
 
-#define CLIENT_UINT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)        \
-    int rc = 0;                                                                \
-    char *tmp = alloca(inlen + 1);                                             \
-    int outtmp;                                                                \
-    db_time_t dbtime;                                                          \
-                                                                               \
-    if (!tmp)                                                                  \
-        return -1;                                                             \
-                                                                               \
-    rc = CLIENT_UINT_to_CLIENT_INT(in, inlen, inopts, inblob, &dbtime,         \
-                                   sizeof(dbtime), &outtmp, NULL, NULL);       \
-    if (isnull || rc)                                                          \
-        return rc;                                                             \
-    dbtime = flibc_ntohll(dbtime);                                             \
-    if (datetime_check_range(dbtime, 0))                                       \
-        return -1;                                                             \
-                                                                               \
-    rc = CLIENT_UINT_to_SERVER_UINT(in, inlen, isnull, inopts, inblob, tmp,    \
-                                    inlen + 1, &outtmp, NULL, NULL);           \
-    if (isnull || rc)                                                          \
-        return rc;                                                             \
-                                                                               \
-    rc = SERVER_UINT_to_SERVER_##UDT(tmp, outtmp, NULL, NULL, out, outlen,     \
-                                     outdtsz, outopts, outblob);               \
-                                                                               \
-    return rc;                                                                 \
-/* END OF CLIENT_UINT_to_SERVER_DT_func_body */
+#define CLIENT_UINT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)     \
+    int rc = 0;                                                             \
+    char *tmp = alloca(inlen + 1);                                          \
+    int outtmp;                                                             \
+    db_time_t dbtime;                                                       \
+                                                                            \
+    if (!tmp)                                                               \
+        return -1;                                                          \
+                                                                            \
+    rc = CLIENT_UINT_to_CLIENT_INT(in, inlen, inopts, inblob, &dbtime,      \
+                                   sizeof(dbtime), &outtmp, NULL, NULL);    \
+    if (isnull || rc)                                                       \
+        return rc;                                                          \
+    dbtime = flibc_ntohll(dbtime);                                          \
+    if (datetime_check_range(dbtime, 0))                                    \
+        return -1;                                                          \
+                                                                            \
+    rc = CLIENT_UINT_to_SERVER_UINT(in, inlen, isnull, inopts, inblob, tmp, \
+                                    inlen + 1, &outtmp, NULL, NULL);        \
+    if (isnull || rc)                                                       \
+        return rc;                                                          \
+                                                                            \
+    rc = SERVER_UINT_to_SERVER_##UDT(tmp, outtmp, NULL, NULL, out, outlen,  \
+                                     outdtsz, outopts, outblob);            \
+                                                                            \
+    return rc;                                                              \
+    /* END OF CLIENT_UINT_to_SERVER_DT_func_body */
 
 static TYPES_INLINE int CLIENT_UINT_to_SERVER_DATETIME(C2S_FUNKY_ARGS)
 {
@@ -7996,33 +7985,33 @@ static TYPES_INLINE int CLIENT_UINT_to_SERVER_DATETIMEUS(C2S_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define CLIENT_INT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)         \
-    int rc = 0;                                                                \
-    char *tmp = alloca(inlen + 1);                                             \
-    int outtmp;                                                                \
-    db_time_t dbtime;                                                          \
-                                                                               \
-    if (!tmp)                                                                  \
-        return -1;                                                             \
-                                                                               \
-    rc = CLIENT_INT_to_CLIENT_INT(in, inlen, inopts, inblob, &dbtime,          \
-                                  sizeof(dbtime), &outtmp, NULL, NULL);        \
-    if (isnull || rc)                                                          \
-        return rc;                                                             \
-    dbtime = flibc_ntohll(dbtime);                                             \
-    if (datetime_check_range(dbtime, 0))                                       \
-        return -1;                                                             \
-                                                                               \
-    rc = CLIENT_INT_to_SERVER_BINT(in, inlen, isnull, inopts, inblob, tmp,     \
-                                   inlen + 1, &outtmp, NULL, NULL);            \
-    if (isnull || rc)                                                          \
-        return rc;                                                             \
-                                                                               \
-    rc = SERVER_BINT_to_SERVER_##UDT(tmp, outtmp, NULL, NULL, out, outlen,     \
-                                     outdtsz, outopts, outblob);               \
-                                                                               \
-    return rc;                                                                 \
-/* END OF CLIENT_INT_to_SERVER_DT_func_body */
+#define CLIENT_INT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)     \
+    int rc = 0;                                                            \
+    char *tmp = alloca(inlen + 1);                                         \
+    int outtmp;                                                            \
+    db_time_t dbtime;                                                      \
+                                                                           \
+    if (!tmp)                                                              \
+        return -1;                                                         \
+                                                                           \
+    rc = CLIENT_INT_to_CLIENT_INT(in, inlen, inopts, inblob, &dbtime,      \
+                                  sizeof(dbtime), &outtmp, NULL, NULL);    \
+    if (isnull || rc)                                                      \
+        return rc;                                                         \
+    dbtime = flibc_ntohll(dbtime);                                         \
+    if (datetime_check_range(dbtime, 0))                                   \
+        return -1;                                                         \
+                                                                           \
+    rc = CLIENT_INT_to_SERVER_BINT(in, inlen, isnull, inopts, inblob, tmp, \
+                                   inlen + 1, &outtmp, NULL, NULL);        \
+    if (isnull || rc)                                                      \
+        return rc;                                                         \
+                                                                           \
+    rc = SERVER_BINT_to_SERVER_##UDT(tmp, outtmp, NULL, NULL, out, outlen, \
+                                     outdtsz, outopts, outblob);           \
+                                                                           \
+    return rc;                                                             \
+    /* END OF CLIENT_INT_to_SERVER_DT_func_body */
 
 TYPES_INLINE int CLIENT_INT_to_SERVER_DATETIME(C2S_FUNKY_ARGS)
 {
@@ -8036,20 +8025,21 @@ TYPES_INLINE int CLIENT_INT_to_SERVER_DATETIMEUS(C2S_FUNKY_ARGS)
                                       unsigned int);
 }
 
-#define check_server_dt_func_body(dt, UDT, prec, frac, fracdt)                 \
-    SRV_TP(dt) sdt;                                                            \
-    const uint8_t *p_in;                                                       \
-    const uint8_t *p_in_end;                                                   \
-                                                                               \
-    /* range validation */                                                     \
-    p_in = (const uint8_t *)out;                                               \
-    p_in_end = (const uint8_t *)out + sizeof(sdt);                             \
-    if (!server_##dt##_get(&sdt, p_in, p_in_end))                              \
-        return -1;                                                             \
-    int8b_to_int8(sdt.sec, (comdb2_int8 *)&sdt.sec);                           \
-                                                                               \
-    if (datetime_check_range(sdt.sec, sdt.frac))                               \
-        return -1;                                                             \
+#define check_server_dt_func_body(dt, UDT, prec, frac, fracdt) \
+    SRV_TP(dt)                                                 \
+    sdt;                                                       \
+    const uint8_t *p_in;                                       \
+    const uint8_t *p_in_end;                                   \
+                                                               \
+    /* range validation */                                     \
+    p_in = (const uint8_t *)out;                               \
+    p_in_end = (const uint8_t *)out + sizeof(sdt);             \
+    if (!server_##dt##_get(&sdt, p_in, p_in_end))              \
+        return -1;                                             \
+    int8b_to_int8(sdt.sec, (comdb2_int8 *)&sdt.sec);           \
+                                                               \
+    if (datetime_check_range(sdt.sec, sdt.frac))               \
+        return -1;                                             \
     return 0;
 /* END OF check_server_dt_func_body */
 
@@ -8063,26 +8053,26 @@ int check_server_datetimeus(void *out)
     check_server_dt_func_body(datetimeus, DATETIMEUS, 6, usec, unsigned int);
 }
 
-#define CLIENT_REAL_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)        \
-    int rc = 0;                                                                \
-    char *tmp = alloca(inlen + 1);                                             \
-    int outtmp;                                                                \
-                                                                               \
-    if (!tmp)                                                                  \
-        return -1;                                                             \
-                                                                               \
-    rc = CLIENT_REAL_to_SERVER_BREAL(in, inlen, isnull, inopts, inblob, tmp,   \
-                                     inlen + 1, &outtmp, NULL, NULL);          \
-    if (isnull || rc)                                                          \
-        return rc;                                                             \
-                                                                               \
-    rc = SERVER_BREAL_to_SERVER_##UDT(tmp, outtmp, NULL, NULL, out, outlen,    \
-                                      outdtsz, outopts, outblob);              \
-                                                                               \
-    if (check_server_##dt(out))                                                \
-        return -1;                                                             \
-    return rc;                                                                 \
-/* END OF CLIENT_REAL_to_SERVER_DT_func_body */
+#define CLIENT_REAL_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)      \
+    int rc = 0;                                                              \
+    char *tmp = alloca(inlen + 1);                                           \
+    int outtmp;                                                              \
+                                                                             \
+    if (!tmp)                                                                \
+        return -1;                                                           \
+                                                                             \
+    rc = CLIENT_REAL_to_SERVER_BREAL(in, inlen, isnull, inopts, inblob, tmp, \
+                                     inlen + 1, &outtmp, NULL, NULL);        \
+    if (isnull || rc)                                                        \
+        return rc;                                                           \
+                                                                             \
+    rc = SERVER_BREAL_to_SERVER_##UDT(tmp, outtmp, NULL, NULL, out, outlen,  \
+                                      outdtsz, outopts, outblob);            \
+                                                                             \
+    if (check_server_##dt(out))                                              \
+        return -1;                                                           \
+    return rc;                                                               \
+    /* END OF CLIENT_REAL_to_SERVER_DT_func_body */
 
 int CLIENT_REAL_to_SERVER_DATETIME(C2S_FUNKY_ARGS)
 {
@@ -8096,9 +8086,9 @@ int CLIENT_REAL_to_SERVER_DATETIMEUS(C2S_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define C2C_FUNKY_ARGS                                                         \
-    const void *in, int inlen, const struct field_conv_opts *inopts,           \
-        blob_buffer_t *inblob, void *out, int outlen, int *outdtsz,            \
+#define C2C_FUNKY_ARGS                                               \
+    const void *in, int inlen, const struct field_conv_opts *inopts, \
+        blob_buffer_t *inblob, void *out, int outlen, int *outdtsz,  \
         const struct field_conv_opts *outopts, blob_buffer_t *outblob
 
 static TYPES_INLINE int CLIENT_to_CLIENT_NO_CONV(C2C_FUNKY_ARGS)
@@ -8141,41 +8131,42 @@ static TYPES_INLINE int CLIENT_to_CLIENT_NO_CONV(C2C_FUNKY_ARGS)
 #define CLIENT_PSTR2_to_CLIENT_DATETIMEUS CLIENT_to_CLIENT_NO_CONV
 #define CLIENT_BLOB_to_CLIENT_DATETIMEUS CLIENT_to_CLIENT_NO_CONV
 
-#define CLIENT_DT_to_CLIENT_DT_func_body(from_dt, FROM_UDT, from_prec,         \
-                                         from_frac, from_fracdt, to_dt,        \
-                                         TO_UDT, to_prec, to_frac, to_fracdt)  \
-    struct field_conv_opts_tz *tzopts = (struct field_conv_opts_tz *)inopts;   \
-                                                                               \
-    struct field_conv_opts_tz *tzoutopts =                                     \
-        (struct field_conv_opts_tz *)outopts;                                  \
-                                                                               \
-    if (!inopts || !outopts || !(inopts->flags & FLD_CONV_TZONE) ||            \
-        !(outopts->flags & FLD_CONV_TZONE))                                    \
-        /* we need TZ information */                                           \
-        return -1;                                                             \
-                                                                               \
-    /* if the timezones are the same, just copy it over */                     \
-    if (!strncmp(tzopts->tzname, tzoutopts->tzname, DB_MAX_TZNAMEDB)) {        \
-        memcpy(out, in, inlen);                                                \
-        *outdtsz = inlen;                                                      \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
+#define CLIENT_DT_to_CLIENT_DT_func_body(from_dt, FROM_UDT, from_prec,           \
+                                         from_frac, from_fracdt, to_dt,          \
+                                         TO_UDT, to_prec, to_frac, to_fracdt)    \
+    struct field_conv_opts_tz *tzopts = (struct field_conv_opts_tz *)inopts;     \
+                                                                                 \
+    struct field_conv_opts_tz *tzoutopts =                                       \
+        (struct field_conv_opts_tz *)outopts;                                    \
+                                                                                 \
+    if (!inopts || !outopts || !(inopts->flags & FLD_CONV_TZONE) ||              \
+        !(outopts->flags & FLD_CONV_TZONE))                                      \
+        /* we need TZ information */                                             \
+        return -1;                                                               \
+                                                                                 \
+    /* if the timezones are the same, just copy it over */                       \
+    if (!strncmp(tzopts->tzname, tzoutopts->tzname, DB_MAX_TZNAMEDB)) {          \
+        memcpy(out, in, inlen);                                                  \
+        *outdtsz = inlen;                                                        \
+        return 0;                                                                \
+    }                                                                            \
+                                                                                 \
     /* different TZones, the way to convert is through server representation   \
-     */                                                                        \
-    {                                                                          \
-        SRV_TP(to_dt) tmp;                                                     \
-        int tmplen;                                                            \
-        int outnull;                                                           \
-                                                                               \
-        if (CLIENT_##FROM_UDT##_to_SERVER_##TO_UDT(in, inlen, 0, inopts, NULL, \
-                                                   &tmp, sizeof(tmp), &tmplen, \
-                                                   NULL, NULL))                \
-            return -1;                                                         \
-                                                                               \
-        return SERVER_##TO_UDT##_to_CLIENT_##TO_UDT(                           \
-            &tmp, sizeof(tmp), NULL, NULL, out, outlen, &outnull, outdtsz,     \
-            outopts, NULL);                                                    \
+     */ \
+    {                                                                            \
+        SRV_TP(to_dt)                                                            \
+        tmp;                                                                     \
+        int tmplen;                                                              \
+        int outnull;                                                             \
+                                                                                 \
+        if (CLIENT_##FROM_UDT##_to_SERVER_##TO_UDT(in, inlen, 0, inopts, NULL,   \
+                                                   &tmp, sizeof(tmp), &tmplen,   \
+                                                   NULL, NULL))                  \
+            return -1;                                                           \
+                                                                                 \
+        return SERVER_##TO_UDT##_to_CLIENT_##TO_UDT(                             \
+            &tmp, sizeof(tmp), NULL, NULL, out, outlen, &outnull, outdtsz,       \
+            outopts, NULL);                                                      \
     }
 /* END OF CLIENT_DT_to_CLIENT_DT_func_body */
 
@@ -8211,7 +8202,10 @@ static TYPES_INLINE int CLIENT_DATETIMEUS_to_CLIENT_DATETIMEUS(C2C_FUNKY_ARGS)
         datetimeus, DATETIMEUS, 6, usec, unsigned int /* to   */);
 }
 
-static TYPES_INLINE int SERVER_to_SERVER_NO_CONV(S2S_FUNKY_ARGS) { return -1; }
+static TYPES_INLINE int SERVER_to_SERVER_NO_CONV(S2S_FUNKY_ARGS)
+{
+    return -1;
+}
 
 #define SERVER_BYTEARRAY_to_SERVER_DATETIME SERVER_to_SERVER_NO_CONV
 #define SERVER_BYTEARRAY_to_SERVER_DATETIMEUS SERVER_to_SERVER_NO_CONV
@@ -8266,44 +8260,46 @@ static TYPES_INLINE int SERVER_DATETIMEUS_to_SERVER_DATETIMEUS(S2S_FUNKY_ARGS)
         in, inlen, inopts, inblob, out, outlen, outdtsz, outopts, outblob);
 }
 
-#define SERVER_DT_to_SERVER_DT_func_body(from_dt, FROM_UDT, from_prec,         \
-                                         from_frac, from_fracdt, to_dt,        \
-                                         TO_UDT, to_prec, to_frac, to_fracdt)  \
-    SRV_TP(from_dt) sdt;                                                       \
-    SRV_TP(to_dt) tmp;                                                         \
-    const uint8_t *p_in = in;                                                  \
-    const uint8_t *p_in_end = (const uint8_t *)in + inlen;                     \
-    uint8_t *p_out = out;                                                      \
-    const uint8_t *p_out_start = out;                                          \
-    const uint8_t *p_out_end = (const uint8_t *)out + outlen;                  \
-                                                                               \
-    /* null? */                                                                \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* unpack */                                                               \
-    if (!server_##from_dt##_get(&sdt, p_in, p_in_end))                         \
-        return -1;                                                             \
-                                                                               \
-    /* TMP BROKEN DATETIME */                                                  \
-    if (*(char *)in == 0) {                                                    \
-        /* ALWAYS WRITE CORRECT DATETIMES*/                                    \
-        bset(out, data_bit);                                                   \
-    }                                                                          \
-                                                                               \
-    tmp.flag = sdt.flag;                                                       \
-    tmp.sec = sdt.sec;                                                         \
-    tmp.to_frac = sdt.from_frac * POW10(to_prec) / POW10(from_prec);           \
-                                                                               \
-    if (!(p_out = server_##to_dt##_put(&tmp, p_out, p_out_end))) {             \
-        return -1;                                                             \
-    }                                                                          \
-                                                                               \
-    *outdtsz = p_out - p_out_start;                                            \
-    return 0;                                                                  \
-/* END OF SERVER_DT_to_SERVER_DT_func_body */
+#define SERVER_DT_to_SERVER_DT_func_body(from_dt, FROM_UDT, from_prec,        \
+                                         from_frac, from_fracdt, to_dt,       \
+                                         TO_UDT, to_prec, to_frac, to_fracdt) \
+    SRV_TP(from_dt)                                                           \
+    sdt;                                                                      \
+    SRV_TP(to_dt)                                                             \
+    tmp;                                                                      \
+    const uint8_t *p_in = in;                                                 \
+    const uint8_t *p_in_end = (const uint8_t *)in + inlen;                    \
+    uint8_t *p_out = out;                                                     \
+    const uint8_t *p_out_start = out;                                         \
+    const uint8_t *p_out_end = (const uint8_t *)out + outlen;                 \
+                                                                              \
+    /* null? */                                                               \
+    if (stype_is_null(in)) {                                                  \
+        set_null(out, outlen);                                                \
+        return 0;                                                             \
+    }                                                                         \
+                                                                              \
+    /* unpack */                                                              \
+    if (!server_##from_dt##_get(&sdt, p_in, p_in_end))                        \
+        return -1;                                                            \
+                                                                              \
+    /* TMP BROKEN DATETIME */                                                 \
+    if (*(char *)in == 0) {                                                   \
+        /* ALWAYS WRITE CORRECT DATETIMES*/                                   \
+        bset(out, data_bit);                                                  \
+    }                                                                         \
+                                                                              \
+    tmp.flag = sdt.flag;                                                      \
+    tmp.sec = sdt.sec;                                                        \
+    tmp.to_frac = sdt.from_frac * POW10(to_prec) / POW10(from_prec);          \
+                                                                              \
+    if (!(p_out = server_##to_dt##_put(&tmp, p_out, p_out_end))) {            \
+        return -1;                                                            \
+    }                                                                         \
+                                                                              \
+    *outdtsz = p_out - p_out_start;                                           \
+    return 0;                                                                 \
+    /* END OF SERVER_DT_to_SERVER_DT_func_body */
 
 static TYPES_INLINE int SERVER_DATETIME_to_SERVER_DATETIMEUS(S2S_FUNKY_ARGS)
 {
@@ -8323,32 +8319,32 @@ static TYPES_INLINE int SERVER_DATETIMEUS_to_SERVER_DATETIME(S2S_FUNKY_ARGS)
         datetime, DATETIME, 3, msec, unsigned short /* to   */);
 }
 
-#define SERVER_UINT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)        \
-    int rc = 0;                                                                \
-    SRV_TP(dt) *sdt = (SRV_TP(dt) *)out;                                       \
-                                                                               \
-    if (sizeof(SRV_TP(dt)) != outlen)                                          \
-        return -1;                                                             \
-                                                                               \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    rc = SERVER_UINT_to_SERVER_BINT(in, inlen, inopts, inblob, out,            \
-                                    sizeof(sdt->sec) + 1, outdtsz, outopts,    \
-                                    outblob);                                  \
-    if (rc)                                                                    \
-        return rc;                                                             \
-                                                                               \
-    bzero(&sdt->frac, sizeof(sdt->frac));                                      \
-    *outdtsz = sizeof(SRV_TP(dt));                                             \
-                                                                               \
-    if (check_server_##dt(out))                                                \
-        return -1;                                                             \
-                                                                               \
-    return 0;                                                                  \
-/* END OF SERVER_UINT_to_SERVER_DT_func_body */
+#define SERVER_UINT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)     \
+    int rc = 0;                                                             \
+    SRV_TP(dt) *sdt = (SRV_TP(dt) *)out;                                    \
+                                                                            \
+    if (sizeof(SRV_TP(dt)) != outlen)                                       \
+        return -1;                                                          \
+                                                                            \
+    if (stype_is_null(in)) {                                                \
+        set_null(out, outlen);                                              \
+        return 0;                                                           \
+    }                                                                       \
+                                                                            \
+    rc = SERVER_UINT_to_SERVER_BINT(in, inlen, inopts, inblob, out,         \
+                                    sizeof(sdt->sec) + 1, outdtsz, outopts, \
+                                    outblob);                               \
+    if (rc)                                                                 \
+        return rc;                                                          \
+                                                                            \
+    bzero(&sdt->frac, sizeof(sdt->frac));                                   \
+    *outdtsz = sizeof(SRV_TP(dt));                                          \
+                                                                            \
+    if (check_server_##dt(out))                                             \
+        return -1;                                                          \
+                                                                            \
+    return 0;                                                               \
+    /* END OF SERVER_UINT_to_SERVER_DT_func_body */
 
 static TYPES_INLINE int SERVER_UINT_to_SERVER_DATETIME(S2S_FUNKY_ARGS)
 {
@@ -8362,32 +8358,32 @@ static TYPES_INLINE int SERVER_UINT_to_SERVER_DATETIMEUS(S2S_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define SERVER_BINT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)        \
-    int rc = 0;                                                                \
-    SRV_TP(dt) *sdt = (SRV_TP(dt) *)out;                                       \
-                                                                               \
-    if (sizeof(SRV_TP(dt)) != outlen)                                          \
-        return -1;                                                             \
-                                                                               \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    rc = SERVER_BINT_to_SERVER_BINT(in, inlen, inopts, inblob, out,            \
-                                    sizeof(sdt->sec) + 1, outdtsz, outopts,    \
-                                    outblob);                                  \
-    if (rc)                                                                    \
-        return rc;                                                             \
-                                                                               \
-    bzero(&sdt->frac, sizeof(sdt->frac));                                      \
-    *outdtsz = sizeof(SRV_TP(dt));                                             \
-                                                                               \
-    if (check_server_##dt(out))                                                \
-        return -1;                                                             \
-                                                                               \
-    return 0;                                                                  \
-/* END OF SERVER_BINT_to_SERVER_DT_func_body */
+#define SERVER_BINT_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)     \
+    int rc = 0;                                                             \
+    SRV_TP(dt) *sdt = (SRV_TP(dt) *)out;                                    \
+                                                                            \
+    if (sizeof(SRV_TP(dt)) != outlen)                                       \
+        return -1;                                                          \
+                                                                            \
+    if (stype_is_null(in)) {                                                \
+        set_null(out, outlen);                                              \
+        return 0;                                                           \
+    }                                                                       \
+                                                                            \
+    rc = SERVER_BINT_to_SERVER_BINT(in, inlen, inopts, inblob, out,         \
+                                    sizeof(sdt->sec) + 1, outdtsz, outopts, \
+                                    outblob);                               \
+    if (rc)                                                                 \
+        return rc;                                                          \
+                                                                            \
+    bzero(&sdt->frac, sizeof(sdt->frac));                                   \
+    *outdtsz = sizeof(SRV_TP(dt));                                          \
+                                                                            \
+    if (check_server_##dt(out))                                             \
+        return -1;                                                          \
+                                                                            \
+    return 0;                                                               \
+    /* END OF SERVER_BINT_to_SERVER_DT_func_body */
 
 static TYPES_INLINE int SERVER_BINT_to_SERVER_DATETIME(S2S_FUNKY_ARGS)
 {
@@ -8401,44 +8397,45 @@ static TYPES_INLINE int SERVER_BINT_to_SERVER_DATETIMEUS(S2S_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define SERVER_BREAL_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)       \
-    int rc = 0;                                                                \
-    SRV_TP(dt) sdt;                                                            \
-    double tmp = 0.0;                                                          \
-    int outnull = 0;                                                           \
-                                                                               \
-    uint8_t *p_out = out;                                                      \
-    const uint8_t *p_out_start = out;                                          \
-    const uint8_t *p_out_end = (const uint8_t *)out + outlen;                  \
-                                                                               \
-    if (sizeof(SRV_TP(dt)) != outlen)                                          \
-        return -1;                                                             \
-                                                                               \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* Replace 'outopts' with 'NULL' to prevent little-endian conversion. */   \
-    rc = SERVER_BREAL_to_CLIENT_REAL(in, inlen, inopts, inblob, &tmp,          \
-                                     sizeof(tmp), &outnull, outdtsz, NULL,     \
-                                     outblob);                                 \
-    if (rc || outnull)                                                         \
-        return rc;                                                             \
-                                                                               \
-    sdt.flag = *(char *)in; /* propagate the flag*/                            \
-                                                                               \
-    tmp = flibc_ntohd(tmp);                                                    \
-    if (_splitReal_##prec(tmp, &sdt.sec, &sdt.frac))                           \
-        return -1;                                                             \
-    if (datetime_check_range(sdt.sec, sdt.frac))                               \
-        return -1;                                                             \
-    int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                                 \
-    if (!(p_out = server_##dt##_put(&sdt, p_out, p_out_end)))                  \
-        return -1;                                                             \
-    *outdtsz = p_out - p_out_start;                                            \
-    return 0;                                                                  \
-/* END OF SERVER_BREAL_to_SERVER_DT_func_body */
+#define SERVER_BREAL_to_SERVER_DT_func_body(dt, UDT, prec, frac, fracdt)     \
+    int rc = 0;                                                              \
+    SRV_TP(dt)                                                               \
+    sdt;                                                                     \
+    double tmp = 0.0;                                                        \
+    int outnull = 0;                                                         \
+                                                                             \
+    uint8_t *p_out = out;                                                    \
+    const uint8_t *p_out_start = out;                                        \
+    const uint8_t *p_out_end = (const uint8_t *)out + outlen;                \
+                                                                             \
+    if (sizeof(SRV_TP(dt)) != outlen)                                        \
+        return -1;                                                           \
+                                                                             \
+    if (stype_is_null(in)) {                                                 \
+        set_null(out, outlen);                                               \
+        return 0;                                                            \
+    }                                                                        \
+                                                                             \
+    /* Replace 'outopts' with 'NULL' to prevent little-endian conversion. */ \
+    rc = SERVER_BREAL_to_CLIENT_REAL(in, inlen, inopts, inblob, &tmp,        \
+                                     sizeof(tmp), &outnull, outdtsz, NULL,   \
+                                     outblob);                               \
+    if (rc || outnull)                                                       \
+        return rc;                                                           \
+                                                                             \
+    sdt.flag = *(char *)in; /* propagate the flag*/                          \
+                                                                             \
+    tmp = flibc_ntohd(tmp);                                                  \
+    if (_splitReal_##prec(tmp, &sdt.sec, &sdt.frac))                         \
+        return -1;                                                           \
+    if (datetime_check_range(sdt.sec, sdt.frac))                             \
+        return -1;                                                           \
+    int8_to_int8b(sdt.sec, (int8b *)&sdt.sec);                               \
+    if (!(p_out = server_##dt##_put(&sdt, p_out, p_out_end)))                \
+        return -1;                                                           \
+    *outdtsz = p_out - p_out_start;                                          \
+    return 0;                                                                \
+    /* END OF SERVER_BREAL_to_SERVER_DT_func_body */
 
 int SERVER_BREAL_to_SERVER_DATETIME(S2S_FUNKY_ARGS)
 {
@@ -8463,7 +8460,7 @@ int SERVER_BREAL_to_SERVER_DATETIMEUS(S2S_FUNKY_ARGS)
     return CLIENT_CSTR_to_SERVER_##UDT(((char *)in) + 1, inlen - 1, 0, inopts, \
                                        NULL, (char *)out + 1, outlen - 1,      \
                                        outdtsz, outopts, NULL);                \
-/* END OF SERVER_BCSTR_to_SERVER_DT_func_body */
+    /* END OF SERVER_BCSTR_to_SERVER_DT_func_body */
 
 static TYPES_INLINE int SERVER_BCSTR_to_SERVER_DATETIME(S2S_FUNKY_ARGS)
 {
@@ -8477,21 +8474,21 @@ static TYPES_INLINE int SERVER_BCSTR_to_SERVER_DATETIMEUS(S2S_FUNKY_ARGS)
                                         unsigned int);
 }
 
-#define SERVER_DT_to_SERVER_UINT_func_body(dt, UDT, prec, frac, fracdt)        \
-    if (inlen != sizeof(SRV_TP(dt)))                                           \
-        return -1;                                                             \
-                                                                               \
-    /* TMP BROKEN DATETIME */                                                  \
-    if (*(char *)in == 0) {                                                    \
-            return SERVER_UINT_to_SERVER_UINT(in, 9, inopts, inblob, out,      \
-                                              outlen, outdtsz, outopts,        \
-                                              outblob);                        \
-    }                                                                          \
-                                                                               \
-    /* good datetime */                                                        \
-    return SERVER_BINT_to_SERVER_UINT(in, 9, inopts, inblob, out, outlen,      \
-                                      outdtsz, outopts, outblob);              \
-/* END OF SERVER_DT_to_SERVER_UINT_func_body */
+#define SERVER_DT_to_SERVER_UINT_func_body(dt, UDT, prec, frac, fracdt)   \
+    if (inlen != sizeof(SRV_TP(dt)))                                      \
+        return -1;                                                        \
+                                                                          \
+    /* TMP BROKEN DATETIME */                                             \
+    if (*(char *)in == 0) {                                               \
+        return SERVER_UINT_to_SERVER_UINT(in, 9, inopts, inblob, out,     \
+                                          outlen, outdtsz, outopts,       \
+                                          outblob);                       \
+    }                                                                     \
+                                                                          \
+    /* good datetime */                                                   \
+    return SERVER_BINT_to_SERVER_UINT(in, 9, inopts, inblob, out, outlen, \
+                                      outdtsz, outopts, outblob);         \
+    /* END OF SERVER_DT_to_SERVER_UINT_func_body */
 
 static TYPES_INLINE int SERVER_DATETIME_to_SERVER_UINT(S2S_FUNKY_ARGS)
 {
@@ -8505,27 +8502,27 @@ static TYPES_INLINE int SERVER_DATETIMEUS_to_SERVER_UINT(S2S_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define SERVER_DT_to_SERVER_BINT_func_body(dt, UDT, prec, frac, fracdt)        \
-    if (inlen != sizeof(SRV_TP(dt)))                                           \
-        return -1;                                                             \
-                                                                               \
-    /* null? */                                                                \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* TMP BROKEN DATETIME */                                                  \
-    if (*(char *)in == 0) {                                                    \
-            return SERVER_UINT_to_SERVER_BINT(in, 9, inopts, inblob, out,      \
-                                              outlen, outdtsz, outopts,        \
-                                              outblob);                        \
-    }                                                                          \
-                                                                               \
-    /* good datetime */                                                        \
-    return SERVER_BINT_to_SERVER_BINT(in, 9, inopts, inblob, out, outlen,      \
-                                      outdtsz, outopts, outblob);              \
-/* END OF SERVER_DT_to_SERVER_BINT_func_body */
+#define SERVER_DT_to_SERVER_BINT_func_body(dt, UDT, prec, frac, fracdt)   \
+    if (inlen != sizeof(SRV_TP(dt)))                                      \
+        return -1;                                                        \
+                                                                          \
+    /* null? */                                                           \
+    if (stype_is_null(in)) {                                              \
+        set_null(out, outlen);                                            \
+        return 0;                                                         \
+    }                                                                     \
+                                                                          \
+    /* TMP BROKEN DATETIME */                                             \
+    if (*(char *)in == 0) {                                               \
+        return SERVER_UINT_to_SERVER_BINT(in, 9, inopts, inblob, out,     \
+                                          outlen, outdtsz, outopts,       \
+                                          outblob);                       \
+    }                                                                     \
+                                                                          \
+    /* good datetime */                                                   \
+    return SERVER_BINT_to_SERVER_BINT(in, 9, inopts, inblob, out, outlen, \
+                                      outdtsz, outopts, outblob);         \
+    /* END OF SERVER_DT_to_SERVER_BINT_func_body */
 
 static TYPES_INLINE int SERVER_DATETIME_to_SERVER_BINT(S2S_FUNKY_ARGS)
 {
@@ -8539,33 +8536,34 @@ static TYPES_INLINE int SERVER_DATETIMEUS_to_SERVER_BINT(S2S_FUNKY_ARGS)
                                        unsigned int);
 }
 
-#define SERVER_DT_to_SERVER_BREAL_func_body(dt, UDT, prec, frac, fracdt)       \
-    SRV_TP(dt) sdt;                                                            \
-    double tmp;                                                                \
-    const uint8_t *p_in = in;                                                  \
-    const uint8_t *p_in_end = (const uint8_t *)in + inlen;                     \
-                                                                               \
-    /* null? */                                                                \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* unpack */                                                               \
-    if (!server_##dt##_get(&sdt, p_in, p_in_end))                              \
-        return -1;                                                             \
-                                                                               \
-    /* TMP BROKEN DATETIME */                                                  \
-    if (*(char *)in == 0) {                                                    \
-    } else                                                                     \
-        /* good datetime */                                                    \
-        int8b_to_int8(sdt.sec, (comdb2_int8 *)&sdt.sec);                       \
-                                                                               \
-    tmp = sdt.sec + ((double)sdt.frac) / POW10(prec);                          \
-    tmp = flibc_htond(tmp);                                                    \
-    return CLIENT_REAL_to_SERVER_BREAL(&tmp, sizeof(tmp), 0, NULL, NULL, out,  \
-                                       outlen, outdtsz, outopts, outblob);     \
-/* END OF SERVER_DT_to_SERVER_BREAL_func_body */
+#define SERVER_DT_to_SERVER_BREAL_func_body(dt, UDT, prec, frac, fracdt)      \
+    SRV_TP(dt)                                                                \
+    sdt;                                                                      \
+    double tmp;                                                               \
+    const uint8_t *p_in = in;                                                 \
+    const uint8_t *p_in_end = (const uint8_t *)in + inlen;                    \
+                                                                              \
+    /* null? */                                                               \
+    if (stype_is_null(in)) {                                                  \
+        set_null(out, outlen);                                                \
+        return 0;                                                             \
+    }                                                                         \
+                                                                              \
+    /* unpack */                                                              \
+    if (!server_##dt##_get(&sdt, p_in, p_in_end))                             \
+        return -1;                                                            \
+                                                                              \
+    /* TMP BROKEN DATETIME */                                                 \
+    if (*(char *)in == 0) {                                                   \
+    } else                                                                    \
+        /* good datetime */                                                   \
+        int8b_to_int8(sdt.sec, (comdb2_int8 *)&sdt.sec);                      \
+                                                                              \
+    tmp = sdt.sec + ((double)sdt.frac) / POW10(prec);                         \
+    tmp = flibc_htond(tmp);                                                   \
+    return CLIENT_REAL_to_SERVER_BREAL(&tmp, sizeof(tmp), 0, NULL, NULL, out, \
+                                       outlen, outdtsz, outopts, outblob);    \
+    /* END OF SERVER_DT_to_SERVER_BREAL_func_body */
 
 static int SERVER_DATETIME_to_SERVER_BREAL(S2S_FUNKY_ARGS)
 {
@@ -8591,7 +8589,8 @@ enum intv_enum {
 #define S2S(sec) ((int)((sec) % 60))
 
 #define _intv_srv2string_func_body(dt, UDT, prec, frac, fracdt)                \
-    SRV_TP(dt) cin;                                                            \
+    SRV_TP(dt)                                                                 \
+    cin;                                                                       \
     uint8_t *p_buf = (uint8_t *)in;                                            \
     uint8_t *p_buf_end = (p_buf + sizeof(SRV_TP(dt)));                         \
     char sign = 1;                                                             \
@@ -8659,22 +8658,23 @@ static int _intv_srv2string(const void *in, const enum intv_enum type,
     return 0;
 }
 
-#define _intv_clt2string_func_body(dt, UDT, prec, frac, fracdt)                \
-    CLT_TP(dt) cin;                                                            \
-    uint8_t *p_buf = (uint8_t *)in;                                            \
-    uint8_t *p_buf_end = p_buf + sizeof(CLT_TP(dt));                           \
-                                                                               \
-    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                          \
-        client_##dt##_little_get(&cin, p_buf, p_buf_end);                      \
-    } else {                                                                   \
-        client_##dt##_get(&cin, p_buf, p_buf_end);                             \
-    }                                                                          \
-                                                                               \
-    snprintf(out, outlen - 1, "%s%u %2.2u:%2.2u:%2.2u.%*.*u",                  \
-             (cin.sign == -1) ? "- " : "", cin.days, cin.hours, cin.mins,      \
-             cin.sec, prec, prec, cin.frac);                                   \
-    out[outlen - 1] = 0;                                                       \
-/* END OF _intv_clt2string_func_body */
+#define _intv_clt2string_func_body(dt, UDT, prec, frac, fracdt)           \
+    CLT_TP(dt)                                                            \
+    cin;                                                                  \
+    uint8_t *p_buf = (uint8_t *)in;                                       \
+    uint8_t *p_buf_end = p_buf + sizeof(CLT_TP(dt));                      \
+                                                                          \
+    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                     \
+        client_##dt##_little_get(&cin, p_buf, p_buf_end);                 \
+    } else {                                                              \
+        client_##dt##_get(&cin, p_buf, p_buf_end);                        \
+    }                                                                     \
+                                                                          \
+    snprintf(out, outlen - 1, "%s%u %2.2u:%2.2u:%2.2u.%*.*u",             \
+             (cin.sign == -1) ? "- " : "", cin.days, cin.hours, cin.mins, \
+             cin.sec, prec, prec, cin.frac);                              \
+    out[outlen - 1] = 0;                                                  \
+    /* END OF _intv_clt2string_func_body */
 
 static int _intv_clt2string(const void *in,
                             const struct field_conv_opts *inopts,
@@ -8718,24 +8718,24 @@ static const char *skipsp(const char *str)
     return str;
 }
 
-#define _string2intv_srv_func_body(dt, UDT, prec, frac, fracdt)                \
-    p_buf = (uint8_t *)out;                                                    \
-    p_buf_end = p_buf + sizeof(SRV_TP(dt));                                    \
-    bzero(&dt, sizeof(dt));                                                    \
-    bset(&dt.flag, data_bit); /* oh, but the nulls */                          \
-    if (str_to_interval(in, len, &tp, &n0, &n1, &ids, &sign))                  \
-        return -1;                                                             \
-    else if (tp == 1)                                                          \
-        ds_to_secs_and_##frac##s(&ids, &n0, &n1);                              \
-    else if (tp != 2)                                                          \
-        return -1;                                                             \
-    frac = (prec == DTTZ_PREC_MSEC) ? n1 / 1000 : n1;                          \
-    sec = n0 * sign;                                                           \
-    int8_to_int8b(sec, (int8b *)&sec);                                         \
-    memcpy(&dt.sec, &sec, sizeof(dt.sec));                                     \
-    memcpy(&dt.frac, &frac, sizeof(dt.frac));                                  \
-    server_##dt##_put(&dt, p_buf, p_buf_end);                                  \
-/* END OF _string2intv_srv_func_body */
+#define _string2intv_srv_func_body(dt, UDT, prec, frac, fracdt) \
+    p_buf = (uint8_t *)out;                                     \
+    p_buf_end = p_buf + sizeof(SRV_TP(dt));                     \
+    bzero(&dt, sizeof(dt));                                     \
+    bset(&dt.flag, data_bit); /* oh, but the nulls */           \
+    if (str_to_interval(in, len, &tp, &n0, &n1, &ids, &sign))   \
+        return -1;                                              \
+    else if (tp == 1)                                           \
+        ds_to_secs_and_##frac##s(&ids, &n0, &n1);               \
+    else if (tp != 2)                                           \
+        return -1;                                              \
+    frac = (prec == DTTZ_PREC_MSEC) ? n1 / 1000 : n1;           \
+    sec = n0 * sign;                                            \
+    int8_to_int8b(sec, (int8b *)&sec);                          \
+    memcpy(&dt.sec, &sec, sizeof(dt.sec));                      \
+    memcpy(&dt.frac, &frac, sizeof(dt.frac));                   \
+    server_##dt##_put(&dt, p_buf, p_buf_end);                   \
+    /* END OF _string2intv_srv_func_body */
 
 static void ds_to_secs_and_msecs(const intv_ds_t *ds, uint64_t *sec,
                                  uint64_t *msec);
@@ -8789,16 +8789,17 @@ static int _string2intv_srv(const char *in, enum intv_enum type, void *out)
     return 0;
 }
 
-#define _intv_srv2int_func_body(dt, UDT, prec, frac, fracdt)                   \
-    SRV_TP(dt) cin;                                                            \
-    uint8_t *p_buf = (uint8_t *)in;                                            \
-    uint8_t *p_buf_end = p_buf + sizeof(SRV_TP(dt));                           \
-                                                                               \
-    /* convert to host ordering */                                             \
-    server_##dt##_get(&cin, p_buf, p_buf_end);                                 \
-    memcpy(&tmp, &cin.sec, sizeof(tmp));                                       \
-    int8b_to_int8(tmp, (comdb2_int8 *)&tmp);                                   \
-    tmp = flibc_htonll(tmp);                                                   \
+#define _intv_srv2int_func_body(dt, UDT, prec, frac, fracdt) \
+    SRV_TP(dt)                                               \
+    cin;                                                     \
+    uint8_t *p_buf = (uint8_t *)in;                          \
+    uint8_t *p_buf_end = p_buf + sizeof(SRV_TP(dt));         \
+                                                             \
+    /* convert to host ordering */                           \
+    server_##dt##_get(&cin, p_buf, p_buf_end);               \
+    memcpy(&tmp, &cin.sec, sizeof(tmp));                     \
+    int8b_to_int8(tmp, (comdb2_int8 *)&tmp);                 \
+    tmp = flibc_htonll(tmp);                                 \
 /* END OF _intv_srv2int_func_body */
 static int _intv_srv2int(const void *in, const enum intv_enum type,
                          long long *out)
@@ -8835,20 +8836,21 @@ static int _intv_srv2int(const void *in, const enum intv_enum type,
     return 0;
 }
 
-#define _int2intv_srv_func_body(dt, UDT, prec, frac, fracdt)                   \
-    SRV_TP(dt) cout;                                                           \
-    uint8_t *p_buf = (uint8_t *)out;                                           \
-    uint8_t *p_buf_end = p_buf + sizeof(SRV_TP(dt));                           \
-    long long sec = flibc_ntohll(in);                                          \
-    fracdt frac = 0;                                                           \
-                                                                               \
-    bzero(&cout, sizeof(cout));                                                \
-    bset(&cout.flag, data_bit); /* oh, but the nulls */                        \
-                                                                               \
-    int8_to_int8b(sec, (int8b *)&sec);                                         \
-    cout.sec = sec;                                                            \
-    cout.frac = frac;                                                          \
-                                                                               \
+#define _int2intv_srv_func_body(dt, UDT, prec, frac, fracdt) \
+    SRV_TP(dt)                                               \
+    cout;                                                    \
+    uint8_t *p_buf = (uint8_t *)out;                         \
+    uint8_t *p_buf_end = p_buf + sizeof(SRV_TP(dt));         \
+    long long sec = flibc_ntohll(in);                        \
+    fracdt frac = 0;                                         \
+                                                             \
+    bzero(&cout, sizeof(cout));                              \
+    bset(&cout.flag, data_bit); /* oh, but the nulls */      \
+                                                             \
+    int8_to_int8b(sec, (int8b *)&sec);                       \
+    cout.sec = sec;                                          \
+    cout.frac = frac;                                        \
+                                                             \
     server_##dt##_put(&cout, p_buf, p_buf_end);
 /* END OF _int2intv_srv_func_body */
 /* in input parameter to these functions is expeced to be in network byte order
@@ -8884,20 +8886,21 @@ static int _int2intv_srv(const long long in, const enum intv_enum type,
     return 0;
 }
 
-#define _intv_srv2real_func_body(dt, UDT, prec, frac, fracdt)                  \
-    SRV_TP(dt) cin;                                                            \
-    uint8_t *p_buf = (uint8_t *)in;                                            \
-    uint8_t *p_buf_end = p_buf + sizeof(SRV_TP(dt));                           \
-    long long sec = 0;                                                         \
-    fracdt frac = 0;                                                           \
-                                                                               \
-    server_##dt##_get(&cin, p_buf, p_buf_end);                                 \
-    memcpy(&sec, &cin.sec, sizeof(sec));                                       \
-    int8b_to_int8(sec, (comdb2_int8 *)&sec);                                   \
-    memcpy(&frac, &cin.frac, sizeof(frac));                                    \
-                                                                               \
-    tmp = sec + (double)frac / POW10(prec);                                    \
-/* END OF _intv_srv2string_func_body */
+#define _intv_srv2real_func_body(dt, UDT, prec, frac, fracdt) \
+    SRV_TP(dt)                                                \
+    cin;                                                      \
+    uint8_t *p_buf = (uint8_t *)in;                           \
+    uint8_t *p_buf_end = p_buf + sizeof(SRV_TP(dt));          \
+    long long sec = 0;                                        \
+    fracdt frac = 0;                                          \
+                                                              \
+    server_##dt##_get(&cin, p_buf, p_buf_end);                \
+    memcpy(&sec, &cin.sec, sizeof(sec));                      \
+    int8b_to_int8(sec, (comdb2_int8 *)&sec);                  \
+    memcpy(&frac, &cin.frac, sizeof(frac));                   \
+                                                              \
+    tmp = sec + (double)frac / POW10(prec);                   \
+    /* END OF _intv_srv2string_func_body */
 
 static int _intv_srv2real(const void *in, const enum intv_enum type,
                           double *out)
@@ -8933,22 +8936,23 @@ static int _intv_srv2real(const void *in, const enum intv_enum type,
     return 0;
 }
 
-#define _intv_clt2real_func_body(dt, UDT, prec, frac, fracdt)                  \
-    CLT_TP(dt) cin;                                                            \
-    uint8_t *p_buf = (uint8_t *)in;                                            \
-    uint8_t *p_buf_end = (uint8_t *)in + sizeof(CLT_TP(dt));                   \
-                                                                               \
-    bzero(&cin, sizeof(cin));                                                  \
-                                                                               \
-    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                          \
-        client_##dt##_little_get(&cin, p_buf, p_buf_end);                      \
-    } else {                                                                   \
-        client_##dt##_get(&cin, p_buf, p_buf_end);                             \
-    }                                                                          \
-                                                                               \
-    tmp = cin.sign * (double)(cin.days * 24 * 3600 + cin.hours * 3600 +        \
-                              cin.mins * 60 + cin.sec) +                       \
-          (double)cin.frac / POW10(prec);                                      \
+#define _intv_clt2real_func_body(dt, UDT, prec, frac, fracdt)           \
+    CLT_TP(dt)                                                          \
+    cin;                                                                \
+    uint8_t *p_buf = (uint8_t *)in;                                     \
+    uint8_t *p_buf_end = (uint8_t *)in + sizeof(CLT_TP(dt));            \
+                                                                        \
+    bzero(&cin, sizeof(cin));                                           \
+                                                                        \
+    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                   \
+        client_##dt##_little_get(&cin, p_buf, p_buf_end);               \
+    } else {                                                            \
+        client_##dt##_get(&cin, p_buf, p_buf_end);                      \
+    }                                                                   \
+                                                                        \
+    tmp = cin.sign * (double)(cin.days * 24 * 3600 + cin.hours * 3600 + \
+                              cin.mins * 60 + cin.sec) +                \
+          (double)cin.frac / POW10(prec);                               \
 /* END OF _intv_clt2real_func_body */
 static int _intv_clt2real(const void *in, const struct field_conv_opts *inopts,
                           const enum intv_enum type, double *out)
@@ -8988,29 +8992,29 @@ static int _intv_clt2real(const void *in, const struct field_conv_opts *inopts,
     return 0;
 }
 
-#define _splitReal_func_body(dt, UDT, prec, frac, fracdt)                      \
-    long long tmp = 0, divisor = IPOW10(prec) * 10, power10 = IPOW10(prec);    \
-                                                                               \
-    if (in >= (double)(LLONG_MAX / divisor + 5) ||                             \
-        in <= (double)(LLONG_MIN / divisor - 5))                               \
-        return -1;                                                             \
-                                                                               \
-    if (in >= 0) {                                                             \
-        tmp = (in * divisor + 5); /* rounding */                               \
-                                                                               \
-        *sec = tmp / divisor;                                                  \
-        *frac_sec = (tmp % divisor) / 10;                                      \
-    } else {                                                                   \
-        tmp = (in * divisor - 5);                                              \
-        if ((tmp % divisor) / 10 == 0) {                                       \
-            *sec = tmp / divisor;                                              \
-            *frac_sec = 0;                                                     \
-        } else {                                                               \
-            *sec = tmp / divisor - 1;                                          \
-            *frac_sec = power10 + ((tmp % divisor) / 10);                      \
-        }                                                                      \
-    }                                                                          \
-                                                                               \
+#define _splitReal_func_body(dt, UDT, prec, frac, fracdt)                   \
+    long long tmp = 0, divisor = IPOW10(prec) * 10, power10 = IPOW10(prec); \
+                                                                            \
+    if (in >= (double)(LLONG_MAX / divisor + 5) ||                          \
+        in <= (double)(LLONG_MIN / divisor - 5))                            \
+        return -1;                                                          \
+                                                                            \
+    if (in >= 0) {                                                          \
+        tmp = (in * divisor + 5); /* rounding */                            \
+                                                                            \
+        *sec = tmp / divisor;                                               \
+        *frac_sec = (tmp % divisor) / 10;                                   \
+    } else {                                                                \
+        tmp = (in * divisor - 5);                                           \
+        if ((tmp % divisor) / 10 == 0) {                                    \
+            *sec = tmp / divisor;                                           \
+            *frac_sec = 0;                                                  \
+        } else {                                                            \
+            *sec = tmp / divisor - 1;                                       \
+            *frac_sec = power10 + ((tmp % divisor) / 10);                   \
+        }                                                                   \
+    }                                                                       \
+                                                                            \
     return 0;
 /* END OF _splitReal_func_body */
 
@@ -9340,7 +9344,7 @@ int shift_coefficient_to_dfp(int coefbytes, char *coef, int *pmoved,
 
     if (moved + tailzero > 2 * coefbytes - 1) {
         logmsg(LOGMSG_ERROR, "%s:%d detected corrupted decimal\n", __func__,
-                __LINE__);
+               __LINE__);
         *pmoved = 0;
         return -1;
     }
@@ -9497,8 +9501,8 @@ static int unmake_order_decimal32(server_decimal32_t *pdec32, char *decimals,
             /* out of range */
             if ((exp + DECSINGLE_Pmax - 1) < (DECSINGLE_Emin + adj_exp)) {
                 logmsg(LOGMSG_ERROR, "%s:%d cannot make decimal 32 orderable adj=%d "
-                                "crt_ext=%d\n",
-                        __FILE__, __LINE__, adj_exp, exp);
+                                     "crt_ext=%d\n",
+                       __FILE__, __LINE__, adj_exp, exp);
 
                 return -1;
             }
@@ -9529,7 +9533,7 @@ static int make_order_decimal64(server_decimal64_t *pdec64, int exponent)
 
     if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_REPORT_DECIMAL_CONVERSION)) {
         logmsg(LOGMSG_USER, "Dec64 make_order IN (exponent %d %x):\n", exponent,
-                exponent);
+               exponent);
         hexdump(LOGMSG_USER, (char *)pdec64, sizeof(*pdec64));
         logmsg(LOGMSG_USER, "\n");
     }
@@ -9626,7 +9630,7 @@ static int unmake_order_decimal64(server_decimal64_t *pdec64, char *decimals,
 
     if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_REPORT_DECIMAL_CONVERSION)) {
         logmsg(LOGMSG_USER, "Dec64 unmake_order IN (exponent %d %x):\n", *exponent,
-                *exponent);
+               *exponent);
         hexdump(LOGMSG_USER, decimals, DECDOUBLE_PACKED_COEF);
         logmsg(LOGMSG_USER, "\n");
     }
@@ -9706,8 +9710,8 @@ static int unmake_order_decimal64(server_decimal64_t *pdec64, char *decimals,
             /* out of range */
             if ((exp + DECDOUBLE_Pmax - 1) < (DECDOUBLE_Emin + adj_exp)) {
                 logmsg(LOGMSG_ERROR, "%s:%d cannot make decimal 64 orderable adj=%d "
-                                "crt_ext=%d\n",
-                        __FILE__, __LINE__, adj_exp, exp);
+                                     "crt_ext=%d\n",
+                       __FILE__, __LINE__, adj_exp, exp);
 
                 *exponent = (signed short)exp;
                 return -1;
@@ -9730,7 +9734,7 @@ static int unmake_order_decimal64(server_decimal64_t *pdec64, char *decimals,
 
     if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_REPORT_DECIMAL_CONVERSION)) {
         logmsg(LOGMSG_USER, "Dec64 unmake_order out (exponent %d %x):\n", *exponent,
-                *exponent);
+               *exponent);
         hexdump(LOGMSG_USER, decimals, DECDOUBLE_PACKED_COEF);
         logmsg(LOGMSG_USER, "\n");
     }
@@ -9747,7 +9751,7 @@ static int make_order_decimal128(server_decimal128_t *pdec128, int exponent)
 
     if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_REPORT_DECIMAL_CONVERSION)) {
         logmsg(LOGMSG_USER, "Dec128 make_order IN (exponent %d %x):\n", exponent,
-                exponent);
+               exponent);
         hexdump(LOGMSG_USER, (char *)pdec128, sizeof(*pdec128));
         logmsg(LOGMSG_USER, "\n");
     }
@@ -9817,7 +9821,7 @@ static int unmake_order_decimal128(server_decimal128_t *pdec128, char *decimals,
 
     if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_REPORT_DECIMAL_CONVERSION)) {
         logmsg(LOGMSG_USER, "Dec128 unmake_order IN (exponent %d %x):\n", *exponent,
-                *exponent);
+               *exponent);
         hexdump(LOGMSG_USER, decimals, DECQUAD_PACKED_COEF);
         logmsg(LOGMSG_USER, "\n");
     }
@@ -9886,8 +9890,8 @@ static int unmake_order_decimal128(server_decimal128_t *pdec128, char *decimals,
             /* out of range */
             if ((exp + DECQUAD_Pmax - 1) < (DECQUAD_Emin + adj_exp)) {
                 logmsg(LOGMSG_ERROR, "%s:%d cannot make decimal 128 orderable "
-                                "adj=%d crt_ext=%d\n",
-                        __FILE__, __LINE__, adj_exp, exp);
+                                     "adj=%d crt_ext=%d\n",
+                       __FILE__, __LINE__, adj_exp, exp);
 
                 *exponent = (signed short)exp;
                 return -1;
@@ -9909,7 +9913,7 @@ static int unmake_order_decimal128(server_decimal128_t *pdec128, char *decimals,
 
     if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_REPORT_DECIMAL_CONVERSION)) {
         logmsg(LOGMSG_USER, "Dec128 unmake_order out (exponent %d %x):\n",
-                *exponent, *exponent);
+               *exponent, *exponent);
         hexdump(LOGMSG_USER, decimals, DECQUAD_PACKED_COEF);
         logmsg(LOGMSG_USER, "\n");
     }
@@ -9922,34 +9926,34 @@ static int unmake_order_decimal128(server_decimal128_t *pdec128, char *decimals,
 #define DEC_2B_INF_ONDISK 0x0F800
 #define DEC_2B_INF_XOR_ONDISK 0x007FF
 
-#define DEC_1B_IS_INFINITY(pd)                                                 \
-    (((pd)->sign == 1 && (pd)->exp == DEC_1B_INF_ONDISK) ||                    \
+#define DEC_1B_IS_INFINITY(pd)                              \
+    (((pd)->sign == 1 && (pd)->exp == DEC_1B_INF_ONDISK) || \
      ((pd)->sign == 0 && (pd)->exp == DEC_1B_INF_XOR_ONDISK))
-#define DEC_2B_IS_INFINITY(pd)                                                 \
-    (((pd)->sign == 1 && (pd)->exp == htons(DEC_2B_INF_ONDISK)) ||             \
+#define DEC_2B_IS_INFINITY(pd)                                     \
+    (((pd)->sign == 1 && (pd)->exp == htons(DEC_2B_INF_ONDISK)) || \
      ((pd)->sign == 0 && (pd)->exp == htons(DEC_2B_INF_XOR_ONDISK)))
 
-#define DEC_1B_SET_INFINITY(pd, sign)                                          \
-    do {                                                                       \
-        if (sign) {                                                            \
-            (pd)->sign = 0;                                                    \
-            (pd)->exp = DEC_1B_INF_XOR_ONDISK;                                 \
-        } else {                                                               \
-            (pd)->sign = 1;                                                    \
-            (pd)->exp = DEC_1B_INF_ONDISK;                                     \
-        }                                                                      \
-        (pd)->coef[DECSINGLE_PACKED_COEF - 1] |= 0x01;                         \
+#define DEC_1B_SET_INFINITY(pd, sign)                  \
+    do {                                               \
+        if (sign) {                                    \
+            (pd)->sign = 0;                            \
+            (pd)->exp = DEC_1B_INF_XOR_ONDISK;         \
+        } else {                                       \
+            (pd)->sign = 1;                            \
+            (pd)->exp = DEC_1B_INF_ONDISK;             \
+        }                                              \
+        (pd)->coef[DECSINGLE_PACKED_COEF - 1] |= 0x01; \
     } while (0);
-#define DEC_2B_SET_INFINITY(pd, sign, sz)                                      \
-    do {                                                                       \
-        if (sign) {                                                            \
-            (pd)->sign = 0;                                                    \
-            (pd)->exp = htons(DEC_2B_INF_XOR_ONDISK);                          \
-        } else {                                                               \
-            (pd)->sign = 1;                                                    \
-            (pd)->exp = htons(DEC_2B_INF_ONDISK);                              \
-        }                                                                      \
-        (pd)->coef[sz - 1] |= 0x01;                                            \
+#define DEC_2B_SET_INFINITY(pd, sign, sz)             \
+    do {                                              \
+        if (sign) {                                   \
+            (pd)->sign = 0;                           \
+            (pd)->exp = htons(DEC_2B_INF_XOR_ONDISK); \
+        } else {                                      \
+            (pd)->sign = 1;                           \
+            (pd)->exp = htons(DEC_2B_INF_ONDISK);     \
+        }                                             \
+        (pd)->coef[sz - 1] |= 0x01;                   \
     } while (0);
 
 static void decimal32_ondisk_to_single(server_decimal32_t *pdec32,
@@ -9979,7 +9983,7 @@ static void decimal32_ondisk_to_single(server_decimal32_t *pdec32,
 
     if (exponent < DECSINGLE_Emin - 7 || exponent > DECSINGLE_Emax + 7) {
         logmsg(LOGMSG_ERROR, "%s; format issues with decimal32: exponent=%d\n",
-                __func__, exponent);
+               __func__, exponent);
         hexdump(LOGMSG_USER, (const char *)pdec32, sizeof(*pdec32));
         logmsg(LOGMSG_USER, "\n");
         exponent ^= 0x080;
@@ -10016,7 +10020,7 @@ static void decimal64_ondisk_to_double(server_decimal64_t *pdec64,
         if (exponent < DECDOUBLE_Emin - 16 || exponent > DECDOUBLE_Emax + 16) {
             comdb2_int2 tmp;
             logmsg(LOGMSG_ERROR, "%s; format issues with decimal64: exponent=%d\n",
-                    __func__, exponent);
+                   __func__, exponent);
             hexdump(LOGMSG_ERROR, (const char *)pdec64, sizeof(*pdec64));
             logmsg(LOGMSG_ERROR, "\n");
             int2b_to_int2(exponent, &tmp);
@@ -10055,7 +10059,7 @@ static void decimal128_ondisk_to_quad(server_decimal128_t *pdec128, decQuad *dn)
         if (exponent < DECQUAD_Emin - 34 || exponent > DECQUAD_Emax + 34) {
             comdb2_int2 tmp;
             logmsg(LOGMSG_USER, "%s; format issues with decimal128: exponent=%d\n",
-                    __func__, exponent);
+                   __func__, exponent);
             hexdump(LOGMSG_USER, (const char *)pdec128, sizeof(*pdec128));
             logmsg(LOGMSG_USER, "\n");
             int2b_to_int2(exponent, &tmp);
@@ -10173,22 +10177,22 @@ int SERVER_DECIMAL_to_CLIENT_CSTR(const void *in, int inlen,
     return 0;
 }
 
-#define SINTV_TO_CLT(from, to)                                                 \
-    void *tmpbuf;                                                              \
-    int rc;                                                                    \
-    if (stype_is_null(in)) {                                                   \
-        *outnull = 1;                                                          \
-        return 0;                                                              \
-    } else {                                                                   \
-        tmpbuf = alloca(sizeof(double));                                       \
-        rc = _intv_srv2real(in, from, tmpbuf);                                 \
-        if (rc == -1)                                                          \
-            return -1;                                                         \
-        *outnull = 0;                                                          \
-        rc = CLIENT_REAL_to_CLIENT_##to(tmpbuf, sizeof(double), NULL, NULL,    \
-                                        out, outlen, outdtsz, outopts,         \
-                                        outblob);                              \
-    }                                                                          \
+#define SINTV_TO_CLT(from, to)                                              \
+    void *tmpbuf;                                                           \
+    int rc;                                                                 \
+    if (stype_is_null(in)) {                                                \
+        *outnull = 1;                                                       \
+        return 0;                                                           \
+    } else {                                                                \
+        tmpbuf = alloca(sizeof(double));                                    \
+        rc = _intv_srv2real(in, from, tmpbuf);                              \
+        if (rc == -1)                                                       \
+            return -1;                                                      \
+        *outnull = 0;                                                       \
+        rc = CLIENT_REAL_to_CLIENT_##to(tmpbuf, sizeof(double), NULL, NULL, \
+                                        out, outlen, outdtsz, outopts,      \
+                                        outblob);                           \
+    }                                                                       \
     return rc
 
 #define SRV_TYPE_TO_CINTV(size, from, to)                                      \
@@ -10287,7 +10291,10 @@ int SERVER_INTVYM_to_CLIENT_UINT(S2C_FUNKY_ARGS)
     SINTV_TO_CLT(INTV_YM, UINT);
 }
 
-int SERVER_INTVYM_to_CLIENT_INT(S2C_FUNKY_ARGS) { SINTV_TO_CLT(INTV_YM, INT); }
+int SERVER_INTVYM_to_CLIENT_INT(S2C_FUNKY_ARGS)
+{
+    SINTV_TO_CLT(INTV_YM, INT);
+}
 
 int SERVER_INTVYM_to_CLIENT_REAL(S2C_FUNKY_ARGS)
 {
@@ -10376,7 +10383,7 @@ int SERVER_INTVYM_to_CLIENT_INTVYM(S2C_FUNKY_ARGS)
 
     if (!(server_intv_ym_get(&cin, p_buf_in, p_buf_in_end))) {
         logmsg(LOGMSG_ERROR, "%s: line %d server_intv_ym_get returns NULL???\n",
-                __func__, __LINE__);
+               __func__, __LINE__);
         return -1;
     }
 
@@ -10395,16 +10402,16 @@ int SERVER_INTVYM_to_CLIENT_INTVYM(S2C_FUNKY_ARGS)
 
     if (outopts && outopts->flags & FLD_CONV_LENDIAN) {
         if (!(client_intv_ym_little_put(&cout, p_buf_out, p_buf_out_end))) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: line %d client_intv_ym_little_put returns NULL???\n",
-                    __func__, __LINE__);
+            logmsg(LOGMSG_ERROR,
+                   "%s: line %d client_intv_ym_little_put returns NULL???\n",
+                   __func__, __LINE__);
             return -1;
         }
     } else {
         if (!(client_intv_ym_put(&cout, p_buf_out, p_buf_out_end))) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: line %d client_intv_ym_put returns NULL???\n",
-                    __func__, __LINE__);
+            logmsg(LOGMSG_ERROR,
+                   "%s: line %d client_intv_ym_put returns NULL???\n",
+                   __func__, __LINE__);
             return -1;
         }
     }
@@ -10426,7 +10433,10 @@ int SERVER_INTVDSUS_to_CLIENT_UINT(S2C_FUNKY_ARGS)
     SINTV_TO_CLT(INTV_DSUS, UINT);
 }
 
-int SERVER_INTVDS_to_CLIENT_INT(S2C_FUNKY_ARGS) { SINTV_TO_CLT(INTV_DS, INT); }
+int SERVER_INTVDS_to_CLIENT_INT(S2C_FUNKY_ARGS)
+{
+    SINTV_TO_CLT(INTV_DS, INT);
+}
 
 int SERVER_INTVDSUS_to_CLIENT_INT(S2C_FUNKY_ARGS)
 {
@@ -10571,8 +10581,10 @@ int SERVER_INTVDSUS_to_CLIENT_PSTR2(S2C_FUNKY_ARGS)
 #define SERVER_INTVDST_to_CLIENT_INTVDST_func_body(                            \
     from_dt, FROM_UDT, from_prec, from_frac, from_fracdt, to_dt, TO_UDT,       \
     to_prec, to_frac, to_fracdt)                                               \
-    SRV_TP(from_dt) cin;                                                       \
-    CLT_TP(to_dt) cout;                                                        \
+    SRV_TP(from_dt)                                                            \
+    cin;                                                                       \
+    CLT_TP(to_dt)                                                              \
+    cout;                                                                      \
                                                                                \
     /* pointers to raw buffers */                                              \
     uint8_t *p_buf_in = (uint8_t *)in;                                         \
@@ -10591,8 +10603,8 @@ int SERVER_INTVDSUS_to_CLIENT_PSTR2(S2C_FUNKY_ARGS)
                                                                                \
     if (!server_##from_dt##_get(&cin, p_buf_in, p_buf_in_end)) {               \
         logmsg(LOGMSG_ERROR,                                                   \
-                "%s: line %d server_" #from_dt "_get returns NULL???\n",       \
-                __func__, __LINE__);                                           \
+               "%s: line %d server_" #from_dt "_get returns NULL???\n",        \
+               __func__, __LINE__);                                            \
         return -1;                                                             \
     }                                                                          \
                                                                                \
@@ -10625,15 +10637,15 @@ int SERVER_INTVDSUS_to_CLIENT_PSTR2(S2C_FUNKY_ARGS)
     if (outopts && outopts->flags & FLD_CONV_LENDIAN) {                        \
         if (!(client_##to_dt##_little_put(&cout, p_buf_out, p_buf_out_end))) { \
             logmsg(LOGMSG_USER,                                                \
-                    "%s: line %d client_" #to_dt "_put returns NULL???\n",     \
-                    __func__, __LINE__);                                       \
+                   "%s: line %d client_" #to_dt "_put returns NULL???\n",      \
+                   __func__, __LINE__);                                        \
             return -1;                                                         \
         }                                                                      \
     } else {                                                                   \
         if (!(client_##to_dt##_put(&cout, p_buf_out, p_buf_out_end))) {        \
             logmsg(LOGMSG_USER,                                                \
-                    "%s: line %d client_" #to_dt "_put returns NULL???\n",     \
-                    __func__, __LINE__);                                       \
+                   "%s: line %d client_" #to_dt "_put returns NULL???\n",      \
+                   __func__, __LINE__);                                        \
             return -1;                                                         \
         }                                                                      \
     }                                                                          \
@@ -10762,32 +10774,32 @@ int dfp_conv_check_status(void *pctx, char *from, char *to)
     status = decContextGetStatus(ctx);
     if (decContextTestSavedStatus(status, DEC_Overflow)) {
         logmsg(LOGMSG_ERROR, "%s:%d %s cannot compress %s to %s [Overflow]\n",
-                __FILE__, __LINE__, __func__, from, to);
+               __FILE__, __LINE__, __func__, from, to);
         return -1;
     }
 
     if (decContextTestSavedStatus(status, DEC_Clamped)) {
         logmsg(LOGMSG_ERROR, "%s:%d %s cannot compress %s to %s [Clamped]\n",
-                __FILE__, __LINE__, __func__, from, to);
+               __FILE__, __LINE__, __func__, from, to);
         return -1;
     }
 
     if (decContextTestSavedStatus(status, DEC_Inexact) &&
         gbl_decimal_rounding == DEC_ROUND_NONE) {
         logmsg(LOGMSG_ERROR, "%s:%d %s cannot compress %s to %s [Rounded]\n",
-                __FILE__, __LINE__, __func__, from, to);
+               __FILE__, __LINE__, __func__, from, to);
         return -1;
     }
 
     if (decContextTestSavedStatus(status, DEC_Subnormal)) {
         logmsg(LOGMSG_ERROR, "%s:%d %s cannot compress %s to %s [Subnormal]\n",
-                __FILE__, __LINE__, __func__, from, to);
+               __FILE__, __LINE__, __func__, from, to);
         return -1;
     }
 
     if (decContextTestSavedStatus(status, DEC_Underflow)) {
         logmsg(LOGMSG_ERROR, "%s:%d %s cannot compress %s to %s [Underflow]\n",
-                __FILE__, __LINE__, __func__, from, to);
+               __FILE__, __LINE__, __func__, from, to);
         return -1;
     }
 
@@ -11358,23 +11370,23 @@ done:
     return rc;
 }
 
-#define CLT_TO_SVR_THROUGH_SRV(cfrom, cto, sto)                                \
-    void *tmpbuf;                                                              \
-    int rc;                                                                    \
-    if (isnull) {                                                              \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    } else {                                                                   \
-        tmpbuf = alloca(inlen + 1);                                            \
-        rc = CLIENT_##cfrom##_to_SERVER_##cto(in, inlen, 0, inopts, inblob,    \
-                                              tmpbuf, inlen + 1, outdtsz,      \
-                                              NULL, NULL);                     \
-        if (rc == -1)                                                          \
-            return -1;                                                         \
-        rc = SERVER_##cto##_to_##SERVER_##sto(tmpbuf, inlen + 1, NULL, NULL,   \
-                                              out, outlen, outdtsz, outopts,   \
-                                              outblob);                        \
-    }                                                                          \
+#define CLT_TO_SVR_THROUGH_SRV(cfrom, cto, sto)                              \
+    void *tmpbuf;                                                            \
+    int rc;                                                                  \
+    if (isnull) {                                                            \
+        set_null(out, outlen);                                               \
+        return 0;                                                            \
+    } else {                                                                 \
+        tmpbuf = alloca(inlen + 1);                                          \
+        rc = CLIENT_##cfrom##_to_SERVER_##cto(in, inlen, 0, inopts, inblob,  \
+                                              tmpbuf, inlen + 1, outdtsz,    \
+                                              NULL, NULL);                   \
+        if (rc == -1)                                                        \
+            return -1;                                                       \
+        rc = SERVER_##cto##_to_##SERVER_##sto(tmpbuf, inlen + 1, NULL, NULL, \
+                                              out, outlen, outdtsz, outopts, \
+                                              outblob);                      \
+    }                                                                        \
     return rc;
 
 #define CLT_TO_SVR_THROUGH_SRV_STR(cfrom, cto, sto)                            \
@@ -11413,20 +11425,20 @@ done:
     }                                                                          \
     return rc;
 
-#define CINTV_TO_SVR_STR(from)                                                 \
-    void *tmpbuf;                                                              \
-    int rc;                                                                    \
-    if (isnull) {                                                              \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    } else {                                                                   \
-        tmpbuf = alloca(outlen + 1);                                           \
-        rc = _intv_clt2string(in, inopts, from, tmpbuf, outlen);               \
-        if (rc == -1)                                                          \
-            return -1;                                                         \
-        rc = CLIENT_CSTR_to_SERVER_BCSTR(tmpbuf, outlen, 0, NULL, NULL, out,   \
-                                         outlen, outdtsz, outopts, outblob);   \
-    }                                                                          \
+#define CINTV_TO_SVR_STR(from)                                               \
+    void *tmpbuf;                                                            \
+    int rc;                                                                  \
+    if (isnull) {                                                            \
+        set_null(out, outlen);                                               \
+        return 0;                                                            \
+    } else {                                                                 \
+        tmpbuf = alloca(outlen + 1);                                         \
+        rc = _intv_clt2string(in, inopts, from, tmpbuf, outlen);             \
+        if (rc == -1)                                                        \
+            return -1;                                                       \
+        rc = CLIENT_CSTR_to_SERVER_BCSTR(tmpbuf, outlen, 0, NULL, NULL, out, \
+                                         outlen, outdtsz, outopts, outblob); \
+    }                                                                        \
     return rc;
 
 int CLIENT_UINT_to_SERVER_INTVYM(C2S_FUNKY_ARGS)
@@ -11553,7 +11565,10 @@ int CLIENT_INTVYM_to_SERVER_BREAL(C2S_FUNKY_ARGS)
     CINTV_TO_SVR(INTV_YM, BREAL);
 }
 
-int CLIENT_INTVYM_to_SERVER_BCSTR(C2S_FUNKY_ARGS) { CINTV_TO_SVR_STR(INTV_YM); }
+int CLIENT_INTVYM_to_SERVER_BCSTR(C2S_FUNKY_ARGS)
+{
+    CINTV_TO_SVR_STR(INTV_YM);
+}
 
 int CLIENT_INTVYM_to_SERVER_INTVYM(C2S_FUNKY_ARGS)
 {
@@ -11577,13 +11592,13 @@ int CLIENT_INTVYM_to_SERVER_INTVYM(C2S_FUNKY_ARGS)
     if (inopts && inopts->flags & FLD_CONV_LENDIAN) {
         if (!(client_intv_ym_little_get(&cin, p_buf_in, p_buf_in_end))) {
             logmsg(LOGMSG_ERROR, "%s: line %d client_intv_ym_get returns NULL???\n",
-                    __func__, __LINE__);
+                   __func__, __LINE__);
             return -1;
         }
     } else {
         if (!(client_intv_ym_get(&cin, p_buf_in, p_buf_in_end))) {
             logmsg(LOGMSG_ERROR, "%s: line %d client_intv_ym_get returns NULL???\n",
-                    __func__, __LINE__);
+                   __func__, __LINE__);
             return -1;
         }
     }
@@ -11600,7 +11615,7 @@ int CLIENT_INTVYM_to_SERVER_INTVYM(C2S_FUNKY_ARGS)
 
     if (!(server_intv_ym_put(&cout, p_buf_out, p_buf_out_end))) {
         logmsg(LOGMSG_ERROR, "%s: line %d server_intv_ym_put returns NULL???\n",
-                __func__, __LINE__);
+               __func__, __LINE__);
         return -1;
     }
 
@@ -11645,7 +11660,10 @@ int CLIENT_INTVDSUS_to_SERVER_BREAL(C2S_FUNKY_ARGS)
     CINTV_TO_SVR(INTV_DSUS, BREAL);
 }
 
-int CLIENT_INTVDS_to_SERVER_BCSTR(C2S_FUNKY_ARGS) { CINTV_TO_SVR_STR(INTV_DS); }
+int CLIENT_INTVDS_to_SERVER_BCSTR(C2S_FUNKY_ARGS)
+{
+    CINTV_TO_SVR_STR(INTV_DS);
+}
 
 int CLIENT_INTVDSUS_to_SERVER_BCSTR(C2S_FUNKY_ARGS)
 {
@@ -11653,69 +11671,70 @@ int CLIENT_INTVDSUS_to_SERVER_BCSTR(C2S_FUNKY_ARGS)
     CINTV_TO_SVR_STR(INTV_DSUS);
 }
 
-#define CLIENT_INTVDST_to_SERVER_INTVDST_func_body(                            \
-    from_dt, FROM_UDT, from_prec, from_frac, from_fracdt, to_dt, TO_UDT,       \
-    to_prec, to_frac, to_fracdt)                                               \
-    CLT_TP(from_dt) cin;                                                       \
-    SRV_TP(to_dt) cout;                                                        \
-                                                                               \
-    /* pointers to raw buffers */                                              \
-    uint8_t *p_buf_in = (uint8_t *)in;                                         \
-    uint8_t *p_buf_in_end = (uint8_t *)in + inlen;                             \
-    uint8_t *p_buf_out = (uint8_t *)out;                                       \
-    uint8_t *p_buf_out_end = (uint8_t *)out + outlen;                          \
-                                                                               \
-    long long sec = 0;                                                         \
-    from_fracdt from_frac = 0;                                                 \
-                                                                               \
-    if (isnull) {                                                              \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                          \
-        if (!(client_##from_dt##_little_get(&cin, p_buf_in, p_buf_in_end))) {  \
-            logmsg(LOGMSG_ERROR, "%s: line %d client_" #from_dt                \
-                            "_little_get returns NULL???\n",                   \
-                    __func__, __LINE__);                                       \
-            return -1;                                                         \
-        }                                                                      \
-    } else {                                                                   \
-        if (!(client_##from_dt##_get(&cin, p_buf_in, p_buf_in_end))) {         \
-            logmsg(LOGMSG_ERROR, "%s: line %d client_" #from_dt "_get returns NULL???\n",   \
-                    __func__, __LINE__);                                       \
-            return -1;                                                         \
-        }                                                                      \
-    }                                                                          \
-                                                                               \
-    bzero(&cout, sizeof(cout));                                                \
-                                                                               \
-    bset(&cout.flag, data_bit);                                                \
-                                                                               \
-    /* client to server while normalizing */                                   \
-    from_frac = cin.from_frac % IPOW10(from_prec);                             \
-    sec = cin.sign * (long long)(cin.from_frac / IPOW10(from_prec) + cin.sec + \
-                                 cin.mins * 60 + cin.hours * 3600 +            \
-                                 cin.days * 24 * 3600);                        \
-                                                                               \
-    if (cin.sign == -1 && cin.from_frac) {                                     \
-        sec--;                                                                 \
-    }                                                                          \
-                                                                               \
-    int8_to_int8b(sec, (int8b *)&sec);                                         \
-    cout.sec = sec;                                                            \
-    cout.to_frac = from_frac * IPOW10(to_prec) / IPOW10(from_prec);            \
-                                                                               \
-    if (!(server_##to_dt##_put(&cout, p_buf_out, p_buf_out_end))) {            \
-        logmsg(LOGMSG_ERROR, "%s: line %d server_" #to_dt "_put returns NULL???\n", \
-                __func__, __LINE__);                                           \
-        return -1;                                                             \
-    }                                                                          \
-                                                                               \
-    *outdtsz = sizeof(SRV_TP(to_dt));                                          \
-                                                                               \
-    return 0;                                                                  \
-/* END OF CLIENT_INTVDST_to_SERVER_INTVDST */
+#define CLIENT_INTVDST_to_SERVER_INTVDST_func_body(                                              \
+    from_dt, FROM_UDT, from_prec, from_frac, from_fracdt, to_dt, TO_UDT,                         \
+    to_prec, to_frac, to_fracdt)                                                                 \
+    CLT_TP(from_dt)                                                                              \
+    cin;                                                                                         \
+    SRV_TP(to_dt)                                                                                \
+    cout;                                                                                        \
+                                                                                                 \
+    /* pointers to raw buffers */                                                                \
+    uint8_t *p_buf_in = (uint8_t *)in;                                                           \
+    uint8_t *p_buf_in_end = (uint8_t *)in + inlen;                                               \
+    uint8_t *p_buf_out = (uint8_t *)out;                                                         \
+    uint8_t *p_buf_out_end = (uint8_t *)out + outlen;                                            \
+                                                                                                 \
+    long long sec = 0;                                                                           \
+    from_fracdt from_frac = 0;                                                                   \
+                                                                                                 \
+    if (isnull) {                                                                                \
+        set_null(out, outlen);                                                                   \
+        return 0;                                                                                \
+    }                                                                                            \
+                                                                                                 \
+    if (inopts && inopts->flags & FLD_CONV_LENDIAN) {                                            \
+        if (!(client_##from_dt##_little_get(&cin, p_buf_in, p_buf_in_end))) {                    \
+            logmsg(LOGMSG_ERROR, "%s: line %d client_" #from_dt "_little_get returns NULL???\n", \
+                   __func__, __LINE__);                                                          \
+            return -1;                                                                           \
+        }                                                                                        \
+    } else {                                                                                     \
+        if (!(client_##from_dt##_get(&cin, p_buf_in, p_buf_in_end))) {                           \
+            logmsg(LOGMSG_ERROR, "%s: line %d client_" #from_dt "_get returns NULL???\n",        \
+                   __func__, __LINE__);                                                          \
+            return -1;                                                                           \
+        }                                                                                        \
+    }                                                                                            \
+                                                                                                 \
+    bzero(&cout, sizeof(cout));                                                                  \
+                                                                                                 \
+    bset(&cout.flag, data_bit);                                                                  \
+                                                                                                 \
+    /* client to server while normalizing */                                                     \
+    from_frac = cin.from_frac % IPOW10(from_prec);                                               \
+    sec = cin.sign * (long long)(cin.from_frac / IPOW10(from_prec) + cin.sec +                   \
+                                 cin.mins * 60 + cin.hours * 3600 +                              \
+                                 cin.days * 24 * 3600);                                          \
+                                                                                                 \
+    if (cin.sign == -1 && cin.from_frac) {                                                       \
+        sec--;                                                                                   \
+    }                                                                                            \
+                                                                                                 \
+    int8_to_int8b(sec, (int8b *)&sec);                                                           \
+    cout.sec = sec;                                                                              \
+    cout.to_frac = from_frac * IPOW10(to_prec) / IPOW10(from_prec);                              \
+                                                                                                 \
+    if (!(server_##to_dt##_put(&cout, p_buf_out, p_buf_out_end))) {                              \
+        logmsg(LOGMSG_ERROR, "%s: line %d server_" #to_dt "_put returns NULL???\n",              \
+               __func__, __LINE__);                                                              \
+        return -1;                                                                               \
+    }                                                                                            \
+                                                                                                 \
+    *outdtsz = sizeof(SRV_TP(to_dt));                                                            \
+                                                                                                 \
+    return 0;                                                                                    \
+    /* END OF CLIENT_INTVDST_to_SERVER_INTVDST */
 
 int CLIENT_INTVDS_to_SERVER_INTVDS(C2S_FUNKY_ARGS)
 {
@@ -12051,22 +12070,22 @@ int SERVER_BCSTR_to_SERVER_INTVDSUS(S2S_FUNKY_ARGS)
     return _string2intv_srv((char *)in + 1, INTV_DSUS, out);
 }
 
-#define _INTVSRV_to_SVR_TYPE(intype, totype)                                   \
-    int rc;                                                                    \
-    long long tmp;                                                             \
-                                                                               \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    *(char *)out = *(char *)in;                                                \
-    rc = _intv_srv2int(in, intype, &tmp);                                      \
-    if (rc)                                                                    \
-        return rc;                                                             \
-                                                                               \
-    return CLIENT_INT_to_SERVER_##totype(&tmp, sizeof(tmp), 0, NULL, NULL,     \
-                                         out, outlen, outdtsz, outopts,        \
+#define _INTVSRV_to_SVR_TYPE(intype, totype)                               \
+    int rc;                                                                \
+    long long tmp;                                                         \
+                                                                           \
+    if (stype_is_null(in)) {                                               \
+        set_null(out, outlen);                                             \
+        return 0;                                                          \
+    }                                                                      \
+                                                                           \
+    *(char *)out = *(char *)in;                                            \
+    rc = _intv_srv2int(in, intype, &tmp);                                  \
+    if (rc)                                                                \
+        return rc;                                                         \
+                                                                           \
+    return CLIENT_INT_to_SERVER_##totype(&tmp, sizeof(tmp), 0, NULL, NULL, \
+                                         out, outlen, outdtsz, outopts,    \
                                          outblob);
 
 int SERVER_INTVYM_to_SERVER_UINT(S2S_FUNKY_ARGS)
@@ -12243,37 +12262,39 @@ static TYPES_INLINE int SERVER_SEQ_to_SERVER_SEQ(S2S_FUNKY_ARGS)
     return 0;
 }
 
-#define SERVER_INTVDST_to_SERVER_INTVDST_func_body(                            \
-    from_dt, FROM_UDT, from_prec, from_frac, from_fracdt, to_dt, TO_UDT,       \
-    to_prec, to_frac, to_fracdt)                                               \
-    SRV_TP(from_dt) sintv;                                                     \
-    SRV_TP(to_dt) tmp;                                                         \
-    const uint8_t *p_in = in;                                                  \
-    const uint8_t *p_in_end = (const uint8_t *)in + inlen;                     \
-    uint8_t *p_out = out;                                                      \
-    const uint8_t *p_out_start = out;                                          \
-    const uint8_t *p_out_end = (const uint8_t *)out + outlen;                  \
-                                                                               \
-    /* null? */                                                                \
-    if (stype_is_null(in)) {                                                   \
-        set_null(out, outlen);                                                 \
-        return 0;                                                              \
-    }                                                                          \
-                                                                               \
-    /* unpack */                                                               \
-    if (!server_##from_dt##_get(&sintv, p_in, p_in_end))                       \
-        return -1;                                                             \
-    tmp.flag = sintv.flag;                                                     \
-    tmp.sec = sintv.sec;                                                       \
-    tmp.to_frac = sintv.from_frac * POW10(to_prec) / POW10(from_prec);         \
-                                                                               \
-    if (!(p_out = server_##to_dt##_put(&tmp, p_out, p_out_end))) {             \
-        return -1;                                                             \
-    }                                                                          \
-                                                                               \
-    *outdtsz = p_out - p_out_start;                                            \
-    return 0;                                                                  \
-/* END OF SERVER_INTVDST_to_SERVER_INTVDST_func_body */
+#define SERVER_INTVDST_to_SERVER_INTVDST_func_body(                      \
+    from_dt, FROM_UDT, from_prec, from_frac, from_fracdt, to_dt, TO_UDT, \
+    to_prec, to_frac, to_fracdt)                                         \
+    SRV_TP(from_dt)                                                      \
+    sintv;                                                               \
+    SRV_TP(to_dt)                                                        \
+    tmp;                                                                 \
+    const uint8_t *p_in = in;                                            \
+    const uint8_t *p_in_end = (const uint8_t *)in + inlen;               \
+    uint8_t *p_out = out;                                                \
+    const uint8_t *p_out_start = out;                                    \
+    const uint8_t *p_out_end = (const uint8_t *)out + outlen;            \
+                                                                         \
+    /* null? */                                                          \
+    if (stype_is_null(in)) {                                             \
+        set_null(out, outlen);                                           \
+        return 0;                                                        \
+    }                                                                    \
+                                                                         \
+    /* unpack */                                                         \
+    if (!server_##from_dt##_get(&sintv, p_in, p_in_end))                 \
+        return -1;                                                       \
+    tmp.flag = sintv.flag;                                               \
+    tmp.sec = sintv.sec;                                                 \
+    tmp.to_frac = sintv.from_frac * POW10(to_prec) / POW10(from_prec);   \
+                                                                         \
+    if (!(p_out = server_##to_dt##_put(&tmp, p_out, p_out_end))) {       \
+        return -1;                                                       \
+    }                                                                    \
+                                                                         \
+    *outdtsz = p_out - p_out_start;                                      \
+    return 0;                                                            \
+    /* END OF SERVER_INTVDST_to_SERVER_INTVDST_func_body */
 
 static TYPES_INLINE int SERVER_INTVDS_to_SERVER_INTVDSUS(S2S_FUNKY_ARGS)
 {
@@ -12313,183 +12334,21 @@ int (*client_to_client_convert_map[CLIENT_MAXTYPE][CLIENT_MAXTYPE])(
     int, int *, const struct field_conv_opts *, blob_buffer_t *) = {
     /* CLIENT_MINTYPE */ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                           NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-    /* CLIENT_UINT */ {NULL, CLIENT_UINT_to_CLIENT_UINT,
-                       CLIENT_UINT_to_CLIENT_INT, CLIENT_UINT_to_CLIENT_REAL,
-                       CLIENT_UINT_to_CLIENT_CSTR, CLIENT_UINT_to_CLIENT_PSTR,
-                       CLIENT_UINT_to_CLIENT_BYTEARRAY,
-                       CLIENT_UINT_to_CLIENT_PSTR2, CLIENT_UINT_to_CLIENT_BLOB,
-                       CLIENT_UINT_to_CLIENT_DATETIME,
-                       CLIENT_UINT_to_CLIENT_INTVYM,
-                       CLIENT_UINT_to_CLIENT_INTVDS,
-                       CLIENT_UINT_to_CLIENT_VUTF8, NULL,
-                       CLIENT_UINT_to_CLIENT_DATETIMEUS,
-                       CLIENT_UINT_to_CLIENT_INTVDSUS},
-    /* CLIENT_INT */ {NULL, CLIENT_INT_to_CLIENT_UINT, CLIENT_INT_to_CLIENT_INT,
-                      CLIENT_INT_to_CLIENT_REAL, CLIENT_INT_to_CLIENT_CSTR,
-                      CLIENT_INT_to_CLIENT_PSTR, CLIENT_INT_to_CLIENT_BYTEARRAY,
-                      CLIENT_INT_to_CLIENT_PSTR2, CLIENT_INT_to_CLIENT_BLOB,
-                      CLIENT_INT_to_CLIENT_DATETIME,
-                      CLIENT_INT_to_CLIENT_INTVYM, CLIENT_INT_to_CLIENT_INTVDS,
-                      CLIENT_INT_to_CLIENT_VUTF8, NULL,
-                      CLIENT_INT_to_CLIENT_DATETIMEUS,
-                      CLIENT_INT_to_CLIENT_INTVDSUS},
-    /* CLIENT_REAL */ {NULL, CLIENT_REAL_to_CLIENT_UINT,
-                       CLIENT_REAL_to_CLIENT_INT, CLIENT_REAL_to_CLIENT_REAL,
-                       CLIENT_REAL_to_CLIENT_CSTR, CLIENT_REAL_to_CLIENT_PSTR,
-                       CLIENT_REAL_to_CLIENT_BYTEARRAY,
-                       CLIENT_REAL_to_CLIENT_PSTR2, CLIENT_REAL_to_CLIENT_BLOB,
-                       CLIENT_REAL_to_CLIENT_DATETIME,
-                       CLIENT_REAL_to_CLIENT_INTVYM,
-                       CLIENT_REAL_to_CLIENT_INTVDS,
-                       CLIENT_REAL_to_CLIENT_VUTF8, NULL,
-                       CLIENT_REAL_to_CLIENT_DATETIMEUS,
-                       CLIENT_REAL_to_CLIENT_INTVDSUS},
-    /* CLIENT_CSTR */ {NULL, CLIENT_CSTR_to_CLIENT_UINT,
-                       CLIENT_CSTR_to_CLIENT_INT, CLIENT_CSTR_to_CLIENT_REAL,
-                       CLIENT_CSTR_to_CLIENT_CSTR, CLIENT_CSTR_to_CLIENT_PSTR,
-                       CLIENT_CSTR_to_CLIENT_BYTEARRAY,
-                       CLIENT_CSTR_to_CLIENT_PSTR2, CLIENT_CSTR_to_CLIENT_BLOB,
-                       CLIENT_CSTR_to_CLIENT_DATETIME,
-                       CLIENT_CSTR_to_CLIENT_INTVYM,
-                       CLIENT_CSTR_to_CLIENT_INTVDS,
-                       CLIENT_CSTR_to_CLIENT_VUTF8, NULL,
-                       CLIENT_CSTR_to_CLIENT_DATETIMEUS,
-                       CLIENT_CSTR_to_CLIENT_INTVDSUS},
-    /* CLIENT_PSTR */ {NULL, CLIENT_PSTR_to_CLIENT_UINT,
-                       CLIENT_PSTR_to_CLIENT_INT, CLIENT_PSTR_to_CLIENT_REAL,
-                       CLIENT_PSTR_to_CLIENT_CSTR, CLIENT_PSTR_to_CLIENT_PSTR,
-                       CLIENT_PSTR_to_CLIENT_BYTEARRAY,
-                       CLIENT_PSTR_to_CLIENT_PSTR2, CLIENT_PSTR_to_CLIENT_BLOB,
-                       CLIENT_PSTR_to_CLIENT_DATETIME,
-                       CLIENT_PSTR_to_CLIENT_INTVYM,
-                       CLIENT_PSTR_to_CLIENT_INTVDS,
-                       CLIENT_PSTR_to_CLIENT_VUTF8, NULL,
-                       CLIENT_PSTR_to_CLIENT_DATETIMEUS,
-                       CLIENT_PSTR_to_CLIENT_INTVDSUS},
-    /* CLIENT_BYTEARRAY */ {NULL, CLIENT_BYTEARRAY_to_CLIENT_UINT,
-                            CLIENT_BYTEARRAY_to_CLIENT_INT,
-                            CLIENT_BYTEARRAY_to_CLIENT_REAL,
-                            CLIENT_BYTEARRAY_to_CLIENT_CSTR,
-                            CLIENT_BYTEARRAY_to_CLIENT_PSTR,
-                            CLIENT_BYTEARRAY_to_CLIENT_BYTEARRAY,
-                            CLIENT_BYTEARRAY_to_CLIENT_PSTR2,
-                            CLIENT_BYTEARRAY_to_CLIENT_BLOB,
-                            CLIENT_BYTEARRAY_to_CLIENT_DATETIME,
-                            CLIENT_BYTEARRAY_to_CLIENT_INTVYM,
-                            CLIENT_BYTEARRAY_to_CLIENT_INTDS,
-                            CLIENT_BYTEARRAY_to_CLIENT_VUTF8, NULL,
-                            CLIENT_BYTEARRAY_to_CLIENT_DATETIMEUS,
-                            CLIENT_BYTEARRAY_to_CLIENT_INTDSUS},
-    /* CLIENT_PSTR2   */ {NULL, CLIENT_PSTR2_to_CLIENT_UINT,
-                          CLIENT_PSTR2_to_CLIENT_INT,
-                          CLIENT_PSTR2_to_CLIENT_REAL,
-                          CLIENT_PSTR2_to_CLIENT_CSTR,
-                          CLIENT_PSTR2_to_CLIENT_PSTR,
-                          CLIENT_PSTR2_to_CLIENT_BYTEARRAY,
-                          CLIENT_PSTR2_to_CLIENT_PSTR2,
-                          CLIENT_PSTR2_to_CLIENT_BLOB,
-                          CLIENT_PSTR2_to_CLIENT_DATETIME,
-                          CLIENT_PSTR2_to_CLIENT_INTVYM,
-                          CLIENT_PSTR2_to_CLIENT_INTVDS,
-                          CLIENT_PSTR2_to_CLIENT_VUTF8, NULL,
-                          CLIENT_PSTR2_to_CLIENT_DATETIMEUS,
-                          CLIENT_PSTR2_to_CLIENT_INTVDSUS},
-    /* CLIENT_BLOB */ {NULL, CLIENT_BLOB_to_CLIENT_UINT,
-                       CLIENT_BLOB_to_CLIENT_INT, CLIENT_BLOB_to_CLIENT_REAL,
-                       CLIENT_BLOB_to_CLIENT_CSTR, CLIENT_BLOB_to_CLIENT_PSTR,
-                       CLIENT_BLOB_to_CLIENT_BYTEARRAY,
-                       CLIENT_BLOB_to_CLIENT_PSTR2, CLIENT_BLOB_to_CLIENT_BLOB,
-                       CLIENT_BLOB_to_CLIENT_DATETIME,
-                       CLIENT_BLOB_to_CLIENT_INTVYM,
-                       CLIENT_BLOB_to_CLIENT_INTVDS,
-                       CLIENT_BLOB_to_CLIENT_VUTF8, NULL,
-                       CLIENT_BLOB_to_CLIENT_DATETIMEUS,
-                       CLIENT_BLOB_to_CLIENT_INTVDSUS},
-    /* CLIENT_DATETIME */ {NULL, CLIENT_DATETIME_to_CLIENT_UINT,
-                           CLIENT_DATETIME_to_CLIENT_INT,
-                           CLIENT_DATETIME_to_CLIENT_REAL,
-                           CLIENT_DATETIME_to_CLIENT_CSTR,
-                           CLIENT_DATETIME_to_CLIENT_PSTR,
-                           CLIENT_DATETIME_to_CLIENT_BYTEARRAY,
-                           CLIENT_DATETIME_to_CLIENT_PSTR2,
-                           CLIENT_DATETIME_to_CLIENT_BLOB,
-                           CLIENT_DATETIME_to_CLIENT_DATETIME,
-                           CLIENT_DATETIME_to_CLIENT_INTVYM,
-                           CLIENT_DATETIME_to_CLIENT_INTVDS,
-                           CLIENT_DATETIME_to_CLIENT_VUTF8, NULL,
-                           CLIENT_DATETIME_to_CLIENT_DATETIMEUS,
-                           CLIENT_DATETIME_to_CLIENT_INTVDSUS},
-    /* CLIENT_INTVYM */ {NULL, CLIENT_INTVYM_to_CLIENT_UINT,
-                         CLIENT_INTVYM_to_CLIENT_INT,
-                         CLIENT_INTVYM_to_CLIENT_REAL,
-                         CLIENT_INTVYM_to_CLIENT_CSTR,
-                         CLIENT_INTVYM_to_CLIENT_PSTR,
-                         CLIENT_INTVYM_to_CLIENT_BYTEARRAY,
-                         CLIENT_INTVYM_to_CLIENT_PSTR2,
-                         CLIENT_INTVYM_to_CLIENT_BLOB,
-                         CLIENT_INTVYM_to_CLIENT_DATETIME,
-                         CLIENT_INTVYM_to_CLIENT_INTVYM,
-                         CLIENT_INTVYM_to_CLIENT_INTVDS,
-                         CLIENT_INTVYM_to_CLIENT_VUTF8, NULL,
-                         CLIENT_INTVYM_to_CLIENT_DATETIMEUS,
-                         CLIENT_INTVYM_to_CLIENT_INTVDSUS},
-    /* CLIENT_INTVDS */ {NULL, CLIENT_INTVDS_to_CLIENT_UINT,
-                         CLIENT_INTVDS_to_CLIENT_INT,
-                         CLIENT_INTVDS_to_CLIENT_REAL,
-                         CLIENT_INTVDS_to_CLIENT_CSTR,
-                         CLIENT_INTVDS_to_CLIENT_PSTR,
-                         CLIENT_INTVDS_to_CLIENT_BYTEARRAY,
-                         CLIENT_INTVDS_to_CLIENT_PSTR2,
-                         CLIENT_INTVDS_to_CLIENT_BLOB,
-                         CLIENT_INTVDS_to_CLIENT_DATETIME,
-                         CLIENT_INTVDS_to_CLIENT_INTVYM,
-                         CLIENT_INTVDS_to_CLIENT_INTVDS,
-                         CLIENT_INTVDS_to_CLIENT_VUTF8, NULL,
-                         CLIENT_INTVDS_to_CLIENT_DATETIMEUS,
-                         CLIENT_INTVDS_to_CLIENT_INTVDSUS},
-    /* CLIENT_VUTF8 */ {NULL, CLIENT_VUTF8_to_CLIENT_UINT,
-                        CLIENT_VUTF8_to_CLIENT_INT, CLIENT_VUTF8_to_CLIENT_REAL,
-                        CLIENT_VUTF8_to_CLIENT_CSTR,
-                        CLIENT_VUTF8_to_CLIENT_PSTR,
-                        CLIENT_VUTF8_to_CLIENT_BYTEARRAY,
-                        CLIENT_VUTF8_to_CLIENT_PSTR2,
-                        CLIENT_VUTF8_to_CLIENT_BLOB,
-                        CLIENT_VUTF8_to_CLIENT_DATETIME,
-                        CLIENT_VUTF8_to_CLIENT_INTVYM,
-                        CLIENT_VUTF8_to_CLIENT_INTVDS,
-                        CLIENT_VUTF8_to_CLIENT_VUTF8, NULL,
-                        CLIENT_VUTF8_to_CLIENT_DATETIMEUS,
-                        CLIENT_VUTF8_to_CLIENT_INTVDSUS},
-    /* CLIENT_BLOB2 */ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                        NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-    /* CLIENT_DATETIMEUS */ {NULL, CLIENT_DATETIMEUS_to_CLIENT_UINT,
-                             CLIENT_DATETIMEUS_to_CLIENT_INT,
-                             CLIENT_DATETIMEUS_to_CLIENT_REAL,
-                             CLIENT_DATETIMEUS_to_CLIENT_CSTR,
-                             CLIENT_DATETIMEUS_to_CLIENT_PSTR,
-                             CLIENT_DATETIMEUS_to_CLIENT_BYTEARRAY,
-                             CLIENT_DATETIMEUS_to_CLIENT_PSTR2,
-                             CLIENT_DATETIMEUS_to_CLIENT_BLOB,
-                             CLIENT_DATETIMEUS_to_CLIENT_DATETIME,
-                             CLIENT_DATETIMEUS_to_CLIENT_INTVYM,
-                             CLIENT_DATETIMEUS_to_CLIENT_INTVDS,
-                             CLIENT_DATETIMEUS_to_CLIENT_VUTF8, NULL,
-                             CLIENT_DATETIMEUS_to_CLIENT_DATETIMEUS,
-                             CLIENT_DATETIMEUS_to_CLIENT_INTVDSUS},
-    /* CLIENT_INTVDS */ {NULL, CLIENT_INTVDSUS_to_CLIENT_UINT,
-                         CLIENT_INTVDSUS_to_CLIENT_INT,
-                         CLIENT_INTVDSUS_to_CLIENT_REAL,
-                         CLIENT_INTVDSUS_to_CLIENT_CSTR,
-                         CLIENT_INTVDSUS_to_CLIENT_PSTR,
-                         CLIENT_INTVDSUS_to_CLIENT_BYTEARRAY,
-                         CLIENT_INTVDSUS_to_CLIENT_PSTR2,
-                         CLIENT_INTVDSUS_to_CLIENT_BLOB,
-                         CLIENT_INTVDSUS_to_CLIENT_DATETIME,
-                         CLIENT_INTVDSUS_to_CLIENT_INTVYM,
-                         CLIENT_INTVDSUS_to_CLIENT_INTVDS,
-                         CLIENT_INTVDSUS_to_CLIENT_VUTF8, NULL,
-                         CLIENT_INTVDSUS_to_CLIENT_DATETIMEUS,
-                         CLIENT_INTVDSUS_to_CLIENT_INTVDSUS},
+    /* CLIENT_UINT */ {NULL, CLIENT_UINT_to_CLIENT_UINT, CLIENT_UINT_to_CLIENT_INT, CLIENT_UINT_to_CLIENT_REAL, CLIENT_UINT_to_CLIENT_CSTR, CLIENT_UINT_to_CLIENT_PSTR, CLIENT_UINT_to_CLIENT_BYTEARRAY, CLIENT_UINT_to_CLIENT_PSTR2, CLIENT_UINT_to_CLIENT_BLOB, CLIENT_UINT_to_CLIENT_DATETIME, CLIENT_UINT_to_CLIENT_INTVYM, CLIENT_UINT_to_CLIENT_INTVDS, CLIENT_UINT_to_CLIENT_VUTF8, NULL, CLIENT_UINT_to_CLIENT_DATETIMEUS, CLIENT_UINT_to_CLIENT_INTVDSUS},
+    /* CLIENT_INT */ {NULL, CLIENT_INT_to_CLIENT_UINT, CLIENT_INT_to_CLIENT_INT, CLIENT_INT_to_CLIENT_REAL, CLIENT_INT_to_CLIENT_CSTR, CLIENT_INT_to_CLIENT_PSTR, CLIENT_INT_to_CLIENT_BYTEARRAY, CLIENT_INT_to_CLIENT_PSTR2, CLIENT_INT_to_CLIENT_BLOB, CLIENT_INT_to_CLIENT_DATETIME, CLIENT_INT_to_CLIENT_INTVYM, CLIENT_INT_to_CLIENT_INTVDS, CLIENT_INT_to_CLIENT_VUTF8, NULL, CLIENT_INT_to_CLIENT_DATETIMEUS, CLIENT_INT_to_CLIENT_INTVDSUS},
+    /* CLIENT_REAL */ {NULL, CLIENT_REAL_to_CLIENT_UINT, CLIENT_REAL_to_CLIENT_INT, CLIENT_REAL_to_CLIENT_REAL, CLIENT_REAL_to_CLIENT_CSTR, CLIENT_REAL_to_CLIENT_PSTR, CLIENT_REAL_to_CLIENT_BYTEARRAY, CLIENT_REAL_to_CLIENT_PSTR2, CLIENT_REAL_to_CLIENT_BLOB, CLIENT_REAL_to_CLIENT_DATETIME, CLIENT_REAL_to_CLIENT_INTVYM, CLIENT_REAL_to_CLIENT_INTVDS, CLIENT_REAL_to_CLIENT_VUTF8, NULL, CLIENT_REAL_to_CLIENT_DATETIMEUS, CLIENT_REAL_to_CLIENT_INTVDSUS},
+    /* CLIENT_CSTR */ {NULL, CLIENT_CSTR_to_CLIENT_UINT, CLIENT_CSTR_to_CLIENT_INT, CLIENT_CSTR_to_CLIENT_REAL, CLIENT_CSTR_to_CLIENT_CSTR, CLIENT_CSTR_to_CLIENT_PSTR, CLIENT_CSTR_to_CLIENT_BYTEARRAY, CLIENT_CSTR_to_CLIENT_PSTR2, CLIENT_CSTR_to_CLIENT_BLOB, CLIENT_CSTR_to_CLIENT_DATETIME, CLIENT_CSTR_to_CLIENT_INTVYM, CLIENT_CSTR_to_CLIENT_INTVDS, CLIENT_CSTR_to_CLIENT_VUTF8, NULL, CLIENT_CSTR_to_CLIENT_DATETIMEUS, CLIENT_CSTR_to_CLIENT_INTVDSUS},
+    /* CLIENT_PSTR */ {NULL, CLIENT_PSTR_to_CLIENT_UINT, CLIENT_PSTR_to_CLIENT_INT, CLIENT_PSTR_to_CLIENT_REAL, CLIENT_PSTR_to_CLIENT_CSTR, CLIENT_PSTR_to_CLIENT_PSTR, CLIENT_PSTR_to_CLIENT_BYTEARRAY, CLIENT_PSTR_to_CLIENT_PSTR2, CLIENT_PSTR_to_CLIENT_BLOB, CLIENT_PSTR_to_CLIENT_DATETIME, CLIENT_PSTR_to_CLIENT_INTVYM, CLIENT_PSTR_to_CLIENT_INTVDS, CLIENT_PSTR_to_CLIENT_VUTF8, NULL, CLIENT_PSTR_to_CLIENT_DATETIMEUS, CLIENT_PSTR_to_CLIENT_INTVDSUS},
+    /* CLIENT_BYTEARRAY */ {NULL, CLIENT_BYTEARRAY_to_CLIENT_UINT, CLIENT_BYTEARRAY_to_CLIENT_INT, CLIENT_BYTEARRAY_to_CLIENT_REAL, CLIENT_BYTEARRAY_to_CLIENT_CSTR, CLIENT_BYTEARRAY_to_CLIENT_PSTR, CLIENT_BYTEARRAY_to_CLIENT_BYTEARRAY, CLIENT_BYTEARRAY_to_CLIENT_PSTR2, CLIENT_BYTEARRAY_to_CLIENT_BLOB, CLIENT_BYTEARRAY_to_CLIENT_DATETIME, CLIENT_BYTEARRAY_to_CLIENT_INTVYM, CLIENT_BYTEARRAY_to_CLIENT_INTDS, CLIENT_BYTEARRAY_to_CLIENT_VUTF8, NULL, CLIENT_BYTEARRAY_to_CLIENT_DATETIMEUS, CLIENT_BYTEARRAY_to_CLIENT_INTDSUS},
+    /* CLIENT_PSTR2   */ {NULL, CLIENT_PSTR2_to_CLIENT_UINT, CLIENT_PSTR2_to_CLIENT_INT, CLIENT_PSTR2_to_CLIENT_REAL, CLIENT_PSTR2_to_CLIENT_CSTR, CLIENT_PSTR2_to_CLIENT_PSTR, CLIENT_PSTR2_to_CLIENT_BYTEARRAY, CLIENT_PSTR2_to_CLIENT_PSTR2, CLIENT_PSTR2_to_CLIENT_BLOB, CLIENT_PSTR2_to_CLIENT_DATETIME, CLIENT_PSTR2_to_CLIENT_INTVYM, CLIENT_PSTR2_to_CLIENT_INTVDS, CLIENT_PSTR2_to_CLIENT_VUTF8, NULL, CLIENT_PSTR2_to_CLIENT_DATETIMEUS, CLIENT_PSTR2_to_CLIENT_INTVDSUS},
+    /* CLIENT_BLOB */ {NULL, CLIENT_BLOB_to_CLIENT_UINT, CLIENT_BLOB_to_CLIENT_INT, CLIENT_BLOB_to_CLIENT_REAL, CLIENT_BLOB_to_CLIENT_CSTR, CLIENT_BLOB_to_CLIENT_PSTR, CLIENT_BLOB_to_CLIENT_BYTEARRAY, CLIENT_BLOB_to_CLIENT_PSTR2, CLIENT_BLOB_to_CLIENT_BLOB, CLIENT_BLOB_to_CLIENT_DATETIME, CLIENT_BLOB_to_CLIENT_INTVYM, CLIENT_BLOB_to_CLIENT_INTVDS, CLIENT_BLOB_to_CLIENT_VUTF8, NULL, CLIENT_BLOB_to_CLIENT_DATETIMEUS, CLIENT_BLOB_to_CLIENT_INTVDSUS},
+    /* CLIENT_DATETIME */ {NULL, CLIENT_DATETIME_to_CLIENT_UINT, CLIENT_DATETIME_to_CLIENT_INT, CLIENT_DATETIME_to_CLIENT_REAL, CLIENT_DATETIME_to_CLIENT_CSTR, CLIENT_DATETIME_to_CLIENT_PSTR, CLIENT_DATETIME_to_CLIENT_BYTEARRAY, CLIENT_DATETIME_to_CLIENT_PSTR2, CLIENT_DATETIME_to_CLIENT_BLOB, CLIENT_DATETIME_to_CLIENT_DATETIME, CLIENT_DATETIME_to_CLIENT_INTVYM, CLIENT_DATETIME_to_CLIENT_INTVDS, CLIENT_DATETIME_to_CLIENT_VUTF8, NULL, CLIENT_DATETIME_to_CLIENT_DATETIMEUS, CLIENT_DATETIME_to_CLIENT_INTVDSUS},
+    /* CLIENT_INTVYM */ {NULL, CLIENT_INTVYM_to_CLIENT_UINT, CLIENT_INTVYM_to_CLIENT_INT, CLIENT_INTVYM_to_CLIENT_REAL, CLIENT_INTVYM_to_CLIENT_CSTR, CLIENT_INTVYM_to_CLIENT_PSTR, CLIENT_INTVYM_to_CLIENT_BYTEARRAY, CLIENT_INTVYM_to_CLIENT_PSTR2, CLIENT_INTVYM_to_CLIENT_BLOB, CLIENT_INTVYM_to_CLIENT_DATETIME, CLIENT_INTVYM_to_CLIENT_INTVYM, CLIENT_INTVYM_to_CLIENT_INTVDS, CLIENT_INTVYM_to_CLIENT_VUTF8, NULL, CLIENT_INTVYM_to_CLIENT_DATETIMEUS, CLIENT_INTVYM_to_CLIENT_INTVDSUS},
+    /* CLIENT_INTVDS */ {NULL, CLIENT_INTVDS_to_CLIENT_UINT, CLIENT_INTVDS_to_CLIENT_INT, CLIENT_INTVDS_to_CLIENT_REAL, CLIENT_INTVDS_to_CLIENT_CSTR, CLIENT_INTVDS_to_CLIENT_PSTR, CLIENT_INTVDS_to_CLIENT_BYTEARRAY, CLIENT_INTVDS_to_CLIENT_PSTR2, CLIENT_INTVDS_to_CLIENT_BLOB, CLIENT_INTVDS_to_CLIENT_DATETIME, CLIENT_INTVDS_to_CLIENT_INTVYM, CLIENT_INTVDS_to_CLIENT_INTVDS, CLIENT_INTVDS_to_CLIENT_VUTF8, NULL, CLIENT_INTVDS_to_CLIENT_DATETIMEUS, CLIENT_INTVDS_to_CLIENT_INTVDSUS},
+    /* CLIENT_VUTF8 */ {NULL, CLIENT_VUTF8_to_CLIENT_UINT, CLIENT_VUTF8_to_CLIENT_INT, CLIENT_VUTF8_to_CLIENT_REAL, CLIENT_VUTF8_to_CLIENT_CSTR, CLIENT_VUTF8_to_CLIENT_PSTR, CLIENT_VUTF8_to_CLIENT_BYTEARRAY, CLIENT_VUTF8_to_CLIENT_PSTR2, CLIENT_VUTF8_to_CLIENT_BLOB, CLIENT_VUTF8_to_CLIENT_DATETIME, CLIENT_VUTF8_to_CLIENT_INTVYM, CLIENT_VUTF8_to_CLIENT_INTVDS, CLIENT_VUTF8_to_CLIENT_VUTF8, NULL, CLIENT_VUTF8_to_CLIENT_DATETIMEUS, CLIENT_VUTF8_to_CLIENT_INTVDSUS},
+    /* CLIENT_BLOB2 */ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    /* CLIENT_DATETIMEUS */ {NULL, CLIENT_DATETIMEUS_to_CLIENT_UINT, CLIENT_DATETIMEUS_to_CLIENT_INT, CLIENT_DATETIMEUS_to_CLIENT_REAL, CLIENT_DATETIMEUS_to_CLIENT_CSTR, CLIENT_DATETIMEUS_to_CLIENT_PSTR, CLIENT_DATETIMEUS_to_CLIENT_BYTEARRAY, CLIENT_DATETIMEUS_to_CLIENT_PSTR2, CLIENT_DATETIMEUS_to_CLIENT_BLOB, CLIENT_DATETIMEUS_to_CLIENT_DATETIME, CLIENT_DATETIMEUS_to_CLIENT_INTVYM, CLIENT_DATETIMEUS_to_CLIENT_INTVDS, CLIENT_DATETIMEUS_to_CLIENT_VUTF8, NULL, CLIENT_DATETIMEUS_to_CLIENT_DATETIMEUS, CLIENT_DATETIMEUS_to_CLIENT_INTVDSUS},
+    /* CLIENT_INTVDS */ {NULL, CLIENT_INTVDSUS_to_CLIENT_UINT, CLIENT_INTVDSUS_to_CLIENT_INT, CLIENT_INTVDSUS_to_CLIENT_REAL, CLIENT_INTVDSUS_to_CLIENT_CSTR, CLIENT_INTVDSUS_to_CLIENT_PSTR, CLIENT_INTVDSUS_to_CLIENT_BYTEARRAY, CLIENT_INTVDSUS_to_CLIENT_PSTR2, CLIENT_INTVDSUS_to_CLIENT_BLOB, CLIENT_INTVDSUS_to_CLIENT_DATETIME, CLIENT_INTVDSUS_to_CLIENT_INTVYM, CLIENT_INTVDSUS_to_CLIENT_INTVDS, CLIENT_INTVDSUS_to_CLIENT_VUTF8, NULL, CLIENT_INTVDSUS_to_CLIENT_DATETIMEUS, CLIENT_INTVDSUS_to_CLIENT_INTVDSUS},
 };
 TYPES_INLINE int CLIENT_to_CLIENT(const void *in, int inlen, int intype,
                                   const struct field_conv_opts *inopts,
@@ -12517,189 +12376,20 @@ int (*server_to_client_convert_map[SERVER_MAXTYPE][CLIENT_MAXTYPE])(
     const struct field_conv_opts *outopts, blob_buffer_t *outblob) = {
     /* SERVER_MINTYPE */ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                           NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-    /* SERVER_UINT */ {NULL, SERVER_UINT_to_CLIENT_UINT,
-                       SERVER_UINT_to_CLIENT_INT, SERVER_UINT_to_CLIENT_REAL,
-                       SERVER_UINT_to_CLIENT_CSTR, SERVER_UINT_to_CLIENT_PSTR,
-                       SERVER_UINT_to_CLIENT_BYTEARRAY,
-                       SERVER_UINT_to_CLIENT_PSTR2, SERVER_UINT_to_CLIENT_BLOB,
-                       SERVER_UINT_to_CLIENT_DATETIME,
-                       SERVER_UINT_to_CLIENT_INTVYM,
-                       SERVER_UINT_to_CLIENT_INTVDS,
-                       SERVER_UINT_to_CLIENT_VUTF8, NULL,
-                       SERVER_UINT_to_CLIENT_DATETIMEUS,
-                       SERVER_UINT_to_CLIENT_INTVDSUS},
-    /* SERVER_BINT */ {NULL, SERVER_BINT_to_CLIENT_UINT,
-                       SERVER_BINT_to_CLIENT_INT, SERVER_BINT_to_CLIENT_REAL,
-                       SERVER_BINT_to_CLIENT_CSTR, SERVER_BINT_to_CLIENT_PSTR,
-                       SERVER_BINT_to_CLIENT_BYTEARRAY,
-                       SERVER_BINT_to_CLIENT_PSTR2, SERVER_BINT_to_CLIENT_BLOB,
-                       SERVER_BINT_to_CLIENT_DATETIME,
-                       SERVER_BINT_to_CLIENT_INTVYM,
-                       SERVER_BINT_to_CLIENT_INTVDS,
-                       SERVER_BINT_to_CLIENT_VUTF8, NULL,
-                       SERVER_BINT_to_CLIENT_DATETIMEUS,
-                       SERVER_BINT_to_CLIENT_INTVDSUS},
-    /* SERVER_BREAL */ {NULL, SERVER_BREAL_to_CLIENT_UINT,
-                        SERVER_BREAL_to_CLIENT_INT, SERVER_BREAL_to_CLIENT_REAL,
-                        SERVER_BREAL_to_CLIENT_CSTR,
-                        SERVER_BREAL_to_CLIENT_PSTR,
-                        SERVER_BREAL_to_CLIENT_BYTEARRAY,
-                        SERVER_BREAL_to_CLIENT_PSTR2,
-                        SERVER_BREAL_to_CLIENT_BLOB,
-                        SERVER_BREAL_to_CLIENT_DATETIME,
-                        SERVER_BREAL_to_CLIENT_INTVYM,
-                        SERVER_BREAL_to_CLIENT_INTVDS,
-                        SERVER_BREAL_to_CLIENT_VUTF8, NULL,
-                        SERVER_BREAL_to_CLIENT_DATETIMEUS,
-                        SERVER_BREAL_to_CLIENT_INTVDSUS},
-    /* SERVER_BCSTR */ {NULL, SERVER_BCSTR_to_CLIENT_UINT,
-                        SERVER_BCSTR_to_CLIENT_INT, SERVER_BCSTR_to_CLIENT_REAL,
-                        SERVER_BCSTR_to_CLIENT_CSTR,
-                        SERVER_BCSTR_to_CLIENT_PSTR,
-                        SERVER_BCSTR_to_CLIENT_BYTEARRAY,
-                        SERVER_BCSTR_to_CLIENT_PSTR2,
-                        SERVER_BCSTR_to_CLIENT_BLOB,
-                        SERVER_BCSTR_to_CLIENT_DATETIME,
-                        SERVER_BCSTR_to_CLIENT_INTVYM,
-                        SERVER_BCSTR_to_CLIENT_INTVDS,
-                        SERVER_BCSTR_to_CLIENT_VUTF8, NULL,
-                        SERVER_BCSTR_to_CLIENT_DATETIMEUS,
-                        SERVER_BCSTR_to_CLIENT_INTVDSUS},
-    /* SERVER_BYTEARRAY */ {NULL, SERVER_BYTEARRAY_to_CLIENT_UINT,
-                            SERVER_BYTEARRAY_to_CLIENT_INT,
-                            SERVER_BYTEARRAY_to_CLIENT_REAL,
-                            SERVER_BYTEARRAY_to_CLIENT_CSTR,
-                            SERVER_BYTEARRAY_to_CLIENT_PSTR,
-                            SERVER_BYTEARRAY_to_CLIENT_BYTEARRAY,
-                            SERVER_BYTEARRAY_to_CLIENT_PSTR2,
-                            SERVER_BYTEARRAY_to_CLIENT_BLOB,
-                            SERVER_BYTEARRAY_to_CLIENT_DATETIME,
-                            SERVER_BYTEARRAY_to_CLIENT_INTVYM,
-                            SERVER_BYTEARRAY_to_CLIENT_INTVDS,
-                            SERVER_BYTEARRAY_to_CLIENT_VUTF8, NULL,
-                            SERVER_BYTEARRAY_to_CLIENT_DATETIMEUS,
-                            SERVER_BYTEARRAY_to_CLIENT_INTVDSUS},
-    /* SERVER_BLOB */ {NULL, SERVER_BLOB_to_CLIENT_UINT,
-                       SERVER_BLOB_to_CLIENT_INT, SERVER_BLOB_to_CLIENT_REAL,
-                       SERVER_BLOB_to_CLIENT_CSTR, SERVER_BLOB_to_CLIENT_PSTR,
-                       SERVER_BLOB_to_CLIENT_BYTEARRAY,
-                       SERVER_BLOB_to_CLIENT_PSTR2, SERVER_BLOB_to_CLIENT_BLOB,
-                       SERVER_BLOB_to_CLIENT_DATETIME,
-                       SERVER_BLOB_to_CLIENT_INTVYM,
-                       SERVER_BLOB_to_CLIENT_INTVDS,
-                       SERVER_BLOB_to_CLIENT_VUTF8, NULL,
-                       SERVER_BLOB_to_CLIENT_DATETIMEUS,
-                       SERVER_BLOB_to_CLIENT_INTVDSUS},
-    /* SERVER_DATETIME*/ {NULL, SERVER_DATETIME_to_CLIENT_UINT,
-                          SERVER_DATETIME_to_CLIENT_INT,
-                          SERVER_DATETIME_to_CLIENT_REAL,
-                          SERVER_DATETIME_to_CLIENT_CSTR,
-                          SERVER_DATETIME_to_CLIENT_PSTR,
-                          SERVER_DATETIME_to_CLIENT_BYTEARRAY,
-                          SERVER_DATETIME_to_CLIENT_PSTR2,
-                          SERVER_DATETIME_to_CLIENT_BLOB,
-                          SERVER_DATETIME_to_CLIENT_DATETIME,
-                          SERVER_DATETIME_to_CLIENT_INTVYM,
-                          SERVER_DATETIME_to_CLIENT_INTVDS,
-                          SERVER_DATETIME_to_CLIENT_VUTF8, NULL,
-                          SERVER_DATETIME_to_CLIENT_DATETIMEUS,
-                          SERVER_DATETIME_to_CLIENT_INTVDSUS},
-    /* SERVER_INTVYM */ {NULL, SERVER_INTVYM_to_CLIENT_UINT,
-                         SERVER_INTVYM_to_CLIENT_INT,
-                         SERVER_INTVYM_to_CLIENT_REAL,
-                         SERVER_INTVYM_to_CLIENT_CSTR,
-                         SERVER_INTVYM_to_CLIENT_PSTR,
-                         SERVER_INTVYM_to_CLIENT_BYTEARRAY,
-                         SERVER_INTVYM_to_CLIENT_PSTR2,
-                         SERVER_INTVYM_to_CLIENT_BLOB,
-                         SERVER_INTVYM_to_CLIENT_DATETIME,
-                         SERVER_INTVYM_to_CLIENT_INTVYM,
-                         SERVER_INTVYM_to_CLIENT_INTVDS,
-                         SERVER_INTVYM_to_CLIENT_VUTF8, NULL,
-                         SERVER_INTVYM_to_CLIENT_DATETIMEUS,
-                         SERVER_INTVYM_to_CLIENT_INTVDSUS},
-    /* SERVER_INTVDS */ {NULL, SERVER_INTVDS_to_CLIENT_UINT,
-                         SERVER_INTVDS_to_CLIENT_INT,
-                         SERVER_INTVDS_to_CLIENT_REAL,
-                         SERVER_INTVDS_to_CLIENT_CSTR,
-                         SERVER_INTVDS_to_CLIENT_PSTR,
-                         SERVER_INTVDS_to_CLIENT_BYTEARRAY,
-                         SERVER_INTVDS_to_CLIENT_PSTR2,
-                         SERVER_INTVDS_to_CLIENT_BLOB,
-                         SERVER_INTVDS_to_CLIENT_DATETIME,
-                         SERVER_INTVDS_to_CLIENT_INTVYM,
-                         SERVER_INTVDS_to_CLIENT_INTVDS,
-                         SERVER_INTVDS_to_CLIENT_VUTF8, NULL,
-                         SERVER_INTVDS_to_CLIENT_DATETIMEUS,
-                         SERVER_INTVDS_to_CLIENT_INTVDSUS},
-    /* SERVER_VUTF8 */ {NULL, SERVER_VUTF8_to_CLIENT_UINT,
-                        SERVER_VUTF8_to_CLIENT_INT, SERVER_VUTF8_to_CLIENT_REAL,
-                        SERVER_VUTF8_to_CLIENT_CSTR,
-                        SERVER_VUTF8_to_CLIENT_PSTR,
-                        SERVER_VUTF8_to_CLIENT_BYTEARRAY,
-                        SERVER_VUTF8_to_CLIENT_PSTR2,
-                        SERVER_VUTF8_to_CLIENT_BLOB,
-                        SERVER_VUTF8_to_CLIENT_DATETIME,
-                        SERVER_VUTF8_to_CLIENT_INTVYM,
-                        SERVER_VUTF8_to_CLIENT_INTVDS,
-                        SERVER_VUTF8_to_CLIENT_VUTF8, NULL,
-                        SERVER_VUTF8_to_CLIENT_DATETIMEUS,
-                        SERVER_VUTF8_to_CLIENT_INTVDSUS},
-    /* SERVER_DECIMAL */ {NULL, SERVER_DECIMAL_to_CLIENT_UINT,
-                          SERVER_DECIMAL_to_CLIENT_INT,
-                          SERVER_DECIMAL_to_CLIENT_REAL,
-                          SERVER_DECIMAL_to_CLIENT_CSTR,
-                          SERVER_DECIMAL_to_CLIENT_PSTR,
-                          SERVER_DECIMAL_to_CLIENT_BYTEARRAY,
-                          SERVER_DECIMAL_to_CLIENT_PSTR2,
-                          SERVER_DECIMAL_to_CLIENT_BLOB,
-                          SERVER_DECIMAL_to_CLIENT_DATETIME,
-                          SERVER_DECIMAL_to_CLIENT_INTVYM,
-                          SERVER_DECIMAL_to_CLIENT_INTVDS,
-                          SERVER_DECIMAL_to_CLIENT_VUTF8, NULL,
-                          SERVER_DECIMAL_to_CLIENT_DATETIMEUS,
-                          SERVER_DECIMAL_to_CLIENT_INTVDSUS},
-    /* SERVER_BLOB2 */ {NULL, SERVER_BLOB2_to_CLIENT_UINT,
-                        SERVER_BLOB2_to_CLIENT_INT, SERVER_BLOB2_to_CLIENT_REAL,
-                        SERVER_BLOB2_to_CLIENT_CSTR,
-                        SERVER_BLOB2_to_CLIENT_PSTR,
-                        SERVER_BLOB2_to_CLIENT_BYTEARRAY,
-                        SERVER_BLOB2_to_CLIENT_PSTR2,
-                        SERVER_BLOB2_to_CLIENT_BLOB,
-                        SERVER_BLOB2_to_CLIENT_DATETIME,
-                        SERVER_BLOB2_to_CLIENT_INTVYM,
-                        SERVER_BLOB2_to_CLIENT_INTVDS,
-                        SERVER_BLOB2_to_CLIENT_VUTF8, NULL,
-                        SERVER_BLOB2_to_CLIENT_DATETIMEUS,
-                        SERVER_BLOB2_to_CLIENT_INTVDSUS},
-    /* SERVER_DATETIMEUS*/ {NULL, SERVER_DATETIMEUS_to_CLIENT_UINT,
-                            SERVER_DATETIMEUS_to_CLIENT_INT,
-                            SERVER_DATETIMEUS_to_CLIENT_REAL,
-                            SERVER_DATETIMEUS_to_CLIENT_CSTR,
-                            SERVER_DATETIMEUS_to_CLIENT_PSTR,
-                            SERVER_DATETIMEUS_to_CLIENT_BYTEARRAY,
-                            SERVER_DATETIMEUS_to_CLIENT_PSTR2,
-                            SERVER_DATETIMEUS_to_CLIENT_BLOB,
-                            SERVER_DATETIMEUS_to_CLIENT_DATETIME,
-                            SERVER_DATETIMEUS_to_CLIENT_INTVYM,
-                            SERVER_DATETIMEUS_to_CLIENT_INTVDS,
-                            SERVER_DATETIMEUS_to_CLIENT_VUTF8, NULL,
-                            SERVER_DATETIMEUS_to_CLIENT_DATETIMEUS,
-                            SERVER_DATETIMEUS_to_CLIENT_INTVDSUS},
-    /* SERVER_INTVDS */ {NULL, SERVER_INTVDSUS_to_CLIENT_UINT,
-                         SERVER_INTVDSUS_to_CLIENT_INT,
-                         SERVER_INTVDSUS_to_CLIENT_REAL,
-                         SERVER_INTVDSUS_to_CLIENT_CSTR,
-                         SERVER_INTVDSUS_to_CLIENT_PSTR,
-                         SERVER_INTVDSUS_to_CLIENT_BYTEARRAY,
-                         SERVER_INTVDSUS_to_CLIENT_PSTR2,
-                         SERVER_INTVDSUS_to_CLIENT_BLOB,
-                         SERVER_INTVDSUS_to_CLIENT_DATETIME,
-                         SERVER_INTVDSUS_to_CLIENT_INTVYM,
-                         SERVER_INTVDSUS_to_CLIENT_INTVDS,
-                         SERVER_INTVDSUS_to_CLIENT_VUTF8, NULL,
-                         SERVER_INTVDSUS_to_CLIENT_DATETIMEUS,
-                         SERVER_INTVDSUS_to_CLIENT_INTVDSUS},
+    /* SERVER_UINT */ {NULL, SERVER_UINT_to_CLIENT_UINT, SERVER_UINT_to_CLIENT_INT, SERVER_UINT_to_CLIENT_REAL, SERVER_UINT_to_CLIENT_CSTR, SERVER_UINT_to_CLIENT_PSTR, SERVER_UINT_to_CLIENT_BYTEARRAY, SERVER_UINT_to_CLIENT_PSTR2, SERVER_UINT_to_CLIENT_BLOB, SERVER_UINT_to_CLIENT_DATETIME, SERVER_UINT_to_CLIENT_INTVYM, SERVER_UINT_to_CLIENT_INTVDS, SERVER_UINT_to_CLIENT_VUTF8, NULL, SERVER_UINT_to_CLIENT_DATETIMEUS, SERVER_UINT_to_CLIENT_INTVDSUS},
+    /* SERVER_BINT */ {NULL, SERVER_BINT_to_CLIENT_UINT, SERVER_BINT_to_CLIENT_INT, SERVER_BINT_to_CLIENT_REAL, SERVER_BINT_to_CLIENT_CSTR, SERVER_BINT_to_CLIENT_PSTR, SERVER_BINT_to_CLIENT_BYTEARRAY, SERVER_BINT_to_CLIENT_PSTR2, SERVER_BINT_to_CLIENT_BLOB, SERVER_BINT_to_CLIENT_DATETIME, SERVER_BINT_to_CLIENT_INTVYM, SERVER_BINT_to_CLIENT_INTVDS, SERVER_BINT_to_CLIENT_VUTF8, NULL, SERVER_BINT_to_CLIENT_DATETIMEUS, SERVER_BINT_to_CLIENT_INTVDSUS},
+    /* SERVER_BREAL */ {NULL, SERVER_BREAL_to_CLIENT_UINT, SERVER_BREAL_to_CLIENT_INT, SERVER_BREAL_to_CLIENT_REAL, SERVER_BREAL_to_CLIENT_CSTR, SERVER_BREAL_to_CLIENT_PSTR, SERVER_BREAL_to_CLIENT_BYTEARRAY, SERVER_BREAL_to_CLIENT_PSTR2, SERVER_BREAL_to_CLIENT_BLOB, SERVER_BREAL_to_CLIENT_DATETIME, SERVER_BREAL_to_CLIENT_INTVYM, SERVER_BREAL_to_CLIENT_INTVDS, SERVER_BREAL_to_CLIENT_VUTF8, NULL, SERVER_BREAL_to_CLIENT_DATETIMEUS, SERVER_BREAL_to_CLIENT_INTVDSUS},
+    /* SERVER_BCSTR */ {NULL, SERVER_BCSTR_to_CLIENT_UINT, SERVER_BCSTR_to_CLIENT_INT, SERVER_BCSTR_to_CLIENT_REAL, SERVER_BCSTR_to_CLIENT_CSTR, SERVER_BCSTR_to_CLIENT_PSTR, SERVER_BCSTR_to_CLIENT_BYTEARRAY, SERVER_BCSTR_to_CLIENT_PSTR2, SERVER_BCSTR_to_CLIENT_BLOB, SERVER_BCSTR_to_CLIENT_DATETIME, SERVER_BCSTR_to_CLIENT_INTVYM, SERVER_BCSTR_to_CLIENT_INTVDS, SERVER_BCSTR_to_CLIENT_VUTF8, NULL, SERVER_BCSTR_to_CLIENT_DATETIMEUS, SERVER_BCSTR_to_CLIENT_INTVDSUS},
+    /* SERVER_BYTEARRAY */ {NULL, SERVER_BYTEARRAY_to_CLIENT_UINT, SERVER_BYTEARRAY_to_CLIENT_INT, SERVER_BYTEARRAY_to_CLIENT_REAL, SERVER_BYTEARRAY_to_CLIENT_CSTR, SERVER_BYTEARRAY_to_CLIENT_PSTR, SERVER_BYTEARRAY_to_CLIENT_BYTEARRAY, SERVER_BYTEARRAY_to_CLIENT_PSTR2, SERVER_BYTEARRAY_to_CLIENT_BLOB, SERVER_BYTEARRAY_to_CLIENT_DATETIME, SERVER_BYTEARRAY_to_CLIENT_INTVYM, SERVER_BYTEARRAY_to_CLIENT_INTVDS, SERVER_BYTEARRAY_to_CLIENT_VUTF8, NULL, SERVER_BYTEARRAY_to_CLIENT_DATETIMEUS, SERVER_BYTEARRAY_to_CLIENT_INTVDSUS},
+    /* SERVER_BLOB */ {NULL, SERVER_BLOB_to_CLIENT_UINT, SERVER_BLOB_to_CLIENT_INT, SERVER_BLOB_to_CLIENT_REAL, SERVER_BLOB_to_CLIENT_CSTR, SERVER_BLOB_to_CLIENT_PSTR, SERVER_BLOB_to_CLIENT_BYTEARRAY, SERVER_BLOB_to_CLIENT_PSTR2, SERVER_BLOB_to_CLIENT_BLOB, SERVER_BLOB_to_CLIENT_DATETIME, SERVER_BLOB_to_CLIENT_INTVYM, SERVER_BLOB_to_CLIENT_INTVDS, SERVER_BLOB_to_CLIENT_VUTF8, NULL, SERVER_BLOB_to_CLIENT_DATETIMEUS, SERVER_BLOB_to_CLIENT_INTVDSUS},
+    /* SERVER_DATETIME*/ {NULL, SERVER_DATETIME_to_CLIENT_UINT, SERVER_DATETIME_to_CLIENT_INT, SERVER_DATETIME_to_CLIENT_REAL, SERVER_DATETIME_to_CLIENT_CSTR, SERVER_DATETIME_to_CLIENT_PSTR, SERVER_DATETIME_to_CLIENT_BYTEARRAY, SERVER_DATETIME_to_CLIENT_PSTR2, SERVER_DATETIME_to_CLIENT_BLOB, SERVER_DATETIME_to_CLIENT_DATETIME, SERVER_DATETIME_to_CLIENT_INTVYM, SERVER_DATETIME_to_CLIENT_INTVDS, SERVER_DATETIME_to_CLIENT_VUTF8, NULL, SERVER_DATETIME_to_CLIENT_DATETIMEUS, SERVER_DATETIME_to_CLIENT_INTVDSUS},
+    /* SERVER_INTVYM */ {NULL, SERVER_INTVYM_to_CLIENT_UINT, SERVER_INTVYM_to_CLIENT_INT, SERVER_INTVYM_to_CLIENT_REAL, SERVER_INTVYM_to_CLIENT_CSTR, SERVER_INTVYM_to_CLIENT_PSTR, SERVER_INTVYM_to_CLIENT_BYTEARRAY, SERVER_INTVYM_to_CLIENT_PSTR2, SERVER_INTVYM_to_CLIENT_BLOB, SERVER_INTVYM_to_CLIENT_DATETIME, SERVER_INTVYM_to_CLIENT_INTVYM, SERVER_INTVYM_to_CLIENT_INTVDS, SERVER_INTVYM_to_CLIENT_VUTF8, NULL, SERVER_INTVYM_to_CLIENT_DATETIMEUS, SERVER_INTVYM_to_CLIENT_INTVDSUS},
+    /* SERVER_INTVDS */ {NULL, SERVER_INTVDS_to_CLIENT_UINT, SERVER_INTVDS_to_CLIENT_INT, SERVER_INTVDS_to_CLIENT_REAL, SERVER_INTVDS_to_CLIENT_CSTR, SERVER_INTVDS_to_CLIENT_PSTR, SERVER_INTVDS_to_CLIENT_BYTEARRAY, SERVER_INTVDS_to_CLIENT_PSTR2, SERVER_INTVDS_to_CLIENT_BLOB, SERVER_INTVDS_to_CLIENT_DATETIME, SERVER_INTVDS_to_CLIENT_INTVYM, SERVER_INTVDS_to_CLIENT_INTVDS, SERVER_INTVDS_to_CLIENT_VUTF8, NULL, SERVER_INTVDS_to_CLIENT_DATETIMEUS, SERVER_INTVDS_to_CLIENT_INTVDSUS},
+    /* SERVER_VUTF8 */ {NULL, SERVER_VUTF8_to_CLIENT_UINT, SERVER_VUTF8_to_CLIENT_INT, SERVER_VUTF8_to_CLIENT_REAL, SERVER_VUTF8_to_CLIENT_CSTR, SERVER_VUTF8_to_CLIENT_PSTR, SERVER_VUTF8_to_CLIENT_BYTEARRAY, SERVER_VUTF8_to_CLIENT_PSTR2, SERVER_VUTF8_to_CLIENT_BLOB, SERVER_VUTF8_to_CLIENT_DATETIME, SERVER_VUTF8_to_CLIENT_INTVYM, SERVER_VUTF8_to_CLIENT_INTVDS, SERVER_VUTF8_to_CLIENT_VUTF8, NULL, SERVER_VUTF8_to_CLIENT_DATETIMEUS, SERVER_VUTF8_to_CLIENT_INTVDSUS},
+    /* SERVER_DECIMAL */ {NULL, SERVER_DECIMAL_to_CLIENT_UINT, SERVER_DECIMAL_to_CLIENT_INT, SERVER_DECIMAL_to_CLIENT_REAL, SERVER_DECIMAL_to_CLIENT_CSTR, SERVER_DECIMAL_to_CLIENT_PSTR, SERVER_DECIMAL_to_CLIENT_BYTEARRAY, SERVER_DECIMAL_to_CLIENT_PSTR2, SERVER_DECIMAL_to_CLIENT_BLOB, SERVER_DECIMAL_to_CLIENT_DATETIME, SERVER_DECIMAL_to_CLIENT_INTVYM, SERVER_DECIMAL_to_CLIENT_INTVDS, SERVER_DECIMAL_to_CLIENT_VUTF8, NULL, SERVER_DECIMAL_to_CLIENT_DATETIMEUS, SERVER_DECIMAL_to_CLIENT_INTVDSUS},
+    /* SERVER_BLOB2 */ {NULL, SERVER_BLOB2_to_CLIENT_UINT, SERVER_BLOB2_to_CLIENT_INT, SERVER_BLOB2_to_CLIENT_REAL, SERVER_BLOB2_to_CLIENT_CSTR, SERVER_BLOB2_to_CLIENT_PSTR, SERVER_BLOB2_to_CLIENT_BYTEARRAY, SERVER_BLOB2_to_CLIENT_PSTR2, SERVER_BLOB2_to_CLIENT_BLOB, SERVER_BLOB2_to_CLIENT_DATETIME, SERVER_BLOB2_to_CLIENT_INTVYM, SERVER_BLOB2_to_CLIENT_INTVDS, SERVER_BLOB2_to_CLIENT_VUTF8, NULL, SERVER_BLOB2_to_CLIENT_DATETIMEUS, SERVER_BLOB2_to_CLIENT_INTVDSUS},
+    /* SERVER_DATETIMEUS*/ {NULL, SERVER_DATETIMEUS_to_CLIENT_UINT, SERVER_DATETIMEUS_to_CLIENT_INT, SERVER_DATETIMEUS_to_CLIENT_REAL, SERVER_DATETIMEUS_to_CLIENT_CSTR, SERVER_DATETIMEUS_to_CLIENT_PSTR, SERVER_DATETIMEUS_to_CLIENT_BYTEARRAY, SERVER_DATETIMEUS_to_CLIENT_PSTR2, SERVER_DATETIMEUS_to_CLIENT_BLOB, SERVER_DATETIMEUS_to_CLIENT_DATETIME, SERVER_DATETIMEUS_to_CLIENT_INTVYM, SERVER_DATETIMEUS_to_CLIENT_INTVDS, SERVER_DATETIMEUS_to_CLIENT_VUTF8, NULL, SERVER_DATETIMEUS_to_CLIENT_DATETIMEUS, SERVER_DATETIMEUS_to_CLIENT_INTVDSUS},
+    /* SERVER_INTVDS */ {NULL, SERVER_INTVDSUS_to_CLIENT_UINT, SERVER_INTVDSUS_to_CLIENT_INT, SERVER_INTVDSUS_to_CLIENT_REAL, SERVER_INTVDSUS_to_CLIENT_CSTR, SERVER_INTVDSUS_to_CLIENT_PSTR, SERVER_INTVDSUS_to_CLIENT_BYTEARRAY, SERVER_INTVDSUS_to_CLIENT_PSTR2, SERVER_INTVDSUS_to_CLIENT_BLOB, SERVER_INTVDSUS_to_CLIENT_DATETIME, SERVER_INTVDSUS_to_CLIENT_INTVYM, SERVER_INTVDSUS_to_CLIENT_INTVDS, SERVER_INTVDSUS_to_CLIENT_VUTF8, NULL, SERVER_INTVDSUS_to_CLIENT_DATETIMEUS, SERVER_INTVDSUS_to_CLIENT_INTVDSUS},
 };
 TYPES_INLINE int SERVER_to_CLIENT(const void *in, int inlen, int intype,
                                   const struct field_conv_opts *inopts,
@@ -12731,204 +12421,21 @@ int (*client_to_server_convert_map[CLIENT_MAXTYPE][SERVER_MAXTYPE])(
     const struct field_conv_opts *outopts, blob_buffer_t *outblob) = {
     /* CLIENT_MINTYPE   */ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
                             NULL, NULL, NULL, NULL, NULL, NULL},
-    /* CLIENT_UINT      */ {NULL, CLIENT_UINT_to_SERVER_UINT,
-                            CLIENT_UINT_to_SERVER_BINT,
-                            CLIENT_UINT_to_SERVER_BREAL,
-                            CLIENT_UINT_to_SERVER_BCSTR,
-                            CLIENT_UINT_to_SERVER_BYTEARRAY,
-                            CLIENT_UINT_to_SERVER_BLOB,
-                            CLIENT_UINT_to_SERVER_DATETIME,
-                            CLIENT_UINT_to_SERVER_INTVYM,
-                            CLIENT_UINT_to_SERVER_INTVDS,
-                            CLIENT_UINT_to_SERVER_VUTF8,
-                            CLIENT_UINT_to_SERVER_DECIMAL,
-                            CLIENT_UINT_to_SERVER_BLOB2,
-                            CLIENT_UINT_to_SERVER_DATETIMEUS,
-                            CLIENT_UINT_to_SERVER_INTVDSUS},
-    /* CLIENT_INT       */ {NULL, CLIENT_INT_to_SERVER_UINT,
-                            CLIENT_INT_to_SERVER_BINT,
-                            CLIENT_INT_to_SERVER_BREAL,
-                            CLIENT_INT_to_SERVER_BCSTR,
-                            CLIENT_INT_to_SERVER_BYTEARRAY,
-                            CLIENT_INT_to_SERVER_BLOB,
-                            CLIENT_INT_to_SERVER_DATETIME,
-                            CLIENT_INT_to_SERVER_INTVYM,
-                            CLIENT_INT_to_SERVER_INTVDS,
-                            CLIENT_INT_to_SERVER_VUTF8,
-                            CLIENT_INT_to_SERVER_DECIMAL,
-                            CLIENT_INT_to_SERVER_BLOB2,
-                            CLIENT_INT_to_SERVER_DATETIMEUS,
-                            CLIENT_INT_to_SERVER_INTVDSUS},
-    /* CLIENT_REAL      */ {NULL, CLIENT_REAL_to_SERVER_UINT,
-                            CLIENT_REAL_to_SERVER_BINT,
-                            CLIENT_REAL_to_SERVER_BREAL,
-                            CLIENT_REAL_to_SERVER_BCSTR,
-                            CLIENT_REAL_to_SERVER_BYTEARRAY,
-                            CLIENT_REAL_to_SERVER_BLOB,
-                            CLIENT_REAL_to_SERVER_DATETIME,
-                            CLIENT_REAL_to_SERVER_INTVYM,
-                            CLIENT_REAL_to_SERVER_INTVDS,
-                            CLIENT_REAL_to_SERVER_VUTF8,
-                            CLIENT_REAL_to_SERVER_DECIMAL,
-                            CLIENT_REAL_to_SERVER_BLOB2,
-                            CLIENT_REAL_to_SERVER_DATETIMEUS,
-                            CLIENT_REAL_to_SERVER_INTVDSUS},
-    /* CLIENT_CSTR      */ {NULL, CLIENT_CSTR_to_SERVER_UINT,
-                            CLIENT_CSTR_to_SERVER_BINT,
-                            CLIENT_CSTR_to_SERVER_BREAL,
-                            CLIENT_CSTR_to_SERVER_BCSTR,
-                            CLIENT_CSTR_to_SERVER_BYTEARRAY,
-                            CLIENT_CSTR_to_SERVER_BLOB,
-                            CLIENT_CSTR_to_SERVER_DATETIME,
-                            CLIENT_CSTR_to_SERVER_INTVYM,
-                            CLIENT_CSTR_to_SERVER_INTVDS,
-                            CLIENT_CSTR_to_SERVER_VUTF8,
-                            CLIENT_CSTR_to_SERVER_DECIMAL,
-                            CLIENT_CSTR_to_SERVER_BLOB2,
-                            CLIENT_CSTR_to_SERVER_DATETIMEUS,
-                            CLIENT_CSTR_to_SERVER_INTVDSUS},
-    /* CLIENT_PSTR      */ {NULL, CLIENT_PSTR_to_SERVER_UINT,
-                            CLIENT_PSTR_to_SERVER_BINT,
-                            CLIENT_PSTR_to_SERVER_BREAL,
-                            CLIENT_PSTR_to_SERVER_BCSTR,
-                            CLIENT_PSTR_to_SERVER_BYTEARRAY,
-                            CLIENT_PSTR_to_SERVER_BLOB,
-                            CLIENT_PSTR_to_SERVER_DATETIME,
-                            CLIENT_PSTR_to_SERVER_INTVYM,
-                            CLIENT_PSTR_to_SERVER_INTVDS,
-                            CLIENT_PSTR_to_SERVER_VUTF8,
-                            CLIENT_PSTR_to_SERVER_DECIMAL,
-                            CLIENT_PSTR_to_SERVER_BLOB2,
-                            CLIENT_PSTR_to_SERVER_DATETIMEUS,
-                            CLIENT_PSTR_to_SERVER_INTVDSUS},
-    /* CLIENT_BYTEARRAY */ {NULL, CLIENT_BYTEARRAY_to_SERVER_UINT,
-                            CLIENT_BYTEARRAY_to_SERVER_BINT,
-                            CLIENT_BYTEARRAY_to_SERVER_BREAL,
-                            CLIENT_BYTEARRAY_to_SERVER_BCSTR,
-                            CLIENT_BYTEARRAY_to_SERVER_BYTEARRAY,
-                            CLIENT_BYTEARRAY_to_SERVER_BLOB,
-                            CLIENT_BYTEARRAY_to_SERVER_DATETIME,
-                            CLIENT_BYTEARRAY_to_SERVER_INTVYM,
-                            CLIENT_BYTEARRAY_to_SERVER_INTVDS,
-                            CLIENT_BYTEARRAY_to_SERVER_VUTF8,
-                            CLIENT_BYTEARRAY_to_SERVER_DECIMAL,
-                            CLIENT_BYTEARRAY_to_SERVER_BLOB2,
-                            CLIENT_BYTEARRAY_to_SERVER_DATETIMEUS,
-                            CLIENT_BYTEARRAY_to_SERVER_INTVDSUS},
-    /* CLIENT_PSTR2     */ {NULL, CLIENT_PSTR2_to_SERVER_UINT,
-                            CLIENT_PSTR2_to_SERVER_BINT,
-                            CLIENT_PSTR2_to_SERVER_BREAL,
-                            CLIENT_PSTR2_to_SERVER_BCSTR,
-                            CLIENT_PSTR2_to_SERVER_BYTEARRAY,
-                            CLIENT_PSTR2_to_SERVER_BLOB,
-                            CLIENT_PSTR2_to_SERVER_DATETIME,
-                            CLIENT_PSTR2_to_SERVER_INTVYM,
-                            CLIENT_PSTR2_to_SERVER_INTVDS,
-                            CLIENT_PSTR2_to_SERVER_VUTF8,
-                            CLIENT_PSTR2_to_SERVER_DECIMAL,
-                            CLIENT_PSTR2_to_SERVER_BLOB2,
-                            CLIENT_PSTR2_to_SERVER_DATETIMEUS,
-                            CLIENT_PSTR2_to_SERVER_INTVDSUS},
-    /* CLIENT_BLOB      */ {NULL, CLIENT_BLOB_to_SERVER_UINT,
-                            CLIENT_BLOB_to_SERVER_BINT,
-                            CLIENT_BLOB_to_SERVER_BREAL,
-                            CLIENT_BLOB_to_SERVER_BCSTR,
-                            CLIENT_BLOB_to_SERVER_BYTEARRAY,
-                            CLIENT_BLOB_to_SERVER_BLOB,
-                            CLIENT_BLOB_to_SERVER_DATETIME,
-                            CLIENT_BLOB_to_SERVER_INTVYM,
-                            CLIENT_BLOB_to_SERVER_INTVDS,
-                            CLIENT_BLOB_to_SERVER_VUTF8,
-                            CLIENT_BLOB_to_SERVER_DECIMAL,
-                            CLIENT_BLOB_to_SERVER_BLOB2,
-                            CLIENT_BLOB_to_SERVER_DATETIMEUS,
-                            CLIENT_BLOB_to_SERVER_INTVDSUS},
-    /* CLIENT_DATETIME  */ {NULL, CLIENT_DATETIME_to_SERVER_UINT,
-                            CLIENT_DATETIME_to_SERVER_BINT,
-                            CLIENT_DATETIME_to_SERVER_BREAL,
-                            CLIENT_DATETIME_to_SERVER_BCSTR,
-                            CLIENT_DATETIME_to_SERVER_BYTEARRAY,
-                            CLIENT_DATETIME_to_SERVER_BLOB,
-                            CLIENT_DATETIME_to_SERVER_DATETIME,
-                            CLIENT_DATETIME_to_SERVER_INTVYM,
-                            CLIENT_DATETIME_to_SERVER_INTVDS,
-                            CLIENT_DATETIME_to_SERVER_VUTF8,
-                            CLIENT_DATETIME_to_SERVER_DECIMAL,
-                            CLIENT_DATETIME_to_SERVER_BLOB2,
-                            CLIENT_DATETIME_to_SERVER_DATETIMEUS,
-                            CLIENT_DATETIME_to_SERVER_INTVDSUS},
-    /* CLIENT_INTVYM    */ {NULL, CLIENT_INTVYM_to_SERVER_UINT,
-                            CLIENT_INTVYM_to_SERVER_BINT,
-                            CLIENT_INTVYM_to_SERVER_BREAL,
-                            CLIENT_INTVYM_to_SERVER_BCSTR,
-                            CLIENT_INTVYM_to_SERVER_BYTEARRAY,
-                            CLIENT_INTVYM_to_SERVER_BLOB,
-                            CLIENT_INTVYM_to_SERVER_DATETIME,
-                            CLIENT_INTVYM_to_SERVER_INTVYM,
-                            CLIENT_INTVYM_to_SERVER_INTVDS,
-                            CLIENT_INTVYM_to_SERVER_VUTF8,
-                            CLIENT_INTVYM_to_SERVER_DECIMAL,
-                            CLIENT_INTVYM_to_SERVER_BLOB2,
-                            CLIENT_INTVYM_to_SERVER_DATETIMEUS,
-                            CLIENT_INTVYM_to_SERVER_INTVDSUS},
-    /* CLIENT_INTVDS    */ {NULL, CLIENT_INTVDS_to_SERVER_UINT,
-                            CLIENT_INTVDS_to_SERVER_BINT,
-                            CLIENT_INTVDS_to_SERVER_BREAL,
-                            CLIENT_INTVDS_to_SERVER_BCSTR,
-                            CLIENT_INTVDS_to_SERVER_BYTEARRAY,
-                            CLIENT_INTVDS_to_SERVER_BLOB,
-                            CLIENT_INTVDS_to_SERVER_DATETIME,
-                            CLIENT_INTVDS_to_SERVER_INTVYM,
-                            CLIENT_INTVDS_to_SERVER_INTVDS,
-                            CLIENT_INTVDS_to_SERVER_VUTF8,
-                            CLIENT_INTVDS_to_SERVER_DECIMAL,
-                            CLIENT_INTVDS_to_SERVER_BLOB2,
-                            CLIENT_INTVDS_to_SERVER_DATETIMEUS,
-                            CLIENT_INTVDS_to_SERVER_INTVDSUS},
-    /* CLIENT_VUTF8     */ {NULL, CLIENT_VUTF8_to_SERVER_UINT,
-                            CLIENT_VUTF8_to_SERVER_BINT,
-                            CLIENT_VUTF8_to_SERVER_BREAL,
-                            CLIENT_VUTF8_to_SERVER_BCSTR,
-                            CLIENT_VUTF8_to_SERVER_BYTEARRAY,
-                            CLIENT_VUTF8_to_SERVER_BLOB,
-                            CLIENT_VUTF8_to_SERVER_DATETIME,
-                            CLIENT_VUTF8_to_SERVER_INTVYM,
-                            CLIENT_VUTF8_to_SERVER_INTVDS,
-                            CLIENT_VUTF8_to_SERVER_VUTF8,
-                            CLIENT_VUTF8_to_SERVER_DECIMAL,
-                            CLIENT_VUTF8_to_SERVER_BLOB2,
-                            CLIENT_VUTF8_to_SERVER_DATETIMEUS,
-                            CLIENT_VUTF8_to_SERVER_INTVDSUS},
-    /* CLIENT_BLOB2   */ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                          NULL, NULL, NULL, NULL, NULL},
-    /* CLIENT_DATETIMEUS */ {NULL, CLIENT_DATETIMEUS_to_SERVER_UINT,
-                             CLIENT_DATETIMEUS_to_SERVER_BINT,
-                             CLIENT_DATETIMEUS_to_SERVER_BREAL,
-                             CLIENT_DATETIMEUS_to_SERVER_BCSTR,
-                             CLIENT_DATETIMEUS_to_SERVER_BYTEARRAY,
-                             CLIENT_DATETIMEUS_to_SERVER_BLOB,
-                             CLIENT_DATETIMEUS_to_SERVER_DATETIME,
-                             CLIENT_DATETIMEUS_to_SERVER_INTVYM,
-                             CLIENT_DATETIMEUS_to_SERVER_INTVDS,
-                             CLIENT_DATETIMEUS_to_SERVER_VUTF8,
-                             CLIENT_DATETIMEUS_to_SERVER_DECIMAL,
-                             CLIENT_DATETIMEUS_to_SERVER_BLOB2,
-                             CLIENT_DATETIMEUS_to_SERVER_DATETIMEUS,
-                             CLIENT_DATETIMEUS_to_SERVER_INTVDSUS},
-    /* CLIENT_INTVDSUS  */ {NULL, CLIENT_INTVDSUS_to_SERVER_UINT,
-                            CLIENT_INTVDSUS_to_SERVER_BINT,
-                            CLIENT_INTVDSUS_to_SERVER_BREAL,
-                            CLIENT_INTVDSUS_to_SERVER_BCSTR,
-                            CLIENT_INTVDSUS_to_SERVER_BYTEARRAY,
-                            CLIENT_INTVDSUS_to_SERVER_BLOB,
-                            CLIENT_INTVDSUS_to_SERVER_DATETIME,
-                            CLIENT_INTVDSUS_to_SERVER_INTVYM,
-                            CLIENT_INTVDSUS_to_SERVER_INTVDS,
-                            CLIENT_INTVDSUS_to_SERVER_VUTF8,
-                            CLIENT_INTVDSUS_to_SERVER_DECIMAL,
-                            CLIENT_INTVDSUS_to_SERVER_BLOB2,
-                            CLIENT_INTVDSUS_to_SERVER_DATETIMEUS,
-                            CLIENT_INTVDSUS_to_SERVER_INTVDSUS},
+    /* CLIENT_UINT      */ {NULL, CLIENT_UINT_to_SERVER_UINT, CLIENT_UINT_to_SERVER_BINT, CLIENT_UINT_to_SERVER_BREAL, CLIENT_UINT_to_SERVER_BCSTR, CLIENT_UINT_to_SERVER_BYTEARRAY, CLIENT_UINT_to_SERVER_BLOB, CLIENT_UINT_to_SERVER_DATETIME, CLIENT_UINT_to_SERVER_INTVYM, CLIENT_UINT_to_SERVER_INTVDS, CLIENT_UINT_to_SERVER_VUTF8, CLIENT_UINT_to_SERVER_DECIMAL, CLIENT_UINT_to_SERVER_BLOB2, CLIENT_UINT_to_SERVER_DATETIMEUS, CLIENT_UINT_to_SERVER_INTVDSUS},
+    /* CLIENT_INT       */ {NULL, CLIENT_INT_to_SERVER_UINT, CLIENT_INT_to_SERVER_BINT, CLIENT_INT_to_SERVER_BREAL, CLIENT_INT_to_SERVER_BCSTR, CLIENT_INT_to_SERVER_BYTEARRAY, CLIENT_INT_to_SERVER_BLOB, CLIENT_INT_to_SERVER_DATETIME, CLIENT_INT_to_SERVER_INTVYM, CLIENT_INT_to_SERVER_INTVDS, CLIENT_INT_to_SERVER_VUTF8, CLIENT_INT_to_SERVER_DECIMAL, CLIENT_INT_to_SERVER_BLOB2, CLIENT_INT_to_SERVER_DATETIMEUS, CLIENT_INT_to_SERVER_INTVDSUS},
+    /* CLIENT_REAL      */ {NULL, CLIENT_REAL_to_SERVER_UINT, CLIENT_REAL_to_SERVER_BINT, CLIENT_REAL_to_SERVER_BREAL, CLIENT_REAL_to_SERVER_BCSTR, CLIENT_REAL_to_SERVER_BYTEARRAY, CLIENT_REAL_to_SERVER_BLOB, CLIENT_REAL_to_SERVER_DATETIME, CLIENT_REAL_to_SERVER_INTVYM, CLIENT_REAL_to_SERVER_INTVDS, CLIENT_REAL_to_SERVER_VUTF8, CLIENT_REAL_to_SERVER_DECIMAL, CLIENT_REAL_to_SERVER_BLOB2, CLIENT_REAL_to_SERVER_DATETIMEUS, CLIENT_REAL_to_SERVER_INTVDSUS},
+    /* CLIENT_CSTR      */ {NULL, CLIENT_CSTR_to_SERVER_UINT, CLIENT_CSTR_to_SERVER_BINT, CLIENT_CSTR_to_SERVER_BREAL, CLIENT_CSTR_to_SERVER_BCSTR, CLIENT_CSTR_to_SERVER_BYTEARRAY, CLIENT_CSTR_to_SERVER_BLOB, CLIENT_CSTR_to_SERVER_DATETIME, CLIENT_CSTR_to_SERVER_INTVYM, CLIENT_CSTR_to_SERVER_INTVDS, CLIENT_CSTR_to_SERVER_VUTF8, CLIENT_CSTR_to_SERVER_DECIMAL, CLIENT_CSTR_to_SERVER_BLOB2, CLIENT_CSTR_to_SERVER_DATETIMEUS, CLIENT_CSTR_to_SERVER_INTVDSUS},
+    /* CLIENT_PSTR      */ {NULL, CLIENT_PSTR_to_SERVER_UINT, CLIENT_PSTR_to_SERVER_BINT, CLIENT_PSTR_to_SERVER_BREAL, CLIENT_PSTR_to_SERVER_BCSTR, CLIENT_PSTR_to_SERVER_BYTEARRAY, CLIENT_PSTR_to_SERVER_BLOB, CLIENT_PSTR_to_SERVER_DATETIME, CLIENT_PSTR_to_SERVER_INTVYM, CLIENT_PSTR_to_SERVER_INTVDS, CLIENT_PSTR_to_SERVER_VUTF8, CLIENT_PSTR_to_SERVER_DECIMAL, CLIENT_PSTR_to_SERVER_BLOB2, CLIENT_PSTR_to_SERVER_DATETIMEUS, CLIENT_PSTR_to_SERVER_INTVDSUS},
+    /* CLIENT_BYTEARRAY */ {NULL, CLIENT_BYTEARRAY_to_SERVER_UINT, CLIENT_BYTEARRAY_to_SERVER_BINT, CLIENT_BYTEARRAY_to_SERVER_BREAL, CLIENT_BYTEARRAY_to_SERVER_BCSTR, CLIENT_BYTEARRAY_to_SERVER_BYTEARRAY, CLIENT_BYTEARRAY_to_SERVER_BLOB, CLIENT_BYTEARRAY_to_SERVER_DATETIME, CLIENT_BYTEARRAY_to_SERVER_INTVYM, CLIENT_BYTEARRAY_to_SERVER_INTVDS, CLIENT_BYTEARRAY_to_SERVER_VUTF8, CLIENT_BYTEARRAY_to_SERVER_DECIMAL, CLIENT_BYTEARRAY_to_SERVER_BLOB2, CLIENT_BYTEARRAY_to_SERVER_DATETIMEUS, CLIENT_BYTEARRAY_to_SERVER_INTVDSUS},
+    /* CLIENT_PSTR2     */ {NULL, CLIENT_PSTR2_to_SERVER_UINT, CLIENT_PSTR2_to_SERVER_BINT, CLIENT_PSTR2_to_SERVER_BREAL, CLIENT_PSTR2_to_SERVER_BCSTR, CLIENT_PSTR2_to_SERVER_BYTEARRAY, CLIENT_PSTR2_to_SERVER_BLOB, CLIENT_PSTR2_to_SERVER_DATETIME, CLIENT_PSTR2_to_SERVER_INTVYM, CLIENT_PSTR2_to_SERVER_INTVDS, CLIENT_PSTR2_to_SERVER_VUTF8, CLIENT_PSTR2_to_SERVER_DECIMAL, CLIENT_PSTR2_to_SERVER_BLOB2, CLIENT_PSTR2_to_SERVER_DATETIMEUS, CLIENT_PSTR2_to_SERVER_INTVDSUS},
+    /* CLIENT_BLOB      */ {NULL, CLIENT_BLOB_to_SERVER_UINT, CLIENT_BLOB_to_SERVER_BINT, CLIENT_BLOB_to_SERVER_BREAL, CLIENT_BLOB_to_SERVER_BCSTR, CLIENT_BLOB_to_SERVER_BYTEARRAY, CLIENT_BLOB_to_SERVER_BLOB, CLIENT_BLOB_to_SERVER_DATETIME, CLIENT_BLOB_to_SERVER_INTVYM, CLIENT_BLOB_to_SERVER_INTVDS, CLIENT_BLOB_to_SERVER_VUTF8, CLIENT_BLOB_to_SERVER_DECIMAL, CLIENT_BLOB_to_SERVER_BLOB2, CLIENT_BLOB_to_SERVER_DATETIMEUS, CLIENT_BLOB_to_SERVER_INTVDSUS},
+    /* CLIENT_DATETIME  */ {NULL, CLIENT_DATETIME_to_SERVER_UINT, CLIENT_DATETIME_to_SERVER_BINT, CLIENT_DATETIME_to_SERVER_BREAL, CLIENT_DATETIME_to_SERVER_BCSTR, CLIENT_DATETIME_to_SERVER_BYTEARRAY, CLIENT_DATETIME_to_SERVER_BLOB, CLIENT_DATETIME_to_SERVER_DATETIME, CLIENT_DATETIME_to_SERVER_INTVYM, CLIENT_DATETIME_to_SERVER_INTVDS, CLIENT_DATETIME_to_SERVER_VUTF8, CLIENT_DATETIME_to_SERVER_DECIMAL, CLIENT_DATETIME_to_SERVER_BLOB2, CLIENT_DATETIME_to_SERVER_DATETIMEUS, CLIENT_DATETIME_to_SERVER_INTVDSUS},
+    /* CLIENT_INTVYM    */ {NULL, CLIENT_INTVYM_to_SERVER_UINT, CLIENT_INTVYM_to_SERVER_BINT, CLIENT_INTVYM_to_SERVER_BREAL, CLIENT_INTVYM_to_SERVER_BCSTR, CLIENT_INTVYM_to_SERVER_BYTEARRAY, CLIENT_INTVYM_to_SERVER_BLOB, CLIENT_INTVYM_to_SERVER_DATETIME, CLIENT_INTVYM_to_SERVER_INTVYM, CLIENT_INTVYM_to_SERVER_INTVDS, CLIENT_INTVYM_to_SERVER_VUTF8, CLIENT_INTVYM_to_SERVER_DECIMAL, CLIENT_INTVYM_to_SERVER_BLOB2, CLIENT_INTVYM_to_SERVER_DATETIMEUS, CLIENT_INTVYM_to_SERVER_INTVDSUS},
+    /* CLIENT_INTVDS    */ {NULL, CLIENT_INTVDS_to_SERVER_UINT, CLIENT_INTVDS_to_SERVER_BINT, CLIENT_INTVDS_to_SERVER_BREAL, CLIENT_INTVDS_to_SERVER_BCSTR, CLIENT_INTVDS_to_SERVER_BYTEARRAY, CLIENT_INTVDS_to_SERVER_BLOB, CLIENT_INTVDS_to_SERVER_DATETIME, CLIENT_INTVDS_to_SERVER_INTVYM, CLIENT_INTVDS_to_SERVER_INTVDS, CLIENT_INTVDS_to_SERVER_VUTF8, CLIENT_INTVDS_to_SERVER_DECIMAL, CLIENT_INTVDS_to_SERVER_BLOB2, CLIENT_INTVDS_to_SERVER_DATETIMEUS, CLIENT_INTVDS_to_SERVER_INTVDSUS},
+    /* CLIENT_VUTF8     */ {NULL, CLIENT_VUTF8_to_SERVER_UINT, CLIENT_VUTF8_to_SERVER_BINT, CLIENT_VUTF8_to_SERVER_BREAL, CLIENT_VUTF8_to_SERVER_BCSTR, CLIENT_VUTF8_to_SERVER_BYTEARRAY, CLIENT_VUTF8_to_SERVER_BLOB, CLIENT_VUTF8_to_SERVER_DATETIME, CLIENT_VUTF8_to_SERVER_INTVYM, CLIENT_VUTF8_to_SERVER_INTVDS, CLIENT_VUTF8_to_SERVER_VUTF8, CLIENT_VUTF8_to_SERVER_DECIMAL, CLIENT_VUTF8_to_SERVER_BLOB2, CLIENT_VUTF8_to_SERVER_DATETIMEUS, CLIENT_VUTF8_to_SERVER_INTVDSUS},
+    /* CLIENT_BLOB2   */ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    /* CLIENT_DATETIMEUS */ {NULL, CLIENT_DATETIMEUS_to_SERVER_UINT, CLIENT_DATETIMEUS_to_SERVER_BINT, CLIENT_DATETIMEUS_to_SERVER_BREAL, CLIENT_DATETIMEUS_to_SERVER_BCSTR, CLIENT_DATETIMEUS_to_SERVER_BYTEARRAY, CLIENT_DATETIMEUS_to_SERVER_BLOB, CLIENT_DATETIMEUS_to_SERVER_DATETIME, CLIENT_DATETIMEUS_to_SERVER_INTVYM, CLIENT_DATETIMEUS_to_SERVER_INTVDS, CLIENT_DATETIMEUS_to_SERVER_VUTF8, CLIENT_DATETIMEUS_to_SERVER_DECIMAL, CLIENT_DATETIMEUS_to_SERVER_BLOB2, CLIENT_DATETIMEUS_to_SERVER_DATETIMEUS, CLIENT_DATETIMEUS_to_SERVER_INTVDSUS},
+    /* CLIENT_INTVDSUS  */ {NULL, CLIENT_INTVDSUS_to_SERVER_UINT, CLIENT_INTVDSUS_to_SERVER_BINT, CLIENT_INTVDSUS_to_SERVER_BREAL, CLIENT_INTVDSUS_to_SERVER_BCSTR, CLIENT_INTVDSUS_to_SERVER_BYTEARRAY, CLIENT_INTVDSUS_to_SERVER_BLOB, CLIENT_INTVDSUS_to_SERVER_DATETIME, CLIENT_INTVDSUS_to_SERVER_INTVYM, CLIENT_INTVDSUS_to_SERVER_INTVDS, CLIENT_INTVDSUS_to_SERVER_VUTF8, CLIENT_INTVDSUS_to_SERVER_DECIMAL, CLIENT_INTVDSUS_to_SERVER_BLOB2, CLIENT_INTVDSUS_to_SERVER_DATETIMEUS, CLIENT_INTVDSUS_to_SERVER_INTVDSUS},
 };
 TYPES_INLINE int
 CLIENT_to_SERVER(const void *in, int inlen, int intype, int isnull,
@@ -13270,9 +12777,9 @@ int dec_parse_rounding(char *str, int len)
         "DEC_ROUND_05UP"       /* round for reround               */
     };
     int tokl[] = {14, 17, 12, 17, 19, 19, 14, 15, 14};
-    int ret[] = {DEC_ROUND_NONE,    DEC_ROUND_CEILING,   DEC_ROUND_UP,
+    int ret[] = {DEC_ROUND_NONE, DEC_ROUND_CEILING, DEC_ROUND_UP,
                  DEC_ROUND_HALF_UP, DEC_ROUND_HALF_EVEN, DEC_ROUND_HALF_DOWN,
-                 DEC_ROUND_DOWN,    DEC_ROUND_FLOOR,     DEC_ROUND_05UP};
+                 DEC_ROUND_DOWN, DEC_ROUND_FLOOR, DEC_ROUND_05UP};
 
     for (i = 0; i < sizeof(tokl) / sizeof(tokl[0]); i++) {
         if (len == tokl[i] && !strncmp(str, tok[i], tokl[i]))
@@ -13349,26 +12856,26 @@ void _setIntervalDSUS(intv_ds_t *ds, long long sec, int usec)
 }
 
 /* convert dttz object to server datetime */
-#define dttz_to_server_dt_func_body(dt, UDT, prec, frac, fracdt)               \
-    long long sec;                                                             \
-    fracdt frac;                                                               \
-    bzero(opts, sizeof(*opts));                                                \
-    opts->flags |= 2 /*FLD_CONV_TZONE*/;                                       \
-    strncpy0(opts->tzname, tz, sizeof(opts->tzname));                          \
-    if (datetime_check_range(in->dttz_sec, in->dttz_frac))                     \
-        return -1;                                                             \
-    /* brr, ugly */                                                            \
-    tmpin[0] = 8; /* data_bit */                                               \
-    sec = flibc_htonll(in->dttz_sec);                                          \
-    if (in->dttz_prec == prec)                                                 \
-        frac = in->dttz_frac;                                                  \
-    else                                                                       \
-        frac = in->dttz_frac * POW10(prec) /                                   \
-               ((in->dttz_prec == DTTZ_PREC_MSEC) ? 1000 : 1000000);           \
-    frac = (sizeof(fracdt) == sizeof(uint16_t)) ? htons(frac) : htonl(frac);   \
-    memcpy(&tmpin[1], &sec, sizeof(long long));                                \
-    tmpin[1] ^= 0x80; /* switch to int8b format */                             \
-    memcpy(&tmpin[1 + sizeof(long long)], &frac, sizeof(fracdt));              \
+#define dttz_to_server_dt_func_body(dt, UDT, prec, frac, fracdt)             \
+    long long sec;                                                           \
+    fracdt frac;                                                             \
+    bzero(opts, sizeof(*opts));                                              \
+    opts->flags |= 2 /*FLD_CONV_TZONE*/;                                     \
+    strncpy0(opts->tzname, tz, sizeof(opts->tzname));                        \
+    if (datetime_check_range(in->dttz_sec, in->dttz_frac))                   \
+        return -1;                                                           \
+    /* brr, ugly */                                                          \
+    tmpin[0] = 8; /* data_bit */                                             \
+    sec = flibc_htonll(in->dttz_sec);                                        \
+    if (in->dttz_prec == prec)                                               \
+        frac = in->dttz_frac;                                                \
+    else                                                                     \
+        frac = in->dttz_frac * POW10(prec) /                                 \
+               ((in->dttz_prec == DTTZ_PREC_MSEC) ? 1000 : 1000000);         \
+    frac = (sizeof(fracdt) == sizeof(uint16_t)) ? htons(frac) : htonl(frac); \
+    memcpy(&tmpin[1], &sec, sizeof(long long));                              \
+    tmpin[1] ^= 0x80; /* switch to int8b format */                           \
+    memcpy(&tmpin[1 + sizeof(long long)], &frac, sizeof(fracdt));            \
     return 0;
 /* END OF dttz_to_server_dt_func_body */
 
@@ -13598,33 +13105,34 @@ int timespec_to_dttz(const struct timespec *ts, dttz_t *dt, int precision)
     return 0;
 }
 
-#define client_dt_to_dttz_func_body(dt, UDT, prec, frac, fracdt)               \
-    int rc, outsz;                                                             \
-    SRV_TP(dt) sdt;                                                            \
-    struct field_conv_opts_tz optstz;                                          \
-    struct field_conv_opts *opts;                                              \
-                                                                               \
-    opts = (struct field_conv_opts *)&optstz;                                  \
-    optstz.flags = FLD_CONV_TZONE;                                             \
-    if (little_endian)                                                         \
-        optstz.flags |= FLD_CONV_LENDIAN;                                      \
-                                                                               \
-    strncpy0(optstz.tzname, outtz, sizeof(optstz.tzname));                     \
-                                                                               \
-    /* convert to a server datetime first */                                   \
-    rc = CLIENT_##UDT##_to_SERVER_##UDT(in, sizeof(*in), 0, opts, NULL, &sdt,  \
-                                        sizeof(sdt), &outsz, NULL, NULL);      \
-    if (rc)                                                                    \
-        return rc;                                                             \
-                                                                               \
-    /* epoch is in server format */                                            \
-    out->dttz_sec = flibc_ntohll(sdt.sec);                                     \
-    int8b_to_int8(out->dttz_sec, (comdb2_int8 *)&out->dttz_sec);               \
-    out->dttz_frac = (sizeof(fracdt) == sizeof(uint16_t)) ? htons(sdt.frac)    \
-                                                          : htonl(sdt.frac);   \
-    out->dttz_prec = prec;                                                     \
-    out->dttz_conv = 0;                                                        \
-    return rc;                                                                 \
+#define client_dt_to_dttz_func_body(dt, UDT, prec, frac, fracdt)              \
+    int rc, outsz;                                                            \
+    SRV_TP(dt)                                                                \
+    sdt;                                                                      \
+    struct field_conv_opts_tz optstz;                                         \
+    struct field_conv_opts *opts;                                             \
+                                                                              \
+    opts = (struct field_conv_opts *)&optstz;                                 \
+    optstz.flags = FLD_CONV_TZONE;                                            \
+    if (little_endian)                                                        \
+        optstz.flags |= FLD_CONV_LENDIAN;                                     \
+                                                                              \
+    strncpy0(optstz.tzname, outtz, sizeof(optstz.tzname));                    \
+                                                                              \
+    /* convert to a server datetime first */                                  \
+    rc = CLIENT_##UDT##_to_SERVER_##UDT(in, sizeof(*in), 0, opts, NULL, &sdt, \
+                                        sizeof(sdt), &outsz, NULL, NULL);     \
+    if (rc)                                                                   \
+        return rc;                                                            \
+                                                                              \
+    /* epoch is in server format */                                           \
+    out->dttz_sec = flibc_ntohll(sdt.sec);                                    \
+    int8b_to_int8(out->dttz_sec, (comdb2_int8 *)&out->dttz_sec);              \
+    out->dttz_frac = (sizeof(fracdt) == sizeof(uint16_t)) ? htons(sdt.frac)   \
+                                                          : htonl(sdt.frac);  \
+    out->dttz_prec = prec;                                                    \
+    out->dttz_conv = 0;                                                       \
+    return rc;                                                                \
     /* END OF client_dt_to_dttz_func_body */
 
 int client_datetime_to_dttz(const cdb2_client_datetime_t *in, const char *outtz,
@@ -13647,17 +13155,20 @@ static int get_int_field(int64_t *out, void *in, size_t len, int flip)
     switch (len) {
     case sizeof(int16_t):
         memcpy(&i16, in, len);
-        if (flip) i16 = flibc_shortflip(i16);
+        if (flip)
+            i16 = flibc_shortflip(i16);
         *out = i16;
         break;
     case sizeof(int32_t):
         memcpy(&i32, in, len);
-        if (flip) i32 = flibc_intflip(i32);
+        if (flip)
+            i32 = flibc_intflip(i32);
         *out = i32;
         break;
     case sizeof(int64_t):
         memcpy(&i64, in, len);
-        if (flip) i64 = flibc_llflip(i64);
+        if (flip)
+            i64 = flibc_llflip(i64);
         *out = i64;
         break;
     default:
@@ -13674,17 +13185,20 @@ static int get_uint_field(uint64_t *out, void *in, size_t len, int flip)
     switch (len) {
     case sizeof(uint16_t):
         memcpy(&u16, in, len);
-        if (flip) u16 = flibc_shortflip(u16);
+        if (flip)
+            u16 = flibc_shortflip(u16);
         *out = u16;
         break;
     case sizeof(uint32_t):
         memcpy(&u32, in, len);
-        if (flip) u32 = flibc_intflip(u32);
+        if (flip)
+            u32 = flibc_intflip(u32);
         *out = u32;
         break;
     case sizeof(uint64_t):
         memcpy(&u64, in, len);
-        if (flip) u64 = flibc_llflip(u64);
+        if (flip)
+            u64 = flibc_llflip(u64);
         *out = u64;
         break;
     default:
@@ -13700,12 +13214,14 @@ static int get_real_field(double *out, void *in, size_t len, int flip)
     switch (len) {
     case sizeof(float):
         memcpy(&f, in, len);
-        if (flip) f = flibc_floatflip(f);
+        if (flip)
+            f = flibc_floatflip(f);
         *out = f;
         break;
     case sizeof(double):
         memcpy(&d, in, len);
-        if (flip) d = flibc_dblflip(d);
+        if (flip)
+            d = flibc_dblflip(d);
         *out = d;
         break;
     default:
@@ -14202,7 +13718,7 @@ int interval_cmp(const intv_t *i1, const intv_t *i2)
         ((i1->type == INTV_DS_TYPE && i2->type != INTV_DSUS_TYPE) ||
          (i1->type == INTV_DSUS_TYPE && i2->type != INTV_DS_TYPE)))
     bad:
-    return i1->sign * memcmp(&i1->u, &i2->u, sizeof(i1->u));
+        return i1->sign * memcmp(&i1->u, &i2->u, sizeof(i1->u));
     if ((rc = i1->sign - i2->sign) != 0)
         return rc < 0 ? -1 : 1;
     switch (i1->type) {
@@ -14577,7 +14093,10 @@ void add_dttz_intvds(const dttz_t *dt, const intv_t *ds, dttz_t *rs)
     rs->dttz_conv = (dt->dttz_conv + ds->u.ds.conv >= DTTZ_CONV_NOW) ? 1 : 0;
 }
 
-void set_null_func(void *to, int sz) { set_null(to, sz); }
+void set_null_func(void *to, int sz)
+{
+    set_null(to, sz);
+}
 
 void set_data_func(void *to, const void *from, int sz)
 {
@@ -14611,14 +14130,14 @@ static void client_intv_ds_to_intv_t(const cdb2_client_intv_ds_t *in,
     ds->conv = 1;
     if (flip) {
         out->sign = flibc_intflip(in->sign);
-        ds->days =  flibc_intflip(in->days);
+        ds->days = flibc_intflip(in->days);
         ds->hours = flibc_intflip(in->hours);
         ds->mins = flibc_intflip(in->mins);
         ds->sec = flibc_intflip(in->sec);
         ds->frac = flibc_intflip(in->msec);
     } else {
         out->sign = in->sign;
-        ds->days =  in->days;
+        ds->days = in->days;
         ds->hours = in->hours;
         ds->mins = in->mins;
         ds->sec = in->sec;
@@ -14638,11 +14157,11 @@ int get_type(struct param_data *param, void *p, int len, int type,
              const char *tzname, int little)
 {
     int flip = 0;
-#   if BYTE_ORDER == BIG_ENDIAN
+#if BYTE_ORDER == BIG_ENDIAN
     if (little)
-#   elif BYTE_ORDER == LITTLE_ENDIAN
+#elif BYTE_ORDER == LITTLE_ENDIAN
     if (!little)
-#   endif
+#endif
         flip = 1;
     param->null = 0;
     /* Make sure the parameter is not NULL if we're binding a 0-length value. */

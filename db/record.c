@@ -65,7 +65,7 @@ static int check_blob_buffers(struct ireq *iq, blob_buffer_t *blobs, size_t maxb
 static int check_blob_sizes(struct ireq *iq, blob_buffer_t *blobs,
                             int maxblobs);
 
-void free_cached_idx(uint8_t * *cached_idx);
+void free_cached_idx(uint8_t **cached_idx);
 
 /*
  * Add a record:
@@ -76,32 +76,29 @@ void free_cached_idx(uint8_t * *cached_idx);
  *  - trigger stored procedures
  */
 
-#define REC_ERROR_LOG(fmt, ...) do {            \
-    EVENTLOG_DEBUG (            \
-        uuidstr_t us;   \
-        if (iq->sorese) { \
-            comdb2uuidstr(iq->sorese->uuid, us); \
-        } \
-        else {  \
-            uuid_t u; \
-            comdb2uuid_clear(u); \
-            comdb2uuidstr(u, us); \
-        } \
-        eventlog_debug("%s:%d uuid %s tbl %s ix %d " fmt, __func__, __LINE__, us, iq->usedb ? iq->usedb->tablename : "???", *ixfailnum, __VA_ARGS__);            \
-    );            \
-} while(0)
+#define REC_ERROR_LOG(fmt, ...)                                                                                                                               \
+    do {                                                                                                                                                      \
+        EVENTLOG_DEBUG(                                                                                                                                       \
+            uuidstr_t us;                                                                                                                                     \
+            if (iq->sorese) {                                                                                                                                 \
+                comdb2uuidstr(iq->sorese->uuid, us);                                                                                                          \
+            } else {                                                                                                                                          \
+                uuid_t u;                                                                                                                                     \
+                comdb2uuid_clear(u);                                                                                                                          \
+                comdb2uuidstr(u, us);                                                                                                                         \
+            } eventlog_debug("%s:%d uuid %s tbl %s ix %d " fmt, __func__, __LINE__, us, iq->usedb ? iq->usedb->tablename : "???", *ixfailnum, __VA_ARGS__);); \
+    } while (0)
 
-
-#define ERR(fmt, ...)                                                               \
-    do {                                                                       \
-        if (gbl_verbose_toblock_backouts)                                      \
-            logmsg(LOGMSG_USER, "err line %d rc %d retrc %d\n", __LINE__, rc,  \
-                   retrc);                                                     \
-        if (iq->debug)                                                         \
-            reqprintf(iq, "err line %d rc %d retrc %d\n", __LINE__, rc,        \
-                      retrc);                                                  \
-        REC_ERROR_LOG("err rc %d retrc %d errval %d errstr %s %s " fmt, rc, retrc, iq->errstat.errval, iq->errstat.errstr, fmt, __VA_ARGS__);    \
-        goto err;                                                              \
+#define ERR(fmt, ...)                                                                                                                         \
+    do {                                                                                                                                      \
+        if (gbl_verbose_toblock_backouts)                                                                                                     \
+            logmsg(LOGMSG_USER, "err line %d rc %d retrc %d\n", __LINE__, rc,                                                                 \
+                   retrc);                                                                                                                    \
+        if (iq->debug)                                                                                                                        \
+            reqprintf(iq, "err line %d rc %d retrc %d\n", __LINE__, rc,                                                                       \
+                      retrc);                                                                                                                 \
+        REC_ERROR_LOG("err rc %d retrc %d errval %d errstr %s %s " fmt, rc, retrc, iq->errstat.errval, iq->errstat.errstr, fmt, __VA_ARGS__); \
+        goto err;                                                                                                                             \
     } while (0);
 
 int gbl_max_wr_rows_per_txn = 0;
@@ -118,7 +115,6 @@ static inline int is_event_from_cascade(int flags)
 {
     return flags & RECFLAGS_IN_CASCADE;
 }
-
 
 static inline int has_constraint(int flags)
 {
@@ -200,7 +196,6 @@ int add_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
         }
     }
 
-
     if (!is_event_from_sc(flags)) {
         iq->written_row_count++;
         if (gbl_max_wr_rows_per_txn && (iq->written_row_count > gbl_max_wr_rows_per_txn)) {
@@ -277,7 +272,7 @@ int add_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
     if (rc != 0) {
         reqerrstrhdr(iq, "Table '%s' ", iq->usedb->tablename);
         reqerrstr(iq, COMDB2_CSTRT_RC_INVL_TAG,
-                  "invalid tag description '%.*s'", (int) taglen, tagdescr);
+                  "invalid tag description '%.*s'", (int)taglen, tagdescr);
         *opfailcode = OP_FAILED_BAD_REQUEST;
         retrc = ERR_BADREQ;
         ERR("invalid tag description: '%.*s' ", taglen, tagdescr);
@@ -396,8 +391,8 @@ int add_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
         }
         od_dta = allocced_memory;
 
-        if ((iq->have_client_endian && TAGGED_API_LITTLE_ENDIAN == iq->client_endian) || 
-                (flags & RECFLAGS_COMDBG_FROM_LE)) {
+        if ((iq->have_client_endian && TAGGED_API_LITTLE_ENDIAN == iq->client_endian) ||
+            (flags & RECFLAGS_COMDBG_FROM_LE)) {
             conv_flags |= CONVERT_LITTLE_ENDIAN_CLIENT;
         }
 
@@ -474,7 +469,8 @@ int add_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
         int upsert_idx = rec_flags >> 8;
         if (upsert_idx <= MAXINDEX) {
             rc = check_index(iq, trans, upsert_idx, blobs, maxblobs, opfailcode, ixfailnum, &retrc, od_dta, od_len, ins_keys);
-            if (rc) ERR("check_for_upsert rc %d", rc);
+            if (rc)
+                ERR("check_for_upsert rc %d", rc);
         }
     }
 
@@ -514,7 +510,7 @@ int add_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
         }
         if (retrc) {
             *opfailcode = OP_FAILED_INTERNAL + ERR_ADD_RRN;
-            ERR("add genid %"PRIx64" rc %d", *genid, rc);
+            ERR("add genid %" PRIx64 " rc %d", *genid, rc);
         }
     }
 
@@ -580,7 +576,7 @@ int add_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
                         reqprintf(iq, "FAILED TO PUSH KEYOP");
                     *opfailcode = OP_FAILED_INTERNAL;
                     retrc = ERR_INTERNAL;
-                    ERR("insert add genid %"PRIx64"", genid);
+                    ERR("insert add genid %" PRIx64 "", genid);
                 }
             } else {
                 /* if rec adding to NEW SCHEMA and this has constraints,
@@ -701,8 +697,6 @@ err:
     return retrc;
 }
 
-
-
 /*
  * Upgrade an existing record to ondisk format
  * without changing genid.
@@ -752,12 +746,11 @@ static int unodhfy_and_clone(const dbtable *db, blob_buffer_t *src, blob_buffer_
 }
 
 #undef ERR
-#define ERR(fmt, ...)                                                               \
-    do {                                                                       \
-        REC_ERROR_LOG("err rc %d retrc %d errval %d errstr %s %s " #fmt, rc, retrc, iq->errstat.errval, iq->errstat.errstr, fmt, __VA_ARGS__);    \
-        goto err;                                                              \
+#define ERR(fmt, ...)                                                                                                                          \
+    do {                                                                                                                                       \
+        REC_ERROR_LOG("err rc %d retrc %d errval %d errstr %s %s " #fmt, rc, retrc, iq->errstat.errval, iq->errstat.errstr, fmt, __VA_ARGS__); \
+        goto err;                                                                                                                              \
     } while (0);
-
 
 /*
  * Update an existing record.
@@ -781,7 +774,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
                int *opfailcode, int *ixfailnum, int opcode, int blkpos,
                int flags)
 {
-    int rc=0;
+    int rc = 0;
     int retrc = 0;
     int prefixes = 0;
     int conv_flags = 0;
@@ -819,21 +812,20 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
 
     *ixfailnum = -1;
 
-    EVENTLOG_DEBUG (
+    EVENTLOG_DEBUG(
         if (!(vrecord || primkey)) {
-            char *rec = malloc(reclen*2+1); 
-            util_tohex(rec, (const char*) p_buf_rec, reclen);
-            REC_ERROR_LOG("vgenid %"PRIx64" buf %s", vgenid, rec);
+            char *rec = malloc(reclen * 2 + 1);
+            util_tohex(rec, (const char *)p_buf_rec, reclen);
+            REC_ERROR_LOG("vgenid %" PRIx64 " buf %s", vgenid, rec);
             free(rec);
-        }
-    );
+        });
 
     if (p_buf_vrec && (p_buf_vrec_end - p_buf_vrec) != reclen) {
         if (iq->debug)
             reqprintf(iq, "REC LEN %zu DOES NOT EQUAL VREC LEN %td", reclen,
                       (p_buf_vrec_end - p_buf_vrec));
         retrc = ERR_BADREQ;
-        ERR("rec len mismatch got %d expected %d", (int) (p_buf_vrec_end - p_buf_vrec), (int) reclen); 
+        ERR("rec len mismatch got %d expected %d", (int)(p_buf_vrec_end - p_buf_vrec), (int)reclen);
     }
 
     if (!is_event_from_sc(flags)) {
@@ -842,7 +834,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
             reqerrstr(iq, COMDB2_CSTRT_RC_TRN_TOO_BIG,
                       "Transaction exceeds max rows limit");
             retrc = ERR_TRAN_TOO_BIG;
-            ERR("exceeds row limit %d", (int) iq->written_row_count);
+            ERR("exceeds row limit %d", (int)iq->written_row_count);
         }
     }
     if (iq->txn_ttl_ms && (gettimeofday_ms() > iq->txn_ttl_ms)) {
@@ -969,7 +961,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
             *opfailcode = OP_FAILED_BAD_REQUEST;
             retrc = ERR_BADREQ;
             ERR("bad data length %zu tag '%s' expects data length %u",
-                      reclen, tag, expected_dat_len);
+                reclen, tag, expected_dat_len);
         }
     }
 
@@ -1000,7 +992,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
             reqprintf(iq, "BAD ONDISK SIZE");
         *opfailcode = OP_FAILED_BAD_REQUEST;
         retrc = ERR_BADREQ;
-        ERR("bad ondisk size %d", (int) od_len_int);
+        ERR("bad ondisk size %d", (int)od_len_int);
     }
     od_len = od_len_int;
 
@@ -1023,7 +1015,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
         odv_dta = allocced_memory + od_len * 2;
 
     if ((iq->have_client_endian && TAGGED_API_LITTLE_ENDIAN == iq->client_endian) ||
-            (iq->comdbg_flags & COMDBG_FLAG_FROM_LE)) {
+        (iq->comdbg_flags & COMDBG_FLAG_FROM_LE)) {
         conv_flags |= CONVERT_LITTLE_ENDIAN_CLIENT;
     }
 
@@ -1096,7 +1088,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
             if (rc == 0 && ver == iq->usedb->schema_version) {
                 // record is at ondisk version, return
                 retrc = rc;
-                ERR("find for upgrade failed genid %"PRIx64" rc %d", vgenid, rc);
+                ERR("find for upgrade failed genid %" PRIx64 " rc %d", vgenid, rc);
             }
         }
 
@@ -1106,7 +1098,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
     } else {
         // To avoid deadlock, get this read done under a write lock
         rc = ix_load_for_write_by_genid_tran(iq, rrn, vgenid, old_dta, &fndlen,
-                                           od_len, trans);
+                                             od_len, trans);
         if (iq->debug)
             reqprintf(iq, "ix_load_for_write_by_genid_tran RRN %d GENID 0x%llx "
                           "DTALEN %zu FNDLEN %d RC %d",
@@ -1632,7 +1624,7 @@ int upd_record(struct ireq *iq, void *trans, void *primkey, int rrn,
 
     /* For live schema change */
     rc = live_sc_post_update(iq, trans, vgenid, old_dta, *genid, od_dta,
-                             ins_keys, del_keys, od_len, updCols, blobs, 
+                             ins_keys, del_keys, od_len, updCols, blobs,
                              maxblobs, flags, rrn, deferredAdd, del_idx_blobs,
                              add_idx_blobs);
     if (rc != 0) {
@@ -1735,9 +1727,9 @@ int del_record(struct ireq *iq, void *trans, void *primkey, int rrn,
 
     if (!is_event_from_sc(flags)) {
         iq->written_row_count++;
-        if(gbl_max_wr_rows_per_txn && (iq->written_row_count > gbl_max_wr_rows_per_txn)) {
+        if (gbl_max_wr_rows_per_txn && (iq->written_row_count > gbl_max_wr_rows_per_txn)) {
             reqerrstr(iq, COMDB2_CSTRT_RC_TRN_TOO_BIG,
-                    "Transaction exceeds max rows limit");
+                      "Transaction exceeds max rows limit");
             retrc = ERR_TRAN_TOO_BIG;
             goto err;
         }
@@ -1752,7 +1744,7 @@ int del_record(struct ireq *iq, void *trans, void *primkey, int rrn,
         iq->cascaded_row_count++;
         if (gbl_max_cascaded_rows_per_txn && (iq->cascaded_row_count > gbl_max_cascaded_rows_per_txn)) {
             reqerrstr(iq, COMDB2_CSTRT_RC_TRN_TOO_BIG,
-                    "Transaction exceeds max cascaded rows limit");
+                      "Transaction exceeds max cascaded rows limit");
             retrc = ERR_TRAN_TOO_BIG;
             goto err;
         }
@@ -1826,7 +1818,7 @@ int del_record(struct ireq *iq, void *trans, void *primkey, int rrn,
         genid = fndgenid;
     } else {
         rc = ix_load_for_write_by_genid_tran(iq, rrn, genid, od_dta, &fndlen,
-                                           od_len, trans);
+                                             od_len, trans);
         if (iq->debug)
             reqprintf(iq, "ix_load_for_write_by_genid_tran RRN %d GENID 0x%llx "
                           "DTALEN %zu FNDLEN %u RC %d",
@@ -1863,7 +1855,7 @@ int del_record(struct ireq *iq, void *trans, void *primkey, int rrn,
             blob_status_to_blob_buffer(&oldblobs, blobs_buf);
             got_oldblobs = 1;
         }
-       del_idx_blobs = blobs_buf;
+        del_idx_blobs = blobs_buf;
     }
 
     if (iq->usedb->ix_partial && del_keys == -1ULL) {
@@ -1906,7 +1898,7 @@ int del_record(struct ireq *iq, void *trans, void *primkey, int rrn,
      * them all here.  Handle deadlock correctly.
      */
     if (!got_oldblobs && ((!(flags & RECFLAGS_NO_TRIGGERS) &&
-        javasp_trans_care_about(iq->jsph, JAVASP_TRANS_LISTEN_SAVE_BLOBS_DEL)))) {
+                           javasp_trans_care_about(iq->jsph, JAVASP_TRANS_LISTEN_SAVE_BLOBS_DEL)))) {
         rc = save_old_blobs(iq, trans, ".ONDISK", od_dta, rrn, genid, &oldblobs);
         if (rc != 0) {
             *opfailcode = OP_FAILED_INTERNAL + ERR_SAVE_BLOBS;
@@ -2043,7 +2035,7 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
     unsigned long long newgenidcpy = newgenid;
     blob_buffer_t outblobs[MAXBLOBS] = {{0}};
 
-    void *sc_old= NULL;
+    void *sc_old = NULL;
     void *sc_new = NULL;
     int use_new_tag = 0;
 
@@ -2066,7 +2058,7 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
     }
 
     if ((gbl_partial_indexes && iq->usedb->ix_partial) ||
-         (gbl_expressions_indexes && iq->usedb->ix_expr)) {
+        (gbl_expressions_indexes && iq->usedb->ix_expr)) {
         int rebuild_keys = 0;
         if (!gbl_use_plan || !iq->usedb->plan)
             rebuild_keys = 1;
@@ -2099,10 +2091,10 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
     }
 
     if (0 != rc) {
-        logmsg(LOGMSG_ERROR, 
-                "upd_new_record oldgenid 0x%llx remap_update_columns -> "
-                "rc %d failed\n",
-                oldgenid, rc);
+        logmsg(LOGMSG_ERROR,
+               "upd_new_record oldgenid 0x%llx remap_update_columns -> "
+               "rc %d failed\n",
+               oldgenid, rc);
         retrc = ERR_BADREQ;
         goto err;
     }
@@ -2148,9 +2140,9 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
                                     MAXBLOBS, 1);
 
         if (rc == -1) {
-            logmsg(LOGMSG_ERROR, 
-                    "upd_new_record: newgenid 0x%llx conversion error\n",
-                    newgenid);
+            logmsg(LOGMSG_ERROR,
+                   "upd_new_record: newgenid 0x%llx conversion error\n",
+                   newgenid);
             if (iq->debug)
                 reqprintf(iq, "CAN'T FORM NEW UPDATE RECORD\n");
             reqerrstrhdr(iq, "Table '%s' ", iq->usedb->tablename);
@@ -2275,10 +2267,10 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
             }
 
             if (idx < 0 || idx >= myupdatecols[0]) {
-                logmsg(LOGMSG_ERROR, 
-                        "upd_new_record newgenid 0x%llx get_schema_blob_field_idx "
-                        "-> idx %d failed\n",
-                    newgenid, idx);
+                logmsg(LOGMSG_ERROR,
+                       "upd_new_record newgenid 0x%llx get_schema_blob_field_idx "
+                       "-> idx %d failed\n",
+                       newgenid, idx);
                 retrc = ERR_BADREQ;
                 goto err;
             }
@@ -2290,10 +2282,10 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
                     reqprintf(iq, "blob_upd_genid blobno %d rc %d", blobn, rc);
                 }
                 if (0 != rc) {
-                    logmsg(LOGMSG_ERROR, 
-                            "upd_new_record newgenid 0x%llx blob_upd_genid "
-                            "-> blobn %d failed\n",
-                            newgenid, blobn);
+                    logmsg(LOGMSG_ERROR,
+                           "upd_new_record newgenid 0x%llx blob_upd_genid "
+                           "-> blobn %d failed\n",
+                           newgenid, blobn);
                     retrc = rc;
                     goto err;
                 }
@@ -2309,8 +2301,8 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
             if (rc != IX_NOTFND && rc != 0) /* like in upd_record() */
             {
                 logmsg(LOGMSG_ERROR, "upd_new_record oldgenid 0x%llx blob_del -> "
-                                "blobn %d failed\n",
-                        oldgenid, blobn);
+                                     "blobn %d failed\n",
+                       oldgenid, blobn);
                 retrc = rc;
                 goto err;
             }
@@ -2327,8 +2319,8 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
             /* check blob range */
             if (oldblobidx < 0 || oldblobidx >= MAXBLOBS) {
                 logmsg(LOGMSG_ERROR, "upd_new_record newgenid 0x%llx blobrange -> "
-                                "oldblobidx %d failed\n",
-                        newgenid, oldblobidx);
+                                     "oldblobidx %d failed\n",
+                       newgenid, oldblobidx);
                 retrc = ERR_BADREQ;
                 goto err;
             }
@@ -2344,8 +2336,8 @@ int upd_new_record(struct ireq *iq, void *trans, unsigned long long oldgenid,
                 }
                 if (rc != 0) {
                     logmsg(LOGMSG_ERROR, "upd_new_record newgenid 0x%llx blob_add ->"
-                                    "blobn %d failed\n",
-                            newgenid, blobn);
+                                         "blobn %d failed\n",
+                           newgenid, blobn);
                     retrc = OP_FAILED_INTERNAL + ERR_ADD_BLOB;
                     goto err;
                 }
@@ -2415,7 +2407,7 @@ int del_new_record(struct ireq *iq, void *trans, unsigned long long genid,
     }
 
     if ((gbl_partial_indexes && iq->usedb->ix_partial) ||
-         (gbl_expressions_indexes && iq->usedb->ix_expr)) {
+        (gbl_expressions_indexes && iq->usedb->ix_expr)) {
         int ixnum;
         int rebuild_keys = 0;
         if (!gbl_use_plan || !iq->usedb->plan)
@@ -2614,8 +2606,7 @@ static int check_blob_buffers(struct ireq *iq, blob_buffer_t *blobs, size_t maxb
             /* if we found a schema earlier, and this blob is a vutf8 string,
              * and the string was small enough to fit in the record itself,
              * then the blob shouldn't exist */
-            else if (schema && (schema->member[idx].type == SERVER_VUTF8 ||
-                                schema->member[idx].type == SERVER_BLOB2) &&
+            else if (schema && (schema->member[idx].type == SERVER_VUTF8 || schema->member[idx].type == SERVER_BLOB2) &&
                      ntohl(blob->length) <= schema->member[idx].len - 5 /*hdr*/)
                 inconsistent = blobs[cblob].exists;
             /* otherwise, fall back to regular blob checks */
@@ -2699,7 +2690,10 @@ int save_old_blobs(struct ireq *iq, void *trans, const char *tag, const void *re
 }
 
 #undef ERR
-#define ERR do  { goto err; } while(0)
+#define ERR       \
+    do {          \
+        goto err; \
+    } while (0)
 
 int updbykey_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
                     const uint8_t *p_buf_tag_name_end, uint8_t *p_buf_rec,
@@ -2780,7 +2774,7 @@ int updbykey_record(struct ireq *iq, void *trans, const uint8_t *p_buf_tag_name,
     if (rc != 0) {
         reqerrstrhdr(iq, "Table '%s' ", iq->usedb->tablename);
         reqerrstr(iq, COMDB2_CSTRT_RC_INVL_TAG,
-                  "invalid tag description '%.*s'", (int) taglen, tagdescr);
+                  "invalid tag description '%.*s'", (int)taglen, tagdescr);
         *opfailcode = OP_FAILED_BAD_REQUEST;
         retrc = ERR_BADREQ;
         goto err;

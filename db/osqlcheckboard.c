@@ -44,8 +44,8 @@
 extern int gbl_master_sends_query_effects;
 
 typedef struct osql_checkboard {
-    hash_t *rqs;     /* sql threads processing a blocksql are registered here */
-    hash_t *rqsuuid; /* like above, but register by uuid */
+    hash_t *rqs;         /* sql threads processing a blocksql are registered here */
+    hash_t *rqsuuid;     /* like above, but register by uuid */
     pthread_mutex_t mtx; /* protect all the requests */
 
 } osql_checkboard_t;
@@ -108,7 +108,9 @@ int osql_checkboard_init(void)
  * after this.
  *
  */
-void osql_checkboard_destroy(void) { /* TODO*/ }
+void osql_checkboard_destroy(void)
+{ /* TODO*/
+}
 
 /* insert entry into checkerboard */
 static inline int insert_into_checkerboard(osql_checkboard_t *cb,

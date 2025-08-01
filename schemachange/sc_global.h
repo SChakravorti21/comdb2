@@ -44,7 +44,7 @@ extern int gbl_sc_last_writer_time;
 
 /* updates/deletes done behind the cursor since schema change started */
 extern pthread_mutex_t gbl_sc_lock;
-extern int gbl_sc_report_freq;      /* seconds between reports */
+extern int gbl_sc_report_freq; /* seconds between reports */
 extern int gbl_sc_abort;
 extern volatile uint32_t gbl_sc_resume_start;
 /* see sc_del_unused_files() and sc_del_unused_files_check_progress() */

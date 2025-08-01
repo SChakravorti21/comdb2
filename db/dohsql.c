@@ -30,11 +30,11 @@ extern char *print_mem(Mem *m);
 
 int gbl_dohsql_disable = 0;
 int gbl_dohsql_verbose = 0;
-int gbl_dohsql_max_queued_kb_highwm = 10000;    /* 10 MB */
-int gbl_dohsql_full_queue_poll_msec = 10;       /* 10msec */
-int gbl_dohsql_max_threads = 8; /* do not run more than 8 parallel shards */
-int gbl_dohsql_pool_thr_slack = 24; /* half default sqlengine pool maxthds */
-int gbl_dohsql_sc_max_threads = 8; /* do not run more than 8 parallel sc-s */
+int gbl_dohsql_max_queued_kb_highwm = 10000; /* 10 MB */
+int gbl_dohsql_full_queue_poll_msec = 10;    /* 10msec */
+int gbl_dohsql_max_threads = 8;              /* do not run more than 8 parallel shards */
+int gbl_dohsql_pool_thr_slack = 24;          /* half default sqlengine pool maxthds */
+int gbl_dohsql_sc_max_threads = 8;           /* do not run more than 8 parallel sc-s */
 /* for now we keep this tunning "private */
 static int gbl_dohsql_track_stats = 1;
 static int gbl_dohsql_que_free_highwm = 10;
@@ -47,7 +47,9 @@ struct col {
 };
 typedef struct col my_col_t;
 
-enum doh_status { DOH_RUNNING = 0, DOH_MASTER_DONE = 1, DOH_CLIENT_DONE = 2 };
+enum doh_status { DOH_RUNNING = 0,
+                  DOH_MASTER_DONE = 1,
+                  DOH_CLIENT_DONE = 2 };
 
 struct dohsql_connector_stats {
     int max_queue_len;         /* over the execution time */
@@ -60,7 +62,7 @@ struct dohsql_connector {
     struct sqlclntstate *clnt;
     queue_type *que;      /* queue to caller */
     queue_type *que_free; /* de-queued rows come here to be freed */
-    int selected;        /* true if a row from this engine is being used by
+    int selected;         /* true if a row from this engine is being used by
                              coordinator */
     pthread_mutex_t mtx;  /* mutex for queueing operations and related counts */
     char *thr_where;      /* cached where status */
@@ -182,9 +184,9 @@ void handle_child_error(struct sqlclntstate *clnt, int errcode)
 
 static void _mark_shard_done(dohsql_connector_t *conn)
 {
-    Pthread_mutex_lock (&conn->mtx);
+    Pthread_mutex_lock(&conn->mtx);
     conn->status = DOH_CLIENT_DONE;
-    Pthread_mutex_unlock (&conn->mtx);
+    Pthread_mutex_unlock(&conn->mtx);
 }
 
 static void sqlengine_work_shard(struct thdpool *pool, void *work,
@@ -194,7 +196,7 @@ static void sqlengine_work_shard(struct thdpool *pool, void *work,
     struct sqlclntstate *clnt = (struct sqlclntstate *)work;
     int rc;
 
-    thr_set_user("shard thread", (intptr_t) clnt->appsock_id);
+    thr_set_user("shard thread", (intptr_t)clnt->appsock_id);
 
     rdlock_schema_lk();
     sqlengine_prepare_engine(thd, clnt, 0);
@@ -597,11 +599,11 @@ static void add_row(dohsql_t *conns, int i, row_t *row)
     conns->conns[conns->row_src].selected = 1;
 }
 
-#define CHILD_DONE(kid)                                                        \
-    (queue_count(conns->conns[(kid)].que) == 0 &&                              \
+#define CHILD_DONE(kid)                           \
+    (queue_count(conns->conns[(kid)].que) == 0 && \
      conns->conns[(kid)].rc == SQLITE_DONE)
-#define CHILD_ERROR(kid)                                                       \
-    (conns->conns[(kid)].rc != SQLITE_ROW &&                                   \
+#define CHILD_ERROR(kid)                     \
+    (conns->conns[(kid)].rc != SQLITE_ROW && \
      conns->conns[(kid)].rc != SQLITE_DONE)
 
 static void _signal_children_master_is_done(dohsql_t *conns)
@@ -1105,7 +1107,6 @@ static void _master_clnt_set(struct sqlclntstate *clnt)
     clnt->plugin.param_index = dohsql_dist_param_index;
 }
 
-
 static void _save_params(dohsql_node_t *node, struct param_data **p, int *np)
 {
     *p = NULL;
@@ -1210,7 +1211,7 @@ int dohsql_distribute(dohsql_node_t *node)
      * queue since we have already dispatched the coordinator
      * This will clear the parallel load faster and in proper order
      */
-    flags |= THDPOOL_ENQUEUE_FRONT; 
+    flags |= THDPOOL_ENQUEUE_FRONT;
     clnt->conns = conns;
     /* augment interface */
     _master_clnt_set(clnt);
@@ -1354,7 +1355,7 @@ done:
     return rc;
 }
 
-#define DOHSQL_CLIENT                                                          \
+#define DOHSQL_CLIENT \
     (clnt->plugin.state && clnt->plugin.write_response == dohsql_write_response)
 
 void dohsql_wait_for_master(sqlite3_stmt *stmt, struct sqlclntstate *clnt)
@@ -1444,8 +1445,8 @@ void comdb2_register_offset(int iOffset, int iLimitOffset, int iSavedOffset)
     }
 }
 
-#define DOHSQL_MASTER                                                          \
-    (clnt->plugin.next_row == dohsql_dist_next_row ||                          \
+#define DOHSQL_MASTER                                 \
+    (clnt->plugin.next_row == dohsql_dist_next_row || \
      clnt->plugin.next_row == dohsql_dist_next_row_ordered)
 
 void comdb2_handle_limit(Vdbe *v, Mem *m)
@@ -1894,7 +1895,7 @@ int dohsql_error(struct sqlclntstate *clnt, const char **errstr)
         *errstr = child_clnt->saved_errstr;
         if (child_clnt->saved_rc == SQLITE_INTERNAL) {
             logmsg(LOGMSG_ERROR, "%s child %d error %d\n",
-                    __func__, clnt->conns->child_err, child_clnt->saved_rc);
+                   __func__, clnt->conns->child_err, child_clnt->saved_rc);
         }
         return child_clnt->saved_rc;
     }
@@ -2051,14 +2052,14 @@ struct params_info *dohsql_params_append(struct params_info **pparams,
     return *pparams = params;
 }
 
-int dohsql_clone_params(unsigned int nparams, struct param_data * params,
+int dohsql_clone_params(unsigned int nparams, struct param_data *params,
                         int *pnparams, struct param_data **pparams)
 {
     struct param_data *pout;
     int i, tmp;
 
     /* do not support param arrays yet */
-    for (i=0; i < nparams; i++) {
+    for (i = 0; i < nparams; i++) {
         if (params[i].arraylen > 0) {
             return -1;
         }
@@ -2068,15 +2069,16 @@ int dohsql_clone_params(unsigned int nparams, struct param_data * params,
     if (!pout)
         return -1;
     memcpy(pout, params, nparams * sizeof(struct param_data));
-    for (i=0; i < nparams; i++) {
+    for (i = 0; i < nparams; i++) {
         if (params[i].name) {
             pout[i].name = strdup(params[i].name);
             if (!pout[i].name) {
                 goto err;
             }
         }
-        if ((params[i].type == CLIENT_CSTR||
-             params[i].type == CLIENT_BLOB)  && params[i].len > 0) {
+        if ((params[i].type == CLIENT_CSTR ||
+             params[i].type == CLIENT_BLOB) &&
+            params[i].len > 0) {
             pout[i].u.p = malloc(params[i].len);
             if (!pout[i].u.p)
                 goto err;
@@ -2096,7 +2098,7 @@ err:
 
 void dohsql_free_params(int *pnparams, struct param_data **pparams, int index)
 {
-    struct param_data * params = *pparams;
+    struct param_data *params = *pparams;
 
     if (index >= *pnparams)
         abort();
@@ -2104,7 +2106,8 @@ void dohsql_free_params(int *pnparams, struct param_data **pparams, int index)
     while (index--) {
         free(params[index].name);
         if ((params[index].type == CLIENT_CSTR ||
-             params[index].type == CLIENT_BLOB)  && params[index].len > 0) {
+             params[index].type == CLIENT_BLOB) &&
+            params[index].len > 0) {
             free(params[index].u.p);
         }
     }

@@ -177,7 +177,8 @@ int validate_ix_names(struct dbtable *db)
         int offset = get_offset_of_keyname(index->csctag);
         const char *keynm = index->csctag + offset;
         rc = validate_ixname(keynm, db->iq);
-        if (rc) break;
+        if (rc)
+            break;
     }
     return rc;
 }

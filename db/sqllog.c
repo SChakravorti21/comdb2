@@ -56,7 +56,8 @@ static pool_t *event_pool;
 struct log_event {
     size_t bufsz;
     uint8_t *buf;
-    LINKC_T(struct log_event) lnk;
+    LINKC_T(struct log_event)
+    lnk;
 };
 
 static LISTC_T(struct log_event) sqllog_events;
@@ -200,8 +201,8 @@ static void sqllog_changesync(int async)
     } else {
         rc = pthread_create(&sqllog_threadid, NULL, async_logthd, NULL);
         if (rc)
-            logmsg(LOGMSG_ERROR, 
-                    "can't create sql logger thread, logging disabled\n");
+            logmsg(LOGMSG_ERROR,
+                   "can't create sql logger thread, logging disabled\n");
         sqllog_use_async = 1;
         async_have_thread = 1;
     }
@@ -224,7 +225,7 @@ again:
         f = fopen(fname, "w");
         if (f == NULL) {
             logmsg(LOGMSG_ERROR, "Can't open %s: %d %s\n", fname, errno,
-                    strerror(errno));
+                   strerror(errno));
             return NULL;
         }
     }
@@ -233,7 +234,7 @@ again:
     if (rc) {
         fclose(f);
         logmsg(LOGMSG_ERROR, "Failed to seek to end of SQL log: %d %s\n", errno,
-                strerror(errno));
+               strerror(errno));
         return NULL;
     }
     /* if it's not a new file, write version number */
@@ -253,14 +254,14 @@ again:
         if (rc) {
             fclose(f);
             logmsg(LOGMSG_ERROR, "Failed to seek to start of SQL log: %d %s\n",
-                    errno, strerror(errno));
+                   errno, strerror(errno));
             return NULL;
         }
         rc = fread(&version, sizeof(int32_t), 1, f);
         if (rc != 1) {
             fclose(f);
             logmsg(LOGMSG_ERROR, "Failed to read version number of SQL log: %d %s\n",
-                    errno, strerror(errno));
+                   errno, strerror(errno));
             return NULL;
         }
         version = ntohl(version);
@@ -273,7 +274,7 @@ again:
             sqllog_run_roll(100);
             if (stat(fname, &st) != 0 || st.st_size != 0) {
                 logmsg(LOGMSG_ERROR, "Failed to roll logs, and I have a different "
-                                "log version, disabled logging\n");
+                                     "log version, disabled logging\n");
                 return NULL;
             }
             goto again;
@@ -282,7 +283,7 @@ again:
         if (rc) {
             fclose(f);
             logmsg(LOGMSG_ERROR, "Failed to seek to end of SQL log: %d %s\n", errno,
-                    strerror(errno));
+                   strerror(errno));
             return NULL;
         }
     }
@@ -340,7 +341,7 @@ static int sqllog_flush(void)
     Pthread_mutex_lock(&sql_log_lk);
     if (sqllog == NULL) {
         logmsg(LOGMSG_ERROR, "SQL log not open (logging %senabled)\n",
-                gbl_log_all_sql ? "" : "not ");
+               gbl_log_all_sql ? "" : "not ");
         Pthread_mutex_unlock(&sql_log_lk);
         return 1;
     }
@@ -363,7 +364,7 @@ static int sqllog_roll_locked(int nkeep, int quiet)
 {
     if (sqllog == NULL) {
         logmsg(LOGMSG_ERROR, "SQL log not open (logging %senabled)\n",
-                gbl_log_all_sql ? "" : "not ");
+               gbl_log_all_sql ? "" : "not ");
         Pthread_mutex_unlock(&sql_log_lk);
         return 1;
     }
@@ -421,7 +422,7 @@ void sqllogger_process_message(char *line, int lline)
         if (ltok == 0) {
             if (nfiles < 1 || nfiles > 100) {
                 logmsg(LOGMSG_ERROR, "Invalid #files to keep for \"sqllogger roll "
-                                "(must be between 1 and 100\"\n");
+                                     "(must be between 1 and 100\"\n");
                 return;
             }
         }
@@ -437,7 +438,7 @@ void sqllogger_process_message(char *line, int lline)
         nfiles = toknum(tok, ltok);
         if (nfiles < 1 || nfiles > 100) {
             logmsg(LOGMSG_ERROR, "Invalid #files to keep for \"sqllogger keep (must "
-                            "be between 1 and 100\"\n");
+                                 "be between 1 and 100\"\n");
             return;
         }
         sqllog_keep_files = nfiles;
@@ -501,8 +502,8 @@ void sqllogger_process_message(char *line, int lline)
         tok = segtok(line, lline, &st, &ltok);
         if (ltok == 0) {
             logmsg(LOGMSG_ERROR, "Expected value for asyncsize, or -1 for unbounded "
-                            "(default %d current max %d, current %d)",
-                    DEFAULT_ASYNC_MAXSIZE, sqllog_async_maxsize, async_size);
+                                 "(default %d current max %d, current %d)",
+                   DEFAULT_ASYNC_MAXSIZE, sqllog_async_maxsize, async_size);
             return;
         }
         size = toknum(tok, ltok);
@@ -521,6 +522,6 @@ void sqllogger_process_message(char *line, int lline)
     }
 }
 
-void sqllog_save_event(struct sqlclntstate *clnt, char *p, int bytes) {
+void sqllog_save_event(struct sqlclntstate *clnt, char *p, int bytes)
+{
 }
-

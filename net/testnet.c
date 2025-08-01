@@ -32,7 +32,9 @@
 #include "lockmacros.h"
 #include "net.h"
 
-enum { MSGTYPE_MSG = 0, MSGTYPE_RETRAN_REQUEST = 1, MSGTYPE_NEEDACK = 2 };
+enum { MSGTYPE_MSG = 0,
+       MSGTYPE_RETRAN_REQUEST = 1,
+       MSGTYPE_NEEDACK = 2 };
 
 struct netnode {
     int node;

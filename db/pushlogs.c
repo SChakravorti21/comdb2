@@ -83,7 +83,7 @@ static void *pushlogs_thread(void *voidarg)
             lastreport = now;
             char b1[32];
             char b2[32];
-           logmsg(LOGMSG_USER, "pushlogs: target %s, current %s, nwrites=%d\n",
+            logmsg(LOGMSG_USER, "pushlogs: target %s, current %s, nwrites=%d\n",
                    bdb_format_seqnum((seqnum_type *)target, b1, sizeof(b1)),
                    bdb_format_seqnum((seqnum_type *)cur_seqnum, b2, sizeof(b2)),
                    nwrites);
@@ -130,7 +130,7 @@ static void *pushlogs_thread(void *voidarg)
         rc = put_csc2_stuff(db, trans, junk, sizeof(junk));
         if (rc != 0) {
             logmsg(LOGMSG_ERROR, "pushlogs_thread: error %d adding to meta table\n",
-                    rc);
+                   rc);
             trans_abort(&iq, trans);
             Pthread_mutex_lock(&mutex);
             have_thread = 0;
@@ -173,7 +173,7 @@ void set_target_lsn(uint32_t logfile, uint32_t logbyte)
                             NULL);
         if (rc != 0) {
             logmsg(LOGMSG_ERROR, "set_target_lsn: can't make thread: %d %s\n", rc,
-                    strerror(rc));
+                   strerror(rc));
         } else {
             have_thread = 1;
         }

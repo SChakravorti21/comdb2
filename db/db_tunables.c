@@ -666,10 +666,11 @@ struct snapshot_impl_config_st {
     const char *name;
     int code;
 } snapshot_impl_config_vals[] = {{"original", SNAP_IMPL_ORIG},
-                                {"new", SNAP_IMPL_NEW},
-                                {"modsnap", SNAP_IMPL_MODSNAP}};
+                                 {"new", SNAP_IMPL_NEW},
+                                 {"modsnap", SNAP_IMPL_MODSNAP}};
 
-static int snapshot_impl_update(void *context, void *value) {
+static int snapshot_impl_update(void *context, void *value)
+{
     comdb2_tunable *tunable;
     char *tok;
     int st = 0;
@@ -702,7 +703,7 @@ static void *snapshot_impl_value(void *context)
 {
     comdb2_tunable *tunable = (comdb2_tunable *)context;
 
-    return (void *) snap_impl_str(*(int *)tunable->var);
+    return (void *)snap_impl_str(*(int *)tunable->var);
 }
 
 struct enable_sql_stmt_caching_st {
@@ -1066,7 +1067,8 @@ static int deadlock_policy_override_update(void *context, void *value)
 
 extern void clean_exit_sigwrap(int signum);
 
-static int update_clean_exit_on_sigterm(void *context, void *value) {
+static int update_clean_exit_on_sigterm(void *context, void *value)
+{
     int val = *(int *)value;
     if (val)
         signal(SIGTERM, clean_exit_sigwrap);
@@ -1132,30 +1134,30 @@ static int hostname_update(void *context, void *value)
 static int fdb_default_ver_update(void *context, void *value)
 {
     comdb2_tunable *tunable = (comdb2_tunable *)context;
-    int val = *(int*)value;
+    int val = *(int *)value;
     if (fdb_default_ver_set(val))
         return -1;
-    *(int*)tunable->var = val;
+    *(int *)tunable->var = val;
     return 0;
 }
 
 static int fdb_push_write_update(void *context, void *value)
 {
     comdb2_tunable *tunable = (comdb2_tunable *)context;
-    int val = *(int*)value;
+    int val = *(int *)value;
     if (fdb_push_write_set(val))
         return -1;
-    *(int*)tunable->var = val;
+    *(int *)tunable->var = val;
     return 0;
 }
 
 static int fdb_push_update(void *context, void *value)
 {
     comdb2_tunable *tunable = (comdb2_tunable *)context;
-    int val = *(int*)value;
+    int val = *(int *)value;
     if (fdb_push_set(val))
         return -1;
-    *(int*)tunable->var = val;
+    *(int *)tunable->var = val;
     return 0;
 }
 
@@ -1169,9 +1171,9 @@ int ctrace_set_rollat(void *unused, void *value);
 int get_commit_lsn_map_switch_value()
 {
     const int dependencies_are_enabled = gbl_utxnid_log;
-    const int enabled_dependent_exists = 
+    const int enabled_dependent_exists =
         gbl_test_commit_lsn_map || gbl_use_modsnap_for_snapshot;
-    
+
     return dependencies_are_enabled && enabled_dependent_exists;
 }
 
@@ -1179,11 +1181,16 @@ int get_commit_lsn_map_switch_value()
 static void *sql_tranlevel_default_value(void *context)
 {
     switch (gbl_sql_tranlevel_default) {
-    case SQL_TDEF_SOCK: return "BLOCKSOCK";
-    case SQL_TDEF_RECOM: return "RECOM";
-    case SQL_TDEF_SNAPISOL: return "SNAPSHOT ISOLATION";
-    case SQL_TDEF_SERIAL: return "SERIAL";
-    default: return "invalid";
+    case SQL_TDEF_SOCK:
+        return "BLOCKSOCK";
+    case SQL_TDEF_RECOM:
+        return "RECOM";
+    case SQL_TDEF_SNAPISOL:
+        return "SNAPSHOT ISOLATION";
+    case SQL_TDEF_SERIAL:
+        return "SERIAL";
+    default:
+        return "invalid";
     }
 }
 
@@ -1291,7 +1298,7 @@ static void *file_permissions_value(void *context)
 
 static int file_permissions_update(void *context, void *value)
 {
-    char *in = (char*) value;
+    char *in = (char *)value;
     long int val = strtol(in, NULL, 8);
     if (val == LONG_MAX || val == LONG_MIN) {
         return 1;
@@ -1314,12 +1321,12 @@ static void tunable_tolower(char *str)
 
 int set_driver_ulimit()
 {
-    const char * const ulimit = getenv("COMDB2_DRIVER_ULIMIT");
+    const char *const ulimit = getenv("COMDB2_DRIVER_ULIMIT");
     if (ulimit) {
         const int rc = parse_int64(ulimit, &gbl_driver_ulimit);
         if (rc) {
             logmsg(LOGMSG_ERROR, "%s:%d Failed to set driver ulimit to %s\n",
-                __FILE__, __LINE__, ulimit);
+                   __FILE__, __LINE__, ulimit);
         }
         return rc;
     } else {
@@ -1355,7 +1362,8 @@ int init_gbl_tunables()
 /* Free memory acquired by tunable members. */
 static inline int free_tunable(comdb2_tunable *tunable)
 {
-    if (tunable->destroy) tunable->destroy(tunable);
+    if (tunable->destroy)
+        tunable->destroy(tunable);
     hash_del(gbl_tunables->hash, tunable);
     free(tunable->name);
     return 0;
@@ -1387,7 +1395,8 @@ int register_tunable(comdb2_tunable *tunable)
     int already_exists = 0;
     comdb2_tunable *t;
 
-    if ((!gbl_tunables) || (gbl_tunables->freeze == 1)) return 0;
+    if ((!gbl_tunables) || (gbl_tunables->freeze == 1))
+        return 0;
 
     if (!tunable->name) {
         logmsg(LOGMSG_ERROR, "%s: Tunable must have a name.\n", __func__);
@@ -1466,15 +1475,24 @@ oom_err:
 const char *tunable_type(comdb2_tunable_type type)
 {
     switch (type) {
-    case TUNABLE_INTEGER: return "INTEGER";
-    case TUNABLE_INT64: return "INT64";
-    case TUNABLE_DOUBLE: return "DOUBLE";
-    case TUNABLE_BOOLEAN: return "BOOLEAN";
-    case TUNABLE_STRING: return "STRING";
-    case TUNABLE_ENUM: return "ENUM";
-    case TUNABLE_COMPOSITE: return "COMPOSITE";
-    case TUNABLE_RAW: return "RAW";
-    default: assert(0);
+    case TUNABLE_INTEGER:
+        return "INTEGER";
+    case TUNABLE_INT64:
+        return "INT64";
+    case TUNABLE_DOUBLE:
+        return "DOUBLE";
+    case TUNABLE_BOOLEAN:
+        return "BOOLEAN";
+    case TUNABLE_STRING:
+        return "STRING";
+    case TUNABLE_ENUM:
+        return "ENUM";
+    case TUNABLE_COMPOSITE:
+        return "COMPOSITE";
+    case TUNABLE_RAW:
+        return "RAW";
+    default:
+        assert(0);
     }
     return "???";
 }
@@ -1619,22 +1637,21 @@ static int parse_bool(const char *value, int *num)
 }
 
 /* Parse the next token and store it into a buffer. */
-#define PARSE_TOKEN                                                            \
-    tok = segtok((char *)value, value_len, &st, &ltok);                        \
+#define PARSE_TOKEN                                     \
+    tok = segtok((char *)value, value_len, &st, &ltok); \
     tokcpy0(tok, ltok, buf, MAX_TUNABLE_VALUE_SIZE);
 
 /* Grab the next token and store it into a buffer. */
-#define PARSE_RAW                                                              \
-    tok = (char*)value;                                                        \
-    ltok = strlen(tok) + 1;                                                    \
+#define PARSE_RAW           \
+    tok = (char *)value;    \
+    ltok = strlen(tok) + 1; \
     tokcpy0(tok, ltok, buf, MAX_TUNABLE_VALUE_SIZE);
 
-
 /* Use the custom verify function if one's provided. */
-#define DO_VERIFY(t, value)                                                    \
-    if (t->verify && t->verify(t, (void *)value)) {                            \
-        logmsg(LOGMSG_ERROR, "Invalid argument for '%s'.\n", t->name);         \
-        return TUNABLE_ERR_INVALID_VALUE; /* Verification failure. */          \
+#define DO_VERIFY(t, value)                                            \
+    if (t->verify && t->verify(t, (void *)value)) {                    \
+        logmsg(LOGMSG_ERROR, "Invalid argument for '%s'.\n", t->name); \
+        return TUNABLE_ERR_INVALID_VALUE; /* Verification failure. */  \
     }
 
 /*
@@ -1642,15 +1659,15 @@ static int parse_bool(const char *value, int *num)
   update() function's responsibility to check for the trailing junk in
   the value.
 */
-#define DO_UPDATE(t, value)                                                    \
-    ret = t->update(t, (void *)value);                                         \
-    if (ret) {                                                                 \
-        logmsg(LOGMSG_ERROR, "Failed to update the value of tunable '%s'.\n",  \
-               t->name);                                                       \
-        return TUNABLE_ERR_INTERNAL;                                           \
+#define DO_UPDATE(t, value)                                                   \
+    ret = t->update(t, (void *)value);                                        \
+    if (ret) {                                                                \
+        logmsg(LOGMSG_ERROR, "Failed to update the value of tunable '%s'.\n", \
+               t->name);                                                      \
+        return TUNABLE_ERR_INTERNAL;                                          \
     }
 
-static int is_unsigned_tunable_int_range_ok(const comdb2_tunable * const t, const int64_t num)
+static int is_unsigned_tunable_int_range_ok(const comdb2_tunable *const t, const int64_t num)
 {
     if (num < 0) {
         return 0;
@@ -1661,7 +1678,7 @@ static int is_unsigned_tunable_int_range_ok(const comdb2_tunable * const t, cons
     }
 }
 
-static int is_signed_tunable_int_range_ok(const comdb2_tunable * const t, const int64_t num)
+static int is_signed_tunable_int_range_ok(const comdb2_tunable *const t, const int64_t num)
 {
     if ((t->flags & NOZERO) && (num <= 0)) {
         return 0;
@@ -1670,8 +1687,8 @@ static int is_signed_tunable_int_range_ok(const comdb2_tunable * const t, const 
     }
 }
 
-static int parse_tunable_int64_value(const comdb2_tunable * const t,
-    char buf[MAX_TUNABLE_VALUE_SIZE], int64_t * const num)
+static int parse_tunable_int64_value(const comdb2_tunable *const t,
+                                     char buf[MAX_TUNABLE_VALUE_SIZE], int64_t *const num)
 {
     if ((!(t->flags & SIGNED)) && (buf[0] == '-')) {
         logmsg(LOGMSG_ERROR, "Invalid negative value for '%s'.\n", t->name);
@@ -1685,8 +1702,8 @@ static int parse_tunable_int64_value(const comdb2_tunable * const t,
     }
 
     const int is_tunable_range_ok = (t->flags & SIGNED
-        ? is_signed_tunable_int_range_ok(t, *num)
-        : is_unsigned_tunable_int_range_ok(t, *num));
+                                         ? is_signed_tunable_int_range_ok(t, *num)
+                                         : is_unsigned_tunable_int_range_ok(t, *num));
 
     if (!is_tunable_range_ok) {
         logmsg(LOGMSG_ERROR,
@@ -1698,8 +1715,8 @@ static int parse_tunable_int64_value(const comdb2_tunable * const t,
     return 0;
 }
 
-static int parse_tunable_int_value(const comdb2_tunable * const t,
-    char buf[MAX_TUNABLE_VALUE_SIZE], int * const num)
+static int parse_tunable_int_value(const comdb2_tunable *const t,
+                                   char buf[MAX_TUNABLE_VALUE_SIZE], int *const num)
 {
     if ((!(t->flags & SIGNED)) && (buf[0] == '-')) {
         logmsg(LOGMSG_ERROR, "Invalid negative value for '%s'.\n", t->name);
@@ -1713,8 +1730,8 @@ static int parse_tunable_int_value(const comdb2_tunable * const t,
     }
 
     const int is_tunable_range_ok = (t->flags & SIGNED
-        ? is_signed_tunable_int_range_ok(t, *num)
-        : is_unsigned_tunable_int_range_ok(t, *num));
+                                         ? is_signed_tunable_int_range_ok(t, *num)
+                                         : is_unsigned_tunable_int_range_ok(t, *num));
 
     if (!is_tunable_range_ok) {
         logmsg(LOGMSG_ERROR,
@@ -1907,7 +1924,8 @@ static comdb2_tunable_err update_tunable(comdb2_tunable *t, const char *value)
                (const char *)t->value(t));
         break;
     }
-    default: assert(0);
+    default:
+        assert(0);
     }
 
     /* Check/warn for unparsed/unexpected junk in the value. */
@@ -2007,11 +2025,7 @@ comdb2_tunable_err handle_lrl_tunable(char *name, int name_len, char *value,
           No argument specified. Check if NOARG flag is
           set for the tunable, in which case its ok.
         */
-        if (((t->flags & NOARG) != 0)
-            && ((t->type == TUNABLE_INTEGER)
-             || (t->type == TUNABLE_INT64)
-             || (t->type == TUNABLE_BOOLEAN)
-             || (t->type == TUNABLE_ENUM))) {
+        if (((t->flags & NOARG) != 0) && ((t->type == TUNABLE_INTEGER) || (t->type == TUNABLE_INT64) || (t->type == TUNABLE_BOOLEAN) || (t->type == TUNABLE_ENUM))) {
             /* Empty the buffer */
             buf[0] = '\0';
             /*
@@ -2077,9 +2091,12 @@ comdb2_tunable_err handle_lrl_tunable(char *name, int name_len, char *value,
 const char *tunable_error(comdb2_tunable_err code)
 {
     switch (code) {
-    case TUNABLE_ERR_INTERNAL: return "Internal error, check server log";
-    case TUNABLE_ERR_INVALID_TUNABLE: return "Invalid tunable";
-    case TUNABLE_ERR_INVALID_VALUE: return "Invalid tunable value";
+    case TUNABLE_ERR_INTERNAL:
+        return "Internal error, check server log";
+    case TUNABLE_ERR_INVALID_TUNABLE:
+        return "Invalid tunable";
+    case TUNABLE_ERR_INVALID_VALUE:
+        return "Invalid tunable value";
     case TUNABLE_ERR_READONLY:
         return "Cannot modify READ-ONLY tunable at runtime";
     }

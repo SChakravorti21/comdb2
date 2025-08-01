@@ -86,7 +86,8 @@ struct thr_handle {
 
     enum thrsubtype subtype;
 
-    LINKC_T(struct thr_handle) linkv;
+    LINKC_T(struct thr_handle)
+    linkv;
 };
 
 static pthread_key_t thrman_key;
@@ -134,7 +135,7 @@ struct thr_handle *thrman_register(enum thrtype type)
     if (thr) {
         char buf[1024];
         logmsg(LOGMSG_FATAL, "thrman_register(%s): thread already registered: %s\n",
-                thrman_type2a(type), thrman_describe(thr, buf, sizeof(buf)));
+               thrman_type2a(type), thrman_describe(thr, buf, sizeof(buf)));
         abort();
     }
 
@@ -155,7 +156,7 @@ struct thr_handle *thrman_register(enum thrtype type)
     thr_type_counts[type]++;
     if (gbl_thrman_trace) {
         char buf[1024];
-       logmsg(LOGMSG_ERROR, "thrman_register: %s\n", thrman_describe(thr, buf, sizeof(buf)));
+        logmsg(LOGMSG_ERROR, "thrman_register: %s\n", thrman_describe(thr, buf, sizeof(buf)));
     }
     Pthread_cond_broadcast(&cond);
     Pthread_mutex_unlock(&mutex);
@@ -192,7 +193,7 @@ void thrman_change_type(struct thr_handle *thr, enum thrtype newtype)
     thr_type_counts[thr->type]++;
     if (gbl_thrman_trace) {
         char buf[1024];
-       logmsg(LOGMSG_USER, "thrman_change_type: from %s -> %s\n", thrman_type2a(oldtype),
+        logmsg(LOGMSG_USER, "thrman_change_type: from %s -> %s\n", thrman_type2a(oldtype),
                thrman_describe(thr, buf, sizeof(buf)));
     }
     Pthread_cond_broadcast(&cond);
@@ -295,7 +296,10 @@ void thrman_setid(struct thr_handle *thr, const char *idstr)
 }
 
 /* Set associated file descriptor.  -1 indicates no file descriptor. */
-void thrman_setfd(struct thr_handle *thr, int fd) { thr->fd = fd; }
+void thrman_setfd(struct thr_handle *thr, int fd)
+{
+    thr->fd = fd;
+}
 
 void thrman_set_subtype(struct thr_handle *thr, enum thrsubtype subtype)
 {
@@ -577,7 +581,10 @@ void stop_threads(struct dbenv *dbenv)
      * and queue consumers. */
     thrman_wait("threads to stop", thrman_check_threads_stopped_ll, NULL);
 
-    LOCK(&stop_thds_time_lk) { gbl_stop_thds_time = 0; }
+    LOCK(&stop_thds_time_lk)
+    {
+        gbl_stop_thds_time = 0;
+    }
     UNLOCK(&stop_thds_time_lk);
 }
 

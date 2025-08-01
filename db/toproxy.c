@@ -31,7 +31,8 @@
 
 struct proxy_config_line {
     char *line;
-    LINKC_T(struct proxy_config_line) lnk;
+    LINKC_T(struct proxy_config_line)
+    lnk;
 };
 
 typedef LISTC_T(struct proxy_config_line) proxy_config;
@@ -158,6 +159,9 @@ void dump_proxy_config(void)
         printf("Proxy configuration parameters:\n");
     else
         printf("No proxy configuration options loaded from lrl file\n");
-    LISTC_FOR_EACH(&proxy_config_lines, l, lnk) { printf("   %s\n", l->line); }
+    LISTC_FOR_EACH(&proxy_config_lines, l, lnk)
+    {
+        printf("   %s\n", l->line);
+    }
     Pthread_rwlock_unlock(&proxy_config_lk);
 }

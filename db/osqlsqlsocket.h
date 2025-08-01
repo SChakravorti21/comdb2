@@ -17,7 +17,6 @@
 #ifndef __OSQLSQLSOCKET_H__
 #define __OSQLSQLSOCKET_H__
 
-
 /**
  * Fwd declare types
  */

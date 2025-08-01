@@ -79,13 +79,15 @@ struct schema {
     void *buf[MAX_TAG_STACK_FRAMES];
     pthread_t tid;
 #endif
-    LINKC_T(struct schema) lnk;
+    LINKC_T(struct schema)
+    lnk;
 };
 
 struct dbtag {
     char *tblname;
     hash_t *tags;
-    LISTC_T(struct schema) taglist;
+    LISTC_T(struct schema)
+    taglist;
 };
 
 void lock_taglock(void);
@@ -100,9 +102,9 @@ enum {
     SCHEMA_RECNUM = 8 /* recnum flag set */
     ,
     SCHEMA_DYNAMIC = 16,
-    SCHEMA_DATACOPY = 32, /* datacopy flag set on index */
-    SCHEMA_UNIQNULLS = 64, /* treat all NULL values as UNIQUE */
-    SCHEMA_PARTIALDATACOPY = 128, /* partial datacopy flag set on index */
+    SCHEMA_DATACOPY = 32,               /* datacopy flag set on index */
+    SCHEMA_UNIQNULLS = 64,              /* treat all NULL values as UNIQUE */
+    SCHEMA_PARTIALDATACOPY = 128,       /* partial datacopy flag set on index */
     SCHEMA_PARTIALDATACOPY_ACTUAL = 256 /* schema that contains partial datacopy fields referenced by partial datacopy index */
 };
 
@@ -117,10 +119,10 @@ enum {
 /* flags for schema conversion */
 enum {
     /* conversion for update: skip fields missing in source buffer */
-    CONVERT_UPDATE               = 1,
+    CONVERT_UPDATE = 1,
     CONVERT_LITTLE_ENDIAN_CLIENT = 2,
-    CONVERT_NULL_NO_ERROR        = 4, // support instant sc for dbstore
-    CONVERT_IGNORE_BLOBS         = 8
+    CONVERT_NULL_NO_ERROR = 4, // support instant sc for dbstore
+    CONVERT_IGNORE_BLOBS = 8
 };
 
 typedef enum convert_errcode {
@@ -347,7 +349,8 @@ const void *field_get_buf(const struct field *fld, const void *dta);
 const struct field_conv_opts *field_get_conv_opts(const struct field *fld);
 
 /* misc conversion routine flags */
-enum { FLAGS_FLIP_ENDIAN, FLAGS_DONT_INVERSE_DESCENDING };
+enum { FLAGS_FLIP_ENDIAN,
+       FLAGS_DONT_INVERSE_DESCENDING };
 
 /* Allocated allocate_db_record - used by bdblib for db conversion.
    Call free_db_record to free. */
@@ -370,7 +373,6 @@ struct dbinfo_systable_entry {
 };
 int collect_systable_dbinfo(void **data, int *npoints);
 void release_systable_dbinfo(void *data, int npoints);
-
 
 /* if tag is NULL, assume .ONDISK_new */
 struct dbrecord *allocate_db_record(struct dbtable *table, const char *tag);
@@ -446,7 +448,7 @@ int create_key_from_ireq(struct ireq *iq, int ixnum, int isDelete, char **tail,
                          int *taillen, char *mangled_key, char *partial_datacopy_tail,
                          const char *inbuf, int inbuflen, char *outbuf);
 
-char* typestr(int type, int len);
+char *typestr(int type, int len);
 
 struct schema *get_schema(const struct dbtable *db, int ix);
 
@@ -461,7 +463,7 @@ struct schema *clone_server_to_client_tag(struct schema *from, const char *newta
 int load_csc2_versions(struct dbtable *table, tran_type *tran);
 
 /* NOTE: tag is already strdup-ed */
-struct schema * alloc_schema(char *tag, int nmembers, int flags);
+struct schema *alloc_schema(char *tag, int nmembers, int flags);
 
 /* return how many tags a table has */
 int get_table_tags_count(const char *tblname, int columns);

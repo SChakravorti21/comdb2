@@ -12,9 +12,10 @@ extern int gbl_assert_systable_locks;
  * to it. */
 
 int dbqueuedb_add_consumer(struct dbtable *db, int consumern, const char *method,
-                           int noremove) {
+                           int noremove)
+{
 
-    comdb2_queue_consumer_t *handler; 
+    comdb2_queue_consumer_t *handler;
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
         if (handler && handler->handles_method(method)) {
@@ -25,8 +26,9 @@ int dbqueuedb_add_consumer(struct dbtable *db, int consumern, const char *method
 }
 
 /* This gets called for all plugins, not just the first */
-void dbqueuedb_admin(struct dbenv *dbenv) {
-    comdb2_queue_consumer_t *handler; 
+void dbqueuedb_admin(struct dbenv *dbenv)
+{
+    comdb2_queue_consumer_t *handler;
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
         if (handler)
@@ -34,8 +36,9 @@ void dbqueuedb_admin(struct dbenv *dbenv) {
     }
 }
 
-int dbqueuedb_check_consumer(const char *method) {
-    comdb2_queue_consumer_t *handler; 
+int dbqueuedb_check_consumer(const char *method)
+{
+    comdb2_queue_consumer_t *handler;
 
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
@@ -46,14 +49,16 @@ int dbqueuedb_check_consumer(const char *method) {
     return -1;
 }
 
-enum consumer_t dbqueue_consumer_type(struct consumer *c) {
+enum consumer_t dbqueue_consumer_type(struct consumer *c)
+{
     struct consumer_base b;
     memcpy(&b, c, sizeof(struct consumer_base));
     return b.type;
 }
 
-void dbqueuedb_coalesce(struct dbenv *dbenv) {
-    comdb2_queue_consumer_t *handler; 
+void dbqueuedb_coalesce(struct dbenv *dbenv)
+{
+    comdb2_queue_consumer_t *handler;
 
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
@@ -62,8 +67,9 @@ void dbqueuedb_coalesce(struct dbenv *dbenv) {
     }
 }
 
-int dbqueuedb_restart_consumers(struct dbtable *db) {
-    comdb2_queue_consumer_t *handler; 
+int dbqueuedb_restart_consumers(struct dbtable *db)
+{
+    comdb2_queue_consumer_t *handler;
 
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
@@ -76,8 +82,9 @@ int dbqueuedb_restart_consumers(struct dbtable *db) {
     return -1;
 }
 
-int dbqueuedb_stop_consumers(struct dbtable *db) {
-    comdb2_queue_consumer_t *handler; 
+int dbqueuedb_stop_consumers(struct dbtable *db)
+{
+    comdb2_queue_consumer_t *handler;
 
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
@@ -90,8 +97,9 @@ int dbqueuedb_stop_consumers(struct dbtable *db) {
     return -1;
 }
 
-int dbqueuedb_wake_all_consumers(struct dbtable *db, int force) {
-    comdb2_queue_consumer_t *handler; 
+int dbqueuedb_wake_all_consumers(struct dbtable *db, int force)
+{
+    comdb2_queue_consumer_t *handler;
 
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
@@ -104,8 +112,9 @@ int dbqueuedb_wake_all_consumers(struct dbtable *db, int force) {
     return -1;
 }
 
-int dbqueuedb_wake_all_consumers_all_queues(struct dbenv *dbenv, int force) {
-    comdb2_queue_consumer_t *handler; 
+int dbqueuedb_wake_all_consumers_all_queues(struct dbenv *dbenv, int force)
+{
+    comdb2_queue_consumer_t *handler;
 
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
@@ -118,8 +127,9 @@ int dbqueuedb_wake_all_consumers_all_queues(struct dbenv *dbenv, int force) {
     return -1;
 }
 
-int dbqueuedb_get_name(struct dbtable *db, char **spname) {
-    comdb2_queue_consumer_t *handler; 
+int dbqueuedb_get_name(struct dbtable *db, char **spname)
+{
+    comdb2_queue_consumer_t *handler;
 
     for (int i = 0; i < CONSUMER_TYPE_LAST; i++) {
         handler = thedb->queue_consumer_handlers[i];
@@ -184,24 +194,22 @@ int dbqueuedb_get_stats(struct dbtable *db, struct consumer_stat *stats, uint32_
     return rc;
 }
 
-int queue_consume(struct ireq* iq, const void* fnd, int consumern)
+int queue_consume(struct ireq *iq, const void *fnd, int consumern)
 {
     const int sleeptime = 1;
     int gotlk = 0;
 
     /* Outer loop - long sleep between retries */
-    while(1)
-    {
+    while (1) {
         int retries;
 
         /* Inner loop - short delay between retries */
-        for(retries = 0; retries < gbl_maxretries; retries++)
-        {
+        for (retries = 0; retries < gbl_maxretries; retries++) {
             tran_type *trans;
             int rc;
 
-            if(retries > 10)
-                poll(0,0,(rand()%25+1));
+            if (retries > 10)
+                poll(0, 0, (rand() % 25 + 1));
 
             if (gbl_exclusive_blockop_qconsume) {
                 Pthread_rwlock_wrlock(&gbl_block_qconsume_lock);
@@ -209,8 +217,7 @@ int queue_consume(struct ireq* iq, const void* fnd, int consumern)
             }
 
             rc = trans_start(iq, NULL, &trans);
-            if(rc != 0)
-            {
+            if (rc != 0) {
                 if (gotlk)
                     Pthread_rwlock_unlock(&gbl_block_qconsume_lock);
                 return -1;
@@ -225,14 +232,13 @@ int queue_consume(struct ireq* iq, const void* fnd, int consumern)
             } else {
                 rc = RC_INTERNAL_RETRY;
             }
-            if(rc != 0)
-            {
+            if (rc != 0) {
                 trans_abort(iq, trans);
                 if (gotlk)
                     Pthread_rwlock_unlock(&gbl_block_qconsume_lock);
-                if(rc == RC_INTERNAL_RETRY)
+                if (rc == RC_INTERNAL_RETRY)
                     continue;
-                else if(rc == IX_NOTFND)
+                else if (rc == IX_NOTFND)
                     return 0;
                 else
                     break;
@@ -241,18 +247,18 @@ int queue_consume(struct ireq* iq, const void* fnd, int consumern)
             rc = trans_commit(iq, trans, 0);
             if (gotlk)
                 Pthread_rwlock_unlock(&gbl_block_qconsume_lock);
-            if(rc == 0)
+            if (rc == 0)
                 return 0;
-            else if(rc == RC_INTERNAL_RETRY)
+            else if (rc == RC_INTERNAL_RETRY)
                 continue;
-            else if(rc == ERR_NOMASTER)
+            else if (rc == ERR_NOMASTER)
                 return -1;
             else
                 break;
         }
 
         logmsg(LOGMSG_ERROR, "difficulty consuming key from queue '%s' consumer %d\n",
-                iq->usedb->tablename, consumern);
+               iq->usedb->tablename, consumern);
         if (db_is_stopped() || thedb->master != gbl_myhostname)
             return -1;
         sleep(sleeptime);

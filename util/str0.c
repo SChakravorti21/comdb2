@@ -48,7 +48,7 @@ int snprintf0(char *buf, size_t bufsize, const char *fmt, ...)
 
     if (buf == NULL || bufsize == 0) {
         logmsg(LOGMSG_ERROR, "snprintf0(%d): ERROR: bad buffer @%p(%zu)\n",
-                (int)getpid(), buf, bufsize);
+               (int)getpid(), buf, bufsize);
         return -1;
     }
 
@@ -94,7 +94,7 @@ char *strncpy0(char *dst, const char *src, size_t n)
 
     if (n == 0) {
         logmsg(LOGMSG_ERROR, "strncpy0(%d): ERROR: bad buffer size: %zu\n",
-                (int)getpid(), n);
+               (int)getpid(), n);
         return NULL;
     }
 
@@ -140,7 +140,7 @@ char *strncat0(char *dst, const char *src, size_t n)
 
     if (n <= dst_len) {
         logmsg(LOGMSG_ERROR, "strncat0(%d): ERROR: bad buffer size: %zu\n",
-                (int)getpid(), n);
+               (int)getpid(), n);
         return NULL;
     }
 
@@ -175,7 +175,7 @@ int strncatf0(char *buf, size_t bufsize, const char *fmt, ...)
 
     if (buf == NULL || bufsize == 0) {
         logmsg(LOGMSG_ERROR, "strncatf0(%d): ERROR: bad buffer @%p(%zu)\n",
-                (int)getpid(), buf, bufsize);
+               (int)getpid(), buf, bufsize);
         return -1;
     }
 
@@ -188,8 +188,8 @@ int strncatf0(char *buf, size_t bufsize, const char *fmt, ...)
 
     if (len >= bufsize) {
         logmsg(LOGMSG_ERROR, "strncatf0(%d): ERROR: string longer than buffer "
-                        "size (%zu >= %zu)\n",
-                (int)getpid(), len, bufsize);
+                             "size (%zu >= %zu)\n",
+               (int)getpid(), len, bufsize);
         return -1;
     }
 
@@ -222,7 +222,7 @@ int vsnprintf0(char *buf, size_t bufsize, const char *fmt, va_list ap)
 
     if (!buf || !bufsize) {
         logmsg(LOGMSG_ERROR, "vsnprintf0(%d): ERROR: bad buffer @%p(%zu)\n",
-                (int)getpid(), buf, bufsize);
+               (int)getpid(), buf, bufsize);
         return -1;
     }
 
@@ -273,7 +273,7 @@ size_t strnlen0(const char *s, size_t maxlen)
 {
     if (s == NULL) {
         logmsg(LOGMSG_ERROR, "strnlen0(%d): ERROR: NULL s with %d maxlen\n",
-                (int)getpid(), (int)maxlen);
+               (int)getpid(), (int)maxlen);
         return 0;
     }
 
@@ -284,7 +284,10 @@ size_t strnlen0(const char *s, size_t maxlen)
 
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 
-static long long int eightbytes(void) { return 0; }
+static long long int eightbytes(void)
+{
+    return 0;
+}
 
 int main()
 {
@@ -296,9 +299,9 @@ int main()
         size_t reslen; /* expected result length (no trailing 0) */
     } tst_data[] = {
         /* source strings */
-        {"12345678911234567892", 20},                     /* small string */
-        {"123456789112345678921234567893123456789", 39},  /* bufsize-1 */
-        {"1234567891123456789212345678931234567894", 39}, /* bufsize */
+        {"12345678911234567892", 20},                               /* small string */
+        {"123456789112345678921234567893123456789", 39},            /* bufsize-1 */
+        {"1234567891123456789212345678931234567894", 39},           /* bufsize */
         {"12345678911234567892123456789312345678941234567895", 39}, /* big */
     };
 

@@ -11,4 +11,4 @@
  * Returns
  *		0 on success and non-0 on if either version could not be parsed
  */
-int compare_semvers(const char * const vers_lhs, const char * const vers_rhs, int * const cmp_result);
+int compare_semvers(const char *const vers_lhs, const char *const vers_rhs, int *const cmp_result);

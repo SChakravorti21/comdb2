@@ -97,7 +97,8 @@ static int opt_idx(char *opt, char *options, struct option *long_options,
     char *p;
     int ii, len;
 
-    if (opt[0] != '-') return -1;
+    if (opt[0] != '-')
+        return -1;
 
     if ((++opt)[0] == '-')
         ++opt;
@@ -115,7 +116,8 @@ static int opt_idx(char *opt, char *options, struct option *long_options,
     for (ii = 0; long_options[ii].name; ii++) {
         if (!strncmp(opt, long_options[ii].name, len) &&
             strlen(long_options[ii].name) == len) {
-            if (req) *req = long_options[ii].has_arg;
+            if (req)
+                *req = long_options[ii].has_arg;
             return ii;
         }
     }
@@ -129,7 +131,8 @@ static void replace_args(int argc, char *argv[], char *options,
     int ii, req_arg, idx, left, mid;
 
     for (ii = 1, left = 1, mid = 1; ii < argc; ii++) {
-        if (left == mid) left = mid = ii;
+        if (left == mid)
+            left = mid = ii;
         if (strcmp(argv[ii], "--") == 0) {
             if (left < mid && mid < ii + 1) {
                 swapargs(argv, left, mid, ii + 1);
@@ -157,7 +160,8 @@ static void replace_args(int argc, char *argv[], char *options,
         }
     }
 
-    if (left < mid && mid < argc) swapargs(argv, left, mid, argc);
+    if (left < mid && mid < argc)
+        swapargs(argv, left, mid, argc);
 }
 
 /*
@@ -188,8 +192,10 @@ static int getopt_internal(int nargc, char *const *nargv, const char *ostr)
          *       * if the user didn't specify '-' as an option,
          *               * assume it means -1.
          *                       */
-        if (optopt == (int)'-') return (-1);
-        if (!*place) ++optind;
+        if (optopt == (int)'-')
+            return (-1);
+        if (!*place)
+            ++optind;
         if (opterr && *ostr != ':')
             (void)fprintf(stderr, "%s: illegal option -- %c\n",
                           __progname(nargv[0]), optopt);
@@ -197,7 +203,8 @@ static int getopt_internal(int nargc, char *const *nargv, const char *ostr)
     }
     if (*++oli != ':') { /* don't need argument */
         optarg = NULL;
-        if (!*place) ++optind;
+        if (!*place)
+            ++optind;
     } else {        /* need an argument */
         if (*place) /* no white space */
             optarg = place;
@@ -256,7 +263,8 @@ int bb_getopt_long(int nargc, char **nargv, char *options,
                 match = i;
                 break;
             }
-            if (match == -1) match = i;
+            if (match == -1)
+                match = i;
         }
         if (match != -1) {
             if (long_options[match].has_arg == required_argument ||
@@ -294,7 +302,8 @@ int bb_getopt_long(int nargc, char **nargv, char *options,
             retval = 0;
         } else
             retval = long_options[match].val;
-        if (index) *index = match;
+        if (index)
+            *index = match;
     }
     return (retval);
 }

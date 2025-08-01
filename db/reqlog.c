@@ -118,7 +118,7 @@ int gbl_longreq_log_freq_sec = 60;
 
 static void log_all_events(struct reqlogger *logger, struct output *out);
 
-extern int is_stored_proc(struct sqlclntstate*);
+extern int is_stored_proc(struct sqlclntstate *);
 
 inline void sltdbt_get_stats(int *n_reqs, int *l_reqs)
 {
@@ -283,7 +283,8 @@ static void dumpf(struct reqlogger *logger, struct output *out, const char *fmt,
     dump(logger, out, (buf_slow) ? buf_slow : buf,
          len); /* don't dump the terminating \0 */
 
-    if (buf_slow) free(buf_slow);
+    if (buf_slow)
+        free(buf_slow);
 }
 
 static void init_range(struct range *range)
@@ -470,7 +471,8 @@ static void printrule(struct logrule *rule, FILE *fh, const char *p)
 {
     char b[32];
     logmsgf(LOGMSG_USER, fh, "%sRULE '%s'", p, rule->name);
-    if (!rule->active) logmsgf(LOGMSG_USER, fh, " (INACTIVE)");
+    if (!rule->active)
+        logmsgf(LOGMSG_USER, fh, " (INACTIVE)");
     logmsgf(LOGMSG_USER, fh, "\n");
     if (rule->count)
         logmsgf(LOGMSG_USER, fh, "%s  Log next %d requests where:\n", p,
@@ -726,7 +728,8 @@ static int parse_dblrange_tok(struct dblrange *dblrange, char *tok, int ltok)
     int rc;
 
     rc = parse_range_tok(&range, tok, ltok);
-    if (rc) return rc;
+    if (rc)
+        return rc;
     dblrange->from = range.from;
     dblrange->to = range.to;
     return 0;
@@ -1016,14 +1019,16 @@ struct reqlogger *reqlog_alloc(void)
     return logger;
 }
 
-static void reqlog_free_error(struct reqlogger *logger) {
+static void reqlog_free_error(struct reqlogger *logger)
+{
     if (logger->error) {
         free(logger->error);
         logger->error = NULL;
     }
 }
 
-static void reqlog_free_events(struct reqlogger *logger) {
+static void reqlog_free_events(struct reqlogger *logger)
+{
     struct logevent *event;
     struct print_event *pevent;
     struct push_prefix_event *pushevent;
@@ -1042,7 +1047,8 @@ static void reqlog_free_events(struct reqlogger *logger) {
     logger->events = NULL;
 }
 
-static void reqlog_free_tables(struct reqlogger *logger) {
+static void reqlog_free_tables(struct reqlogger *logger)
+{
     struct tablelist *table;
 
     while ((table = logger->tables) != NULL) {
@@ -1108,7 +1114,8 @@ int reqlog_pushprefixv(struct reqlogger *logger, const char *fmt, va_list args)
     int nchars;
     va_list args_c;
 
-    if (logger == NULL) return 0;
+    if (logger == NULL)
+        return 0;
 
     len = 256;
     s = malloc(len);
@@ -1219,7 +1226,8 @@ static int reqlog_logv_int(struct reqlogger *logger, unsigned event_flag,
     int nchars;
     va_list args_c;
 
-    if (logger == NULL) return 0;
+    if (logger == NULL)
+        return 0;
 
     len = 256;
     s = malloc(len);
@@ -1483,7 +1491,8 @@ inline void reqlog_set_sql(struct reqlogger *logger, struct string_ref *sr)
 
 inline void reqlog_set_startprcs(struct reqlogger *logger, uint64_t val)
 {
-    if (logger) logger->startprcsus = val;
+    if (logger)
+        logger->startprcsus = val;
 }
 
 void reqlog_new_sql_request(struct reqlogger *logger, struct string_ref *sr)
@@ -1579,11 +1588,11 @@ static void log_header_ll(struct reqlogger *logger, struct output *out,
         char expanded_fp[2 * FINGERPRINTSZ + 1];
         util_tohex(expanded_fp, logger->fingerprint, FINGERPRINTSZ);
         dumpf(logger, out, "for fingerprint %.*s", FINGERPRINTSZ * 2,
-                    expanded_fp);
+              expanded_fp);
     }
 
     struct sqlclntstate *clnt = logger->clnt;
-    if(clnt) {
+    if (clnt) {
         dumpf(logger, out, " pid %d task %s",
               clnt->conninfo.pid, clnt->argv0 ? clnt->argv0 : "???");
     }
@@ -1623,7 +1632,8 @@ static void log_header_ll(struct reqlogger *logger, struct output *out,
     if (out == long_request_out &&
         bdb_attr_get(thedb->bdb_attr, BDB_ATTR_SHOW_COST_IN_LONGREQ)) {
         struct client_query_stats *qstats = get_query_stats_from_thd();
-        if (qstats) print_client_query_stats(logger, qstats, out);
+        if (qstats)
+            print_client_query_stats(logger, qstats, out);
     }
     log_all_events(logger, out);
 }
@@ -1667,7 +1677,7 @@ static void print_blob(const char *data, int len, char *s, int n)
     }
 }
 
-static void print_ym(const intv_t *tv,  char *s, int n)
+static void print_ym(const intv_t *tv, char *s, int n)
 {
     const intv_ym_t *ym = &tv->u.ym;
     snprintf(s, n, "%s%u-%2.2u", tv->sign == -1 ? "-" : "", ym->years, ym->months);
@@ -1680,7 +1690,8 @@ static void print_ds(const intv_t *tv, char *s, int n)
              ds->days, ds->hours, ds->mins, ds->sec, ds->prec, ds->frac);
 }
 
-char *param_string_value(struct sqlclntstate *clnt, int n, char *out, int outlen) {
+char *param_string_value(struct sqlclntstate *clnt, int n, char *out, int outlen)
+{
     struct param_data p = {0};
 
     if (param_value(clnt, &p, n) != 0) {
@@ -1695,49 +1706,50 @@ char *param_string_value(struct sqlclntstate *clnt, int n, char *out, int outlen
         snprintf(value, sizeof(value), "carray of length %d", p.arraylen);
     } else {
         switch (p.type) {
-            case CLIENT_UINT:
-            case CLIENT_INT:
-                snprintf(value, sizeof(value), "%"PRId64, p.u.i);
-                break;
-            case CLIENT_REAL:
-                snprintf(value, sizeof(value), "%f", p.u.r);
-                break;
-            case CLIENT_CSTR:
-            case CLIENT_PSTR:
-            case CLIENT_PSTR2:
-            case CLIENT_VUTF8:
-                print_str(p.u.p, p.len, value, sizeof(value));
-                break;
-            case CLIENT_BYTEARRAY:
-            case CLIENT_BLOB:
-            case CLIENT_BLOB2:
-                print_blob(p.u.p, p.len, value, sizeof(value));
-                break;
-            case CLIENT_DATETIME:
-            case CLIENT_DATETIMEUS: {
-                dttz_to_str(&p.u.dt, value, sizeof(value), &len, clnt->tzname);
-                break; }
-            case CLIENT_INTVYM:
-                print_ym(&p.u.tv, value, sizeof(value));
-                break;
-            case CLIENT_INTVDS:
-            case CLIENT_INTVDSUS:
-                print_ds(&p.u.tv, value, sizeof(value));
-                break;
-            default:
-                value[0] = 0;
-                break;
+        case CLIENT_UINT:
+        case CLIENT_INT:
+            snprintf(value, sizeof(value), "%" PRId64, p.u.i);
+            break;
+        case CLIENT_REAL:
+            snprintf(value, sizeof(value), "%f", p.u.r);
+            break;
+        case CLIENT_CSTR:
+        case CLIENT_PSTR:
+        case CLIENT_PSTR2:
+        case CLIENT_VUTF8:
+            print_str(p.u.p, p.len, value, sizeof(value));
+            break;
+        case CLIENT_BYTEARRAY:
+        case CLIENT_BLOB:
+        case CLIENT_BLOB2:
+            print_blob(p.u.p, p.len, value, sizeof(value));
+            break;
+        case CLIENT_DATETIME:
+        case CLIENT_DATETIMEUS: {
+            dttz_to_str(&p.u.dt, value, sizeof(value), &len, clnt->tzname);
+            break;
+        }
+        case CLIENT_INTVYM:
+            print_ym(&p.u.tv, value, sizeof(value));
+            break;
+        case CLIENT_INTVDS:
+        case CLIENT_INTVDSUS:
+            print_ds(&p.u.tv, value, sizeof(value));
+            break;
+        default:
+            value[0] = 0;
+            break;
         }
     }
     if (p.pos)
         snprintf(out, outlen,
-                "param%-3d type=%-12s len=%-3d indx=%-16d value=%s", n,
-                type, p.len, p.pos, value);
+                 "param%-3d type=%-12s len=%-3d indx=%-16d value=%s", n,
+                 type, p.len, p.pos, value);
     else
         snprintf(out, outlen,
-                "param%-3d type=%-12s len=%-3d name=%-16s value=%s", n,
-                type, p.len, p.name, value);
-    out[outlen-1]=0;
+                 "param%-3d type=%-12s len=%-3d name=%-16s value=%s", n,
+                 type, p.len, p.name, value);
+    out[outlen - 1] = 0;
     return out;
 }
 
@@ -1745,7 +1757,8 @@ static void log_params(struct reqlogger *logger)
 {
     struct sqlclntstate *clnt = logger->clnt;
     int n = param_count(clnt);
-    if (n <= 0) return;
+    if (n <= 0)
+        return;
     char param_out[256];
     reqlog_logf(logger, REQL_INFO, "params=%d\n", n);
     for (int i = 0; i < n; ++i) {
@@ -1809,9 +1822,13 @@ static void log_rule(struct reqlogger *logger, struct output *out,
             prefix_push(&logger->prefix, pushevent->text, pushevent->length);
             break;
 
-        case EVENT_POP_PREFIX: prefix_pop(&logger->prefix); break;
+        case EVENT_POP_PREFIX:
+            prefix_pop(&logger->prefix);
+            break;
 
-        case EVENT_POP_PREFIX_ALL: prefix_pop_all(&logger->prefix); break;
+        case EVENT_POP_PREFIX_ALL:
+            prefix_pop_all(&logger->prefix);
+            break;
 
         case EVENT_PRINT:
             pevent = (struct print_event *)event;
@@ -1862,12 +1879,14 @@ static int indblrange(const struct dblrange *range, double value)
 
 inline void reqlog_set_cost(struct reqlogger *logger, double cost)
 {
-    if (logger) logger->sqlcost = cost;
+    if (logger)
+        logger->sqlcost = cost;
 }
 
 inline void reqlog_set_rows(struct reqlogger *logger, int rows)
 {
-    if (logger) logger->sqlrows = rows;
+    if (logger)
+        logger->sqlrows = rows;
 }
 
 uint64_t reqlog_current_us(struct reqlogger *logger)
@@ -1877,7 +1896,7 @@ uint64_t reqlog_current_us(struct reqlogger *logger)
 
 inline void reqlog_set_rqid(struct reqlogger *logger, void *id, int idlen)
 {
-    assert (idlen == sizeof(unsigned long long) || idlen == sizeof(uuid_t));
+    assert(idlen == sizeof(unsigned long long) || idlen == sizeof(uuid_t));
     if (idlen == sizeof(uuid_t))
         comdb2uuidstr(id, logger->id);
     else
@@ -1892,7 +1911,8 @@ static int current_shortest_long_request_ms = INT_MAX;
 
 void reqlog_long_running_clnt(struct sqlclntstate *clnt)
 {
-    if (clnt->done || !clnt->thd || !clnt->sql || !clnt->thd->logger) return;
+    if (clnt->done || !clnt->thd || !clnt->sql || !clnt->thd->logger)
+        return;
 
     if (can_consume(clnt) == 1) {
         return; /* Do not log consumers */
@@ -1956,8 +1976,7 @@ void reqlog_long_running_clnt(struct sqlclntstate *clnt)
         if (is_stored_proc(clnt)) {
             normSql = clnt->work.zOrigNormSql;
         } else {
-            normSql = (clnt->work.zNormSql) ? clnt->work.zNormSql :
-          clnt->work.zOrigNormSql;
+            normSql = (clnt->work.zNormSql) ? clnt->work.zNormSql : clnt->work.zOrigNormSql;
         }
         if (normSql) {
             calc_fingerprint(normSql, &unused, fp);
@@ -2371,15 +2390,16 @@ void init_clientstats_table()
 }
 
 #define UNKNOWN_NAME "Unknown"
-#define GET_NAME_AND_LEN(s, s_len)                                             \
-    do {                                                                       \
-        if (!s || (s_len = strlen(s) + 1) <= 1) {                              \
-            s = UNKNOWN_NAME;                                                  \
-            s_len = sizeof(UNKNOWN_NAME);                                      \
-        }                                                                      \
+#define GET_NAME_AND_LEN(s, s_len)                \
+    do {                                          \
+        if (!s || (s_len = strlen(s) + 1) <= 1) { \
+            s = UNKNOWN_NAME;                     \
+            s_len = sizeof(UNKNOWN_NAME);         \
+        }                                         \
     } while (0);
 
-static int hash_free_element(void *elem, void *unused) {
+static int hash_free_element(void *elem, void *unused)
+{
     free(elem);
     return 0;
 }
@@ -2404,10 +2424,10 @@ static void init_clientstats(nodestats_t *entry, int task_len, char *host, int f
     entry->stack = entry->mem + task_len;
     entry->host = host;
     entry->ref = 1;
-    entry->rawtotals.api_history = init_api_history(); 
+    entry->rawtotals.api_history = init_api_history();
     entry->rawtotals.svc_time = time_metric_new("svc_time");
     entry->prevtotals.svc_time = entry->rawtotals.svc_time;
-    
+
     Pthread_mutex_init(&entry->mtx, 0);
     Pthread_mutex_init(&entry->rawtotals.lk, NULL);
 
@@ -2420,16 +2440,17 @@ static void init_clientstats(nodestats_t *entry, int task_len, char *host, int f
         if (getpeername(fd, (struct sockaddr *)&peeraddr, &len) < 0) {
             if (errno != ENOTCONN)
                 logmsg(LOGMSG_ERROR, "%s: getpeername failed fd %d: %d %s\n", __func__, fd, errno,
-                        strerror(errno));
+                       strerror(errno));
             bzero(&(entry->addr), sizeof(struct in_addr));
         } else {
             memcpy(&(entry->addr), &peeraddr.sin_addr,
-                    sizeof(struct in_addr));
+                   sizeof(struct in_addr));
         }
     }
 }
 
-static void update_clientstats_cache(nodestats_t *entry) {
+static void update_clientstats_cache(nodestats_t *entry)
+{
     assert(entry->ref >= 0);
     Pthread_mutex_lock(&clientstats_cache_mtx);
     listc_maybe_rfl(&clientstats_cache, entry);
@@ -2458,7 +2479,7 @@ static nodestats_t *add_clientstats(unsigned checksum,
     nodestats_t *entry_chk = hash_find(clientstats, entry);
     if (entry_chk) {
         free(entry);
-        entry = entry_chk; 
+        entry = entry_chk;
         Pthread_mutex_lock(&entry->mtx);
         entry->ref++;
         update_clientstats_cache(entry);
@@ -2486,11 +2507,11 @@ static nodestats_t *add_clientstats(unsigned checksum,
         }
     }
     Pthread_mutex_unlock(&clientstats_cache_mtx);
-    
+
     if (nclientstats >= gbl_max_clientstats_cache) {
         logmsg(LOGMSG_ERROR,
-                "%s: too many running clientstats (max %d), skipping.\n",
-                __func__, gbl_max_clientstats_cache);
+               "%s: too many running clientstats (max %d), skipping.\n",
+               __func__, gbl_max_clientstats_cache);
         free(entry);
         entry = NULL;
         goto done;
@@ -2527,16 +2548,16 @@ static nodestats_t *find_clientstats(unsigned checksum, int node, int fd)
         if (getpeername(fd, (struct sockaddr *)&peeraddr, &len) < 0) {
             if (errno != ENOTCONN)
                 logmsg(LOGMSG_ERROR, "%s: getpeername failed fd %d: %d %s\n", __func__, fd, errno,
-                        strerror(errno));
+                       strerror(errno));
             bzero(&(entry->addr), sizeof(struct in_addr));
         } else {
             memcpy(&(entry->addr), &peeraddr.sin_addr,
-                    sizeof(struct in_addr));
+                   sizeof(struct in_addr));
         }
     }
     Pthread_mutex_unlock(&entry->mtx);
 
-done: 
+done:
     release_clientstats_lock();
     return entry;
 }
@@ -2547,7 +2568,7 @@ static int release_clientstats(unsigned checksum, int node)
     nodestats_t key;
     key.checksum = checksum;
     key.node = node;
-    
+
     acquire_clientstats_lock(0);
     nodestats_t *entry = hash_find_readonly(clientstats, &key);
     if (!entry) {
@@ -2561,7 +2582,7 @@ static int release_clientstats(unsigned checksum, int node)
     Pthread_mutex_unlock(&entry->mtx);
     rc = 0;
 
-done: 
+done:
     release_clientstats_lock();
     return rc;
 }
@@ -2571,13 +2592,13 @@ nodestats_t *get_next_clientstats_entry(void **curr, unsigned int *iter)
     assert(clientstats);
     acquire_clientstats_lock(0);
     nodestats_t *entry;
-    
+
     if (!*curr && !*iter) {
         entry = (nodestats_t *)hash_first(clientstats, curr, iter);
     } else {
         entry = (nodestats_t *)hash_next(clientstats, curr, iter);
     }
-    
+
     release_clientstats_lock();
     return entry;
 }
@@ -2608,7 +2629,7 @@ struct rawnodestats *get_raw_node_stats(const char *task, const char *stack,
     memcpy(tmp, task, task_len);
     memcpy(tmp + task_len, stack, stack_len);
     checksum = crc32c((const uint8_t *)tmp, namelen);
-    
+
     nodestats_t *nodestats = find_clientstats(checksum, node, fd);
     if (!nodestats) {
         nodestats = add_clientstats(checksum, tmp, task_len, stack_len, host, node, fd);
@@ -2624,7 +2645,8 @@ struct rawnodestats *get_raw_node_stats(const char *task, const char *stack,
             __func__, task, stack, node);
     }
 
-    if (tmp && namelen >= 1024) free(tmp);
+    if (tmp && namelen >= 1024)
+        free(tmp);
 
     return nodestats ? &(nodestats->rawtotals) : NULL;
 }
@@ -3030,7 +3052,8 @@ void nodestats_report(FILE *fh, const char *prefix, int disp_rates)
     unsigned ii;
     struct summary_nodestats *summaries;
 
-    if (!prefix) prefix = "";
+    if (!prefix)
+        prefix = "";
 
     if (disp_rates) {
         logmsgf(LOGMSG_USER, fh,
@@ -3067,7 +3090,7 @@ void nodestats_report(FILE *fh, const char *prefix, int disp_rates)
                 summaries[ii].recom, summaries[ii].snapisol,
                 summaries[ii].serial, summaries[ii].sql_queries,
                 summaries[ii].sql_steps, summaries[ii].sql_rows,
-                summaries[ii].sql_queries_cdb2api, 
+                summaries[ii].sql_queries_cdb2api,
                 summaries[ii].sql_queries_comdb2api,
                 summaries[ii].sql_queries_converted);
     }
@@ -3098,12 +3121,14 @@ inline const char *reqlog_get_origin(const struct reqlogger *logger)
 
 inline void reqlog_set_vreplays(struct reqlogger *logger, int replays)
 {
-    if (logger) logger->vreplays = replays;
+    if (logger)
+        logger->vreplays = replays;
 }
 
 inline void reqlog_set_queue_time(struct reqlogger *logger, uint64_t timeus)
 {
-    if (logger) logger->queuetimeus = timeus;
+    if (logger)
+        logger->queuetimeus = timeus;
 }
 
 inline uint64_t reqlog_get_queue_time(const struct reqlogger *logger)
@@ -3165,7 +3190,8 @@ inline void reqlog_set_error(struct reqlogger *logger, const char *error,
 
 inline void reqlog_set_api_type(struct reqlogger *logger, const char *api_type)
 {
-    if (logger) logger->api_type = api_type;
+    if (logger)
+        logger->api_type = api_type;
 }
 
 inline int reqlog_get_error_code(const struct reqlogger *logger)
@@ -3202,46 +3228,48 @@ inline void reqlog_set_nwrites(struct reqlogger *logger, int nwrites, int cascad
     logger->cascaded_nwrites = cascaded_nwrites;
 }
 
-struct dump_client_sql_options  {
+struct dump_client_sql_options {
     struct reqlogger *logger;
     int do_snap;
     nodestats_t *st;
-    char fingerprint[FINGERPRINTSZ*2+1];
+    char fingerprint[FINGERPRINTSZ * 2 + 1];
 };
 
-static int print_client_fingerprint(struct reqlogger *logger, char *host, char *task, char *fp, int64_t count, int64_t cost, int64_t time, int64_t rows) {
-    reqlog_logf(logger, REQL_INFO, "host=%s task=%s fp=%s count=%"PRId64" cost=%"PRId64" time=%"PRId64 " rows=%"PRId64"\n", host, task, fp, count, cost, time, rows);
+static int print_client_fingerprint(struct reqlogger *logger, char *host, char *task, char *fp, int64_t count, int64_t cost, int64_t time, int64_t rows)
+{
+    reqlog_logf(logger, REQL_INFO, "host=%s task=%s fp=%s count=%" PRId64 " cost=%" PRId64 " time=%" PRId64 " rows=%" PRId64 "\n", host, task, fp, count, cost, time, rows);
     return 0;
 }
 
-static int dump_client_fingerprint(void *ent, void *arg) {
-    struct dump_client_sql_options *options = (struct dump_client_sql_options*) arg;
-    struct query_count *cnt = (struct query_count*) ent;
-    char fingerprint[FINGERPRINTSZ*2+1];
+static int dump_client_fingerprint(void *ent, void *arg)
+{
+    struct dump_client_sql_options *options = (struct dump_client_sql_options *)arg;
+    struct query_count *cnt = (struct query_count *)ent;
+    char fingerprint[FINGERPRINTSZ * 2 + 1];
 
     util_tohex(fingerprint, cnt->fingerprint, FINGERPRINTSZ);
     if (options->do_snap) {
         if (cnt->count != cnt->last_count || cnt->cost != cnt->last_cost || cnt->timems != cnt->last_timems || cnt->rows != cnt->last_rows) {
             print_client_fingerprint(options->logger, options->st->host, options->st->task, fingerprint,
-                        cnt->count - cnt->last_count,
-                        cnt->cost - cnt->last_cost,
-                        cnt->timems - cnt->last_timems,
-                        cnt->rows - cnt->last_rows);
+                                     cnt->count - cnt->last_count,
+                                     cnt->cost - cnt->last_cost,
+                                     cnt->timems - cnt->last_timems,
+                                     cnt->rows - cnt->last_rows);
             cnt->last_count = cnt->count;
             cnt->last_cost = cnt->cost;
             cnt->last_rows = cnt->rows;
             cnt->last_timems = cnt->timems;
         }
-    }
-    else {
+    } else {
         print_client_fingerprint(options->logger, options->st->host, options->st->task, fingerprint, cnt->count, cnt->cost, cnt->timems, cnt->rows);
     }
     return 0;
 }
 
-static int dump_client_sql_data_single(void *ent, void *arg) {
-    nodestats_t *st = (nodestats_t*) ent;
-    struct dump_client_sql_options *options = (struct dump_client_sql_options*) arg;
+static int dump_client_sql_data_single(void *ent, void *arg)
+{
+    nodestats_t *st = (nodestats_t *)ent;
+    struct dump_client_sql_options *options = (struct dump_client_sql_options *)arg;
     options->st = st;
     Pthread_mutex_lock(&st->rawtotals.lk);
     if (st->rawtotals.fingerprints)
@@ -3250,15 +3278,17 @@ static int dump_client_sql_data_single(void *ent, void *arg) {
     return 0;
 }
 
-void dump_client_sql_data(struct reqlogger *logger, int do_snapshot) {
-    struct dump_client_sql_options options = { .do_snap = do_snapshot, .logger = logger };
+void dump_client_sql_data(struct reqlogger *logger, int do_snapshot)
+{
+    struct dump_client_sql_options options = {.do_snap = do_snapshot, .logger = logger};
     acquire_clientstats_lock(0);
     if (clientstats)
         hash_for(clientstats, dump_client_sql_data_single, &options);
     release_clientstats_lock();
 }
 
-void add_fingerprint_to_rawstats(struct rawnodestats *stats, unsigned char *fingerprint, int cost, int rows, int timems) {
+void add_fingerprint_to_rawstats(struct rawnodestats *stats, unsigned char *fingerprint, int cost, int rows, int timems)
+{
     Pthread_mutex_lock(&stats->lk);
     if (stats->fingerprints == NULL) {
         stats->fingerprints = hash_init_o(offsetof(struct query_count, fingerprint), FINGERPRINTSZ);
@@ -3283,13 +3313,13 @@ struct client_sql_systable_options {
     int nstats;
     int nalloced;
 
-    nodestats_t *st; 
+    nodestats_t *st;
 };
 
-
-int gather_client_sql_data_fingerprint(void *ent, void *arg) {
-    struct client_sql_systable_options *opt = (struct client_sql_systable_options*) arg;
-    struct query_count *cnt = (struct query_count*) ent;
+int gather_client_sql_data_fingerprint(void *ent, void *arg)
+{
+    struct client_sql_systable_options *opt = (struct client_sql_systable_options *)arg;
+    struct query_count *cnt = (struct query_count *)ent;
 
     if (opt->nstats == opt->nalloced) {
         opt->nalloced = opt->nalloced * 2 + 16;
@@ -3309,9 +3339,10 @@ int gather_client_sql_data_fingerprint(void *ent, void *arg) {
     return 0;
 }
 
-int gather_client_sql_data_single(void *ent, void *arg) {
-    struct client_sql_systable_options *opt = (struct client_sql_systable_options*) arg;
-    nodestats_t *st = (nodestats_t*) ent;
+int gather_client_sql_data_single(void *ent, void *arg)
+{
+    struct client_sql_systable_options *opt = (struct client_sql_systable_options *)arg;
+    nodestats_t *st = (nodestats_t *)ent;
     opt->st = st;
     Pthread_mutex_lock(&st->rawtotals.lk);
     int rc = 0;
@@ -3323,7 +3354,8 @@ int gather_client_sql_data_single(void *ent, void *arg) {
 
 void free_client_sql_data(void *data, int npoints);
 
-int gather_client_sql_data(void **data_out, int *npoints) {
+int gather_client_sql_data(void **data_out, int *npoints)
+{
     struct client_sql_systable_options opt = {0};
 
     *npoints = 0;
@@ -3345,8 +3377,9 @@ int gather_client_sql_data(void **data_out, int *npoints) {
     return rc;
 }
 
-void free_client_sql_data(void *data, int npoints) {
-    struct client_sql_systable_data *stats = (struct client_sql_systable_data*) data;
+void free_client_sql_data(void *data, int npoints)
+{
+    struct client_sql_systable_data *stats = (struct client_sql_systable_data *)data;
     for (int i = 0; i < npoints; i++) {
         free(stats[i].task);
     }

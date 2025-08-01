@@ -177,8 +177,8 @@ int logical_cron_init(const char *sched_name, struct errstat *err)
     return VIEW_NOERR;
 }
 
-#define LOGICAL_CRON_SYSTABLE_SCHEMA                                           \
-    "create table comdb2_logical_cron (name cstring(128) primary key, value "  \
+#define LOGICAL_CRON_SYSTABLE_SCHEMA                                          \
+    "create table comdb2_logical_cron (name cstring(128) primary key, value " \
     "int)"
 
 unsigned long long logical_cron_read_persistent(const char *name,

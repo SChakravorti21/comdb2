@@ -521,7 +521,8 @@ void sc_del_unused_files_tran(struct dbtable *db, tran_type *tran)
     if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_DELAYED_OLDFILE_CLEANUP)) {
         if (bdb_list_unused_files_tran(
                 db->handle, tran, &bdberr,
-                "schemachange") || bdberr != BDBERR_NOERROR)
+                "schemachange") ||
+            bdberr != BDBERR_NOERROR)
             logmsg(LOGMSG_WARN, "%s: errors listing old files\n", __func__);
     } else {
         if (bdb_del_unused_files_tran(db->handle, tran, &bdberr) ||
@@ -788,7 +789,7 @@ static int scdone_add(const char tablename[], void *arg, scdone_t type)
     /* this is used by testgenshard, creating a partition name alias for the actual shard */
     char *sqlalias = NULL;
     rc = bdb_get_table_sqlalias_tran(db->tablename, tran, &sqlalias);
-    if (sqlalias){
+    if (sqlalias) {
         hash_sqlalias_db(db, sqlalias);
     }
 
@@ -799,7 +800,6 @@ static int scdone_add(const char tablename[], void *arg, scdone_t type)
             logmsg(LOGMSG_ERROR, "REPLICANT FAILED TO UPDATE GENERIC SHARD INFO\n");
         }
     }
-
 
     _master_recs(tran, tablename, type);
 
@@ -1283,15 +1283,15 @@ static int scdone_alias(const char tablename[], void *arg, scdone_t type)
 }
 /* keep this in sync with enum scdone */
 int (*SCDONE_CALLBACKS[])(const char *, void *, scdone_t) = {
-    &scdone_alter,         &scdone_addandfastinit, /* fastinit AND add (doh) */
-    &scdone_drop,          &scdone_bulkimport,     &scdone_setcompr,
-    &scdone_luareload,     &scdone_sc_analyze,     &scdone_bthash,
-    &scdone_rowlocks,      &scdone_rowlocks,       &scdone_rowlocks,
-    &scdone_views,         &scdone_llmeta_queue,   &scdone_llmeta_queue,
-    &scdone_llmeta_queue,  &scdone_genid48,        &scdone_genid48,
-    &scdone_lua_sfunc,     &scdone_lua_afunc,      &scdone_rename_table,
-    &scdone_change_stripe, &scdone_user_view,      &scdone_queue_file,
-    &scdone_queue_file,    &scdone_rename_table,   &scdone_alias,
+    &scdone_alter, &scdone_addandfastinit, /* fastinit AND add (doh) */
+    &scdone_drop, &scdone_bulkimport, &scdone_setcompr,
+    &scdone_luareload, &scdone_sc_analyze, &scdone_bthash,
+    &scdone_rowlocks, &scdone_rowlocks, &scdone_rowlocks,
+    &scdone_views, &scdone_llmeta_queue, &scdone_llmeta_queue,
+    &scdone_llmeta_queue, &scdone_genid48, &scdone_genid48,
+    &scdone_lua_sfunc, &scdone_lua_afunc, &scdone_rename_table,
+    &scdone_change_stripe, &scdone_user_view, &scdone_queue_file,
+    &scdone_queue_file, &scdone_rename_table, &scdone_alias,
     &scdone_default_cons};
 
 /* TODO fail gracefully now that inline? */

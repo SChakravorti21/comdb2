@@ -100,7 +100,8 @@ int finalize_drop_table(struct ireq *iq, struct schema_change_type *s,
     delete_table(db, tran);
     /*Now that we don't have any data, please clear unwanted schemas.*/
     bdberr = bdb_reset_csc2_version(tran, db->tablename, db->schema_version, 0);
-    if (bdberr != BDBERR_NOERROR) return -1;
+    if (bdberr != BDBERR_NOERROR)
+        return -1;
 
     if ((rc = bdb_del_file_versions(db->handle, tran, &bdberr))) {
         sc_errf(s, "%s: bdb_del_file_versions failed with rc: %d bdberr: "
@@ -120,12 +121,10 @@ int finalize_drop_table(struct ireq *iq, struct schema_change_type *s,
     }
 
     /* Delete all access permissions related to this table. */
-    if ((rc = bdb_del_all_table_access(db->handle, tran, db->tablename)) != 0)
-    {
+    if ((rc = bdb_del_all_table_access(db->handle, tran, db->tablename)) != 0) {
         sc_errf(s, "Failed to delete access permissions\n");
         return rc;
     }
-
 
     /* if this is a shard, remove the llmeta partition entry */
     if (s->partition.type == PARTITION_REMOVE && s->publish) {

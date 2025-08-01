@@ -23,7 +23,7 @@ struct event_base;
 struct ssl_data;
 enum ssl_mode;
 
-typedef void (ssl_evbuffer_cb)(void *);
+typedef void(ssl_evbuffer_cb)(void *);
 void accept_ssl_evbuffer(struct ssl_data *, struct event_base *, ssl_evbuffer_cb *err, ssl_evbuffer_cb *accepted, void *);
 void connect_ssl_evbuffer(struct ssl_data *, struct event_base *, ssl_evbuffer_cb *err, ssl_evbuffer_cb *connected, void *);
 int rd_ssl_evbuffer(struct evbuffer *, struct ssl_data *, int *eof);

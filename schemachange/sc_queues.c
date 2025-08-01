@@ -21,25 +21,27 @@
 #include "logmsg.h"
 #include "sc_callbacks.h"
 
-#define BDB_TRAN_MAYBE_ABORT_OR_FATAL(a,b,c) do {                             \
-    (c) = 0;                                                                  \
-    if (((b) != NULL) && bdb_tran_abort((a), (b), &(c)) != 0) {               \
-        logmsg(LOGMSG_FATAL, "%s: bdb_tran_abort err = %d\n", __func__, (c)); \
-        abort();                                                              \
-    }                                                                         \
-} while (0);
+#define BDB_TRAN_MAYBE_ABORT_OR_FATAL(a, b, c)                                    \
+    do {                                                                          \
+        (c) = 0;                                                                  \
+        if (((b) != NULL) && bdb_tran_abort((a), (b), &(c)) != 0) {               \
+            logmsg(LOGMSG_FATAL, "%s: bdb_tran_abort err = %d\n", __func__, (c)); \
+            abort();                                                              \
+        }                                                                         \
+    } while (0);
 
-#define BDB_TRIGGER_MAYBE_UNPAUSE(a,b) do {                                   \
-    if (((a) != NULL) && (b)) {                                               \
-        int rc3 = bdb_trigger_unpause((a));                                   \
-        if (rc3 == 0) {                                                       \
-            (b) = 0;                                                          \
-        } else {                                                              \
-            logmsg(LOGMSG_ERROR, "%s: bdb_trigger_unpause rc = %d\n",         \
-                   __func__, rc3);                                            \
-        }                                                                     \
-    }                                                                         \
-} while (0);
+#define BDB_TRIGGER_MAYBE_UNPAUSE(a, b)                                   \
+    do {                                                                  \
+        if (((a) != NULL) && (b)) {                                       \
+            int rc3 = bdb_trigger_unpause((a));                           \
+            if (rc3 == 0) {                                               \
+                (b) = 0;                                                  \
+            } else {                                                      \
+                logmsg(LOGMSG_ERROR, "%s: bdb_trigger_unpause rc = %d\n", \
+                       __func__, rc3);                                    \
+            }                                                             \
+        }                                                                 \
+    } while (0);
 
 extern int dbqueue_add_consumer(struct dbtable *db, int consumern,
                                 const char *method, int noremove);
@@ -179,15 +181,19 @@ int add_queue_to_environment(char *table, int avgitemsz, int pagesize)
 static const char *qtype(struct dbtable *db)
 {
     switch (dbqueue_consumer_type(db->consumers[0])) {
-    case CONSUMER_TYPE_LUA: return "trigger";
-    case CONSUMER_TYPE_DYNLUA: return "consumer";
-    default: return "???";
+    case CONSUMER_TYPE_LUA:
+        return "trigger";
+    case CONSUMER_TYPE_DYNLUA:
+        return "consumer";
+    default:
+        return "???";
     }
 }
 
 static const char *pretty_qname(const char *q)
 {
-    if (strncmp(q, "__q", 3) == 0) return q + 3;
+    if (strncmp(q, "__q", 3) == 0)
+        return q + 3;
     return q;
 }
 
@@ -375,12 +381,12 @@ static inline void set_empty_queue_options(struct schema_change_type *s)
 }
 
 extern int get_physical_transaction(bdb_state_type *bdb_state,
-        tran_type *logical_tran, tran_type **outtran, int force_commit);
+                                    tran_type *logical_tran, tran_type **outtran, int force_commit);
 
 static int perform_trigger_update_int(struct schema_change_type *sc, tran_type *in_ltran)
 {
     char *config = sc->newcsc2_for_default_cons_q ? sc->newcsc2_for_default_cons_q : sc->newcsc2;
-    char * tablename = sc->newcsc2_for_default_cons_q ? sc->tablename_for_default_cons_q : sc->tablename;
+    char *tablename = sc->newcsc2_for_default_cons_q ? sc->tablename_for_default_cons_q : sc->tablename;
 
     /* we are on on master
      * 1) write config/destinations to llmeta
@@ -397,7 +403,7 @@ static int perform_trigger_update_int(struct schema_change_type *sc, tran_type *
     SBUF2 *sb = sc->sb;
 
     const int should_add_trigger = sc->kind == SC_ADD_TRIGGER ||
-                                  sc->kind == SC_DEFAULTCONS;
+                                   sc->kind == SC_DEFAULTCONS;
 
     set_empty_queue_options(sc);
 
@@ -628,11 +634,10 @@ static int perform_trigger_update_int(struct schema_change_type *sc, tran_type *
                    __func__, rc, bdberr);
             goto done;
         }
-
     }
 
     rc = bdb_llog_scdone_tran(thedb->bdb_env, scdone_type, tran, tablename,
-                            strlen(tablename) + 1, &bdberr);
+                              strlen(tablename) + 1, &bdberr);
     if (rc) {
         sbuf2printf(sb, "!Failed to write scdone , rc=%d\n", rc);
         goto done;
@@ -654,8 +659,10 @@ static int perform_trigger_update_int(struct schema_change_type *sc, tran_type *
     }
 
 done:
-    if (ltran) bdb_tran_abort(thedb->bdb_env, ltran, &bdberr);
-    else if (tran) bdb_tran_abort(thedb->bdb_env, tran, &bdberr);
+    if (ltran)
+        bdb_tran_abort(thedb->bdb_env, ltran, &bdberr);
+    else if (tran)
+        bdb_tran_abort(thedb->bdb_env, tran, &bdberr);
 
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s rc:%d\n", __func__, rc);
@@ -729,12 +736,15 @@ int reopen_qdb(const char *queue_name, uint32_t flags, tran_type *tran)
     }
     int rc, paused = 0;
     rc = bdb_trigger_pause(db->handle);
-    if (rc != 0) goto done;
+    if (rc != 0)
+        goto done;
     paused = 1;
     rc = close_qdb(db, tran);
-    if (rc != 0) goto done;
+    if (rc != 0)
+        goto done;
     rc = open_qdb(db, flags, tran);
-    if (rc != 0) goto done;
+    if (rc != 0)
+        goto done;
 done:
     BDB_TRIGGER_MAYBE_UNPAUSE(db->handle, paused);
     return rc;
@@ -764,12 +774,13 @@ static int add_qdb_file(struct schema_change_type *s, tran_type *tran)
                                   &bdberr);
     if (rc == 0 && file_version != 0) {
         logmsg(LOGMSG_ERROR,
-             "%s: bdb_get_file_version_qdb rc %d name %s num %d ver %lld "
-             "bdberr %d\n", __func__, rc, s->tablename, file_num, file_version,
-             bdberr);
+               "%s: bdb_get_file_version_qdb rc %d name %s num %d ver %lld "
+               "bdberr %d\n",
+               __func__, rc, s->tablename, file_num, file_version,
+               bdberr);
         sbuf2printf(sb,
-             "!Should not find qdb %s file version %lld for file #%d\n",
-             s->tablename, file_version, file_num);
+                    "!Should not find qdb %s file version %lld for file #%d\n",
+                    s->tablename, file_version, file_num);
         goto done;
     }
     file_version = s->qdb_file_ver;
@@ -778,9 +789,10 @@ static int add_qdb_file(struct schema_change_type *s, tran_type *tran)
                                   &bdberr);
     if (rc) {
         logmsg(LOGMSG_ERROR,
-             "%s: bdb_new_file_version_qdb rc %d name %s num %d ver %lld "
-             "bdberr %d\n", __func__, rc, s->tablename, file_num, file_version,
-             bdberr);
+               "%s: bdb_new_file_version_qdb rc %d name %s num %d ver %lld "
+               "bdberr %d\n",
+               __func__, rc, s->tablename, file_num, file_version,
+               bdberr);
         sbuf2printf(sb, "!Failed add qdb %s file num %d file version %lld\n",
                     s->tablename, file_num, file_version);
         goto done;
@@ -816,12 +828,13 @@ static int del_qdb_file(struct schema_change_type *s, tran_type *tran)
                                       &file_versions[file_num], &bdberr);
         if ((rc != 0) || (file_versions[file_num] == 0)) {
             logmsg(LOGMSG_ERROR,
-                 "%s: bdb_get_file_version_qdb rc %d name %s num %d ver %lld "
-                 "bdberr %d\n", __func__, rc, s->tablename, file_num,
-                 file_versions[file_num], bdberr);
+                   "%s: bdb_get_file_version_qdb rc %d name %s num %d ver %lld "
+                   "bdberr %d\n",
+                   __func__, rc, s->tablename, file_num,
+                   file_versions[file_num], bdberr);
             sbuf2printf(sb,
-                 "!Bad or missing qdb %s file version %lld for file #%d\n",
-                 s->tablename, file_versions[file_num], file_num);
+                        "!Bad or missing qdb %s file version %lld for file #%d\n",
+                        s->tablename, file_versions[file_num], file_num);
             goto done;
         }
     }

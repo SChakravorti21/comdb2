@@ -61,7 +61,8 @@ struct sqlite3_stmt {
     struct sql_schema *schema;
     sqlite3 *db;
     char *debug_sql;
-    LINKC_T(struct sqlite3_stmt) lnk;
+    LINKC_T(struct sqlite3_stmt)
+    lnk;
 };
 
 struct sqlite {
@@ -74,7 +75,8 @@ struct sqlite {
     int colnamebufsize;
     char *colvalbuf;
     int colvalbufsize;
-    LISTC_T(struct sqlite3_stmt) cursors;
+    LISTC_T(struct sqlite3_stmt)
+    cursors;
 };
 
 #endif

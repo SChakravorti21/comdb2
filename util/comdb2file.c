@@ -147,12 +147,12 @@ char *comdb2_location_in_hash(char *type, char *fmt, ...)
     return out;
 }
 
-#define DEFAULT_LOCATION(type, file)                                           \
-    do {                                                                       \
-        char *f;                                                               \
-        f = comdb2_asprintf("%s/%s", gbl_config_root, file);                   \
-        add_location(type, f);                                                 \
-        free(f);                                                               \
+#define DEFAULT_LOCATION(type, file)                         \
+    do {                                                     \
+        char *f;                                             \
+        f = comdb2_asprintf("%s/%s", gbl_config_root, file); \
+        add_location(type, f);                               \
+        free(f);                                             \
     } while (0)
 
 void init_file_locations(char *lrlname)
@@ -170,15 +170,15 @@ void init_file_locations(char *lrlname)
         gbl_config_root = "/";
 
     const char *logs, *config, *marker, *tzdata;
-#   ifdef LEGACY_DEFAULTS
+#ifdef LEGACY_DEFAULTS
     logs = "data";
     config = "bin";
     marker = "bin";
-#   else
+#else
     logs = "var/log/cdb2";
     config = "etc/cdb2/config";
     marker = "tmp/cdb2";
-#   endif
+#endif
 
     /* init defaults */
     DEFAULT_LOCATION("logs", logs);
@@ -196,13 +196,13 @@ void init_file_locations(char *lrlname)
     else
         DEFAULT_LOCATION("database", "var/cdb2");
 
-#   if defined(LEGACY_DEFAULTS)
+#if defined(LEGACY_DEFAULTS)
     tzdata = "/bb/data/datetime";
-#   elif defined(_SUN_SOURCE)
+#elif defined(_SUN_SOURCE)
     tzdata = "/usr/share/lib";
-#   else
+#else
     tzdata = "/usr/share/";
-#   endif
+#endif
     add_location("tzdata", tzdata);
 
     global_config = getenv("COMDB2_GLOBAL_CONFIG");

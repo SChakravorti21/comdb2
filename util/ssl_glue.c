@@ -99,13 +99,13 @@ static int hostname_wildcard_match(const char *s, const char *p)
 }
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
-#    define ASN1_STRING_get0_data ASN1_STRING_data
+#define ASN1_STRING_get0_data ASN1_STRING_data
 #endif
 
 /* 0: okay. -1: no san. 1: no match. */
 static int ssl_verify_san(const char *hostname, const X509 *cert)
 {
-    STACK_OF(GENERAL_NAME) *peersan;
+    STACK_OF(GENERAL_NAME) * peersan;
     const GENERAL_NAME *name;
     const char *dnsname;
     int rc, ii, len;
@@ -153,7 +153,7 @@ static int ssl_verify_cn(const char *hostname, const X509 *cert)
 int ssl_x509_get_attr(const X509 *cert, int nid, char *out, size_t len)
 {
     int fldindx;
-    X509_NAME  *certname;
+    X509_NAME *certname;
     X509_NAME_ENTRY *fld;
     ASN1_STRING *fldasn1;
     const char *fldstr;
@@ -232,21 +232,21 @@ int ssl_verify_hostname(X509 *cert, int fd)
 
     /* Forward lookup the IPs */
 
-#   if defined(__APPLE__)
+#if defined(__APPLE__)
     hp = gethostbyname(peerhost);
-#   elif defined(_LINUX_SOURCE)
+#elif defined(_LINUX_SOURCE)
     int herr;
     char buf[8192];
     struct hostent hostbuf;
     gethostbyname_r(peerhost, &hostbuf, buf, sizeof(buf), &hp, &herr);
-#   elif defined(_SUN_SOURCE)
+#elif defined(_SUN_SOURCE)
     int herr;
     char buf[8192];
     struct hostent hostbuf;
     hp = gethostbyname_r(peerhost, &hostbuf, buf, sizeof(buf), &herr);
-#   else
+#else
     hp = gethostbyname(peerhost);
-#   endif
+#endif
 
     if (hp == NULL) {
         return 1;
@@ -264,7 +264,8 @@ int ssl_verify_hostname(X509 *cert, int fd)
     }
 
     /* Suspicious PTR record. Reject it. */
-    if (!found_addr) return 1;
+    if (!found_addr)
+        return 1;
 
     /* Trust localhost */
     if (strcasecmp(peerhost, "localhost") == 0 ||

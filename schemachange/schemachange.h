@@ -59,7 +59,8 @@ struct scplan {
 
 struct dest {
     char *dest;
-    LINKC_T(struct dest) lnk;
+    LINKC_T(struct dest)
+    lnk;
 };
 
 enum comdb2_partition_type {
@@ -136,20 +137,20 @@ enum schema_change_kind {
     SC_DROPTABLE_INDEX = 28,
     SC_REBUILDTABLE_INDEX = 29,
     SC_BULK_IMPORT = 30,
-    SC_DEFAULTCONS = 31, 
+    SC_DEFAULTCONS = 31,
     SC_LAST /* End marker */
 };
 
 #define IS_SC_DBTYPE_TAGGED_TABLE(s) ((s)->kind > SC_DROP_VIEW)
-#define IS_FASTINIT(s)                                                         \
+#define IS_FASTINIT(s) \
     (((s)->kind == SC_DROP_VIEW) || ((s)->kind == SC_TRUNCATETABLE))
 #define IS_SFUNC(s) (((s)->kind == SC_ADD_SFUNC) || ((s)->kind == SC_DEL_SFUNC))
 #define IS_AFUNC(s) (((s)->kind == SC_ADD_AFUNC) || ((s)->kind == SC_DEL_AFUNC))
-#define IS_TRIGGER(s)                                                          \
+#define IS_TRIGGER(s) \
     (((s)->kind == SC_ADD_TRIGGER) || ((s)->kind == SC_DEL_TRIGGER))
-#define IS_UPRECS(s)                                                           \
+#define IS_UPRECS(s) \
     (((s)->kind == SC_FULLUPRECS) || ((s)->kind == SC_PARTIALUPRECS))
-#define IS_ALTERTABLE(s)                                                       \
+#define IS_ALTERTABLE(s) \
     (((s)->kind >= SC_ALTERTABLE) && ((s)->kind <= SC_REBUILDTABLE_INDEX))
 
 struct schema_change_type {
@@ -158,16 +159,16 @@ struct schema_change_type {
     unsigned long long rqid;
     uuid_t uuid;
     size_t tablename_len;
-    char tablename[MAXTABLELEN];    /* name of table/queue */
-    char newtable[MAXTABLELEN];     /* new table name */
+    char tablename[MAXTABLELEN]; /* name of table/queue */
+    char newtable[MAXTABLELEN];  /* new table name */
     size_t fname_len;
-    char fname[256];                /* name of schema file for table schema
+    char fname[256]; /* name of schema file for table schema
                                        change or client provided SP version */
     size_t aname_len;
-    char aname[256];         /* advised file name for .csc2 */
-    int avgitemsz;           /* average item size for queue creation */
-    int newdtastripe;        /* new dtastripe factor */
-    int blobstripe;          /* 1 if we are converting to blobstripe */
+    char aname[256];  /* advised file name for .csc2 */
+    int avgitemsz;    /* average item size for queue creation */
+    int newdtastripe; /* new dtastripe factor */
+    int blobstripe;   /* 1 if we are converting to blobstripe */
     int live;
     size_t newcsc2_len;
     char *newcsc2; /* malloced buffer containing the new schema */
@@ -176,7 +177,7 @@ struct schema_change_type {
     int force_rebuild; /* force full rebuild of table */
     int force_dta_rebuild;
     int force_blob_rebuild;
-    int force; /* force schema change even if not ready */
+    int force;   /* force schema change even if not ready */
     int headers; /* Add ondisk headers? -1 for no change*/
     int header_change;
     int compress;       /* new compression algorithm or -1 for no change */
@@ -185,15 +186,15 @@ struct schema_change_type {
     int ip_updates;     /* inplace updates or -1 for no change */
     int instant_sc;     /* 1 is enable, 0 disable, or -1 for no change */
     int preempted;
-    int use_plan;         /* if we want to use a plan so we don't rebuild
+    int use_plan;      /* if we want to use a plan so we don't rebuild
                              everything needlessly. */
-    int commit_sleep;     /* Used for testing; sleep a bit before committing
+    int commit_sleep;  /* Used for testing; sleep a bit before committing
                              schemas. */
-    int convert_sleep;    /* Also for testing */
-    int same_schema;      /* indicates that the schema hasn't changed, so
+    int convert_sleep; /* Also for testing */
+    int same_schema;   /* indicates that the schema hasn't changed, so
                              we can skip the schema reload steps */
     int dbnum;
-/* instead of failing to resume schemachange, generate sc plan
+    /* instead of failing to resume schemachange, generate sc plan
  * compatible with previous versions of comdb2 depending on which of
  * following flags are set */
 
@@ -208,7 +209,8 @@ struct schema_change_type {
 
     char source_node[256];
 
-    LISTC_T(struct dest) dests;
+    LISTC_T(struct dest)
+    dests;
 
     size_t spname_len;
     char spname[MAX_SPNAME];
@@ -222,9 +224,9 @@ struct schema_change_type {
     int onstack; /* if 1 don't free */
     int nothrevent;
     int already_locked; /* already holding schema lock */
-    int keep_locked; /* don't release schema lock upon commit */
-    int pagesize; /* pagesize override to use */
-    SBUF2 *sb; /* socket to sponsoring program */
+    int keep_locked;    /* don't release schema lock upon commit */
+    int pagesize;       /* pagesize override to use */
+    SBUF2 *sb;          /* socket to sponsoring program */
     int must_close_sb;
     int use_old_blobs_on_rebuild;
     int partialuprecs; /* count updated records in partial table upgrade */
@@ -238,9 +240,9 @@ struct schema_change_type {
     int statistics;       /* comdb2sc.tsk <dbname> stat <table> */
     int use_new_genids;   /* rebuilding old genids needs to
                              get new genids to avoid name collission */
-    int finalize;      /* Whether the schema change should be committed */
+    int finalize;         /* Whether the schema change should be committed */
 
-    pthread_mutex_t mtx; /* mutex for thread sync */
+    pthread_mutex_t mtx;      /* mutex for thread sync */
     pthread_mutex_t mtxStart; /* mutex for thread start */
     pthread_cond_t condStart; /* condition var for thread sync */
     int started;
@@ -250,7 +252,8 @@ struct schema_change_type {
     void *tran; /* transactional schemachange */
 
     struct schema_change_type *sc_next;
-    LINKC_T(struct schema_change_type) scs_lnk; /* all the schema changess in a txn  */
+    LINKC_T(struct schema_change_type)
+    scs_lnk; /* all the schema changess in a txn  */
 
     int usedbtablevers;
     int fix_tp_badvers;
@@ -312,14 +315,14 @@ struct schema_change_type {
     size_t import_src_tablename_len;
     char import_src_dbname[MAX_DBNAME_LENGTH];
     size_t import_src_dbname_len;
-    ImportData * import_src_table_data;
+    ImportData *import_src_table_data;
     unsigned long long import_dst_data_genid;
     unsigned long long import_dst_index_genids[MAXINDEX];
     unsigned long long import_dst_blob_genids[MAXBLOBS];
 
     char tablename_for_default_cons_q[MAXTABLELEN];
     size_t tablename_for_default_cons_q_len;
-    char * newcsc2_for_default_cons_q;
+    char *newcsc2_for_default_cons_q;
     size_t newcsc2_for_default_cons_q_len;
 };
 

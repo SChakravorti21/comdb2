@@ -47,7 +47,8 @@ enum {
 };
 
 /* coordinated transaction errors */
-enum { ERR_COORD_UNKNOWN_TRANSACTION = 1, ERR_COORD_COMMIT_FAILED = 2 };
+enum { ERR_COORD_UNKNOWN_TRANSACTION = 1,
+       ERR_COORD_COMMIT_FAILED = 2 };
 
 /* detailed blockop error codes */
 enum {
@@ -175,7 +176,9 @@ enum { BLOCK_ERR_LEN = 4 + 4 + 4 };
 BB_COMPILE_TIME_ASSERT(block_err_size,
                        sizeof(struct block_err) == BLOCK_ERR_LEN);
 
-enum { BLKF_ERRSTAT = 1, BLKF_DONT_COMMIT = 2, BLKF_RETRY = 4 };
+enum { BLKF_ERRSTAT = 1,
+       BLKF_DONT_COMMIT = 2,
+       BLKF_RETRY = 4 };
 
 /* end blockreq structs */
 /* start packedreq structs */
@@ -745,7 +748,8 @@ BB_COMPILE_TIME_ASSERT(commitrec_size,
                        sizeof(struct commitrec) == COMMITREC_SIZE);
 
 /* lockset_req flags */
-enum { SETLOCKS_FLAGS_REPLAY = 1, SETLOCKS_FLAGS_DEAD = 2 };
+enum { SETLOCKS_FLAGS_REPLAY = 1,
+       SETLOCKS_FLAGS_DEAD = 2 };
 
 struct lockset_req {
     tranid_t id;
@@ -815,12 +819,11 @@ const uint8_t *tran_req_get(struct tran_req *p_tran_req, const uint8_t *p_buf,
 uint8_t *block_req_put(const struct block_req *p_block_req, uint8_t *p_buf,
                        const uint8_t *p_buf_end);
 const uint8_t *block_req_get(struct block_req *p_block_req,
-                             const uint8_t *p_buf, const uint8_t *p_buf_end, 
+                             const uint8_t *p_buf, const uint8_t *p_buf_end,
                              int comdbg_flags);
 
 uint8_t *block_fwd_put(const struct block_fwd *p_block_fwd, uint8_t *p_buf,
                        const uint8_t *p_buf_end, int comdbg_flags);
-
 
 const uint8_t *block_fwd_get(struct block_fwd *p_block_fwd,
                              const uint8_t *p_buf, const uint8_t *p_buf_end,
@@ -884,7 +887,7 @@ uint8_t *packedreq_hdr_put(const struct packedreq_hdr *p_packedreq_hdr,
                            uint8_t *p_buf, const uint8_t *p_buf_end);
 const uint8_t *packedreq_hdr_get(struct packedreq_hdr *p_packedreq_hdr,
                                  const uint8_t *p_buf,
-                                 const uint8_t *p_buf_end, 
+                                 const uint8_t *p_buf_end,
                                  int comdbg_flags);
 
 uint8_t *packedreq_add_put(const struct packedreq_add *p_packedreq_add,

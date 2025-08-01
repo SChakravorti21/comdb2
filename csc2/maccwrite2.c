@@ -223,8 +223,8 @@ int compute_all_data(int tidx)
 
     if (off > maxrecsz) {
         logmsg(LOGMSG_ERROR, " **** ERROR: RECORD LEN IS %d BYTES; "
-                        "MAXIMUM FOR COMDB2 IS %d BYTES (%d WORDS).\n",
-                off, maxrecsz, maxrecsz / 4);
+                             "MAXIMUM FOR COMDB2 IS %d BYTES (%d WORDS).\n",
+               off, maxrecsz, maxrecsz / 4);
         extern int gbl_broken_max_rec_sz;
         if (off > (maxrecsz + gbl_broken_max_rec_sz)) {
             return -1;
@@ -331,7 +331,7 @@ int offsetpad(int off, int idx, int tbl)
                     mostpad =
                         offpad(off, tables[tbl].sym[i].align); /* every symbol
                                                                   in a union. */
-                    lrgsz = i; /* Also find largest non-string element     */
+                    lrgsz = i;                                 /* Also find largest non-string element     */
                 }
             }
         }

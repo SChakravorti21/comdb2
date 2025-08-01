@@ -45,26 +45,26 @@ int gbl_merge_table_enabled = 1;
 
 struct timepart_shard {
     char *tblname; /* name of the table covering the shard, can be an alias */
-    int low;  /* lowest value in this shard, including limit  [low, high) */
-    int high; /* excluding limit, values up to this can be stored in this shard
+    int low;       /* lowest value in this shard, including limit  [low, high) */
+    int high;      /* excluding limit, values up to this can be stored in this shard
                  [low, high) */
 };
 typedef struct timepart_shard timepart_shard_t;
 
 struct timepart_view {
-    char *name;                       /* name of the view, visible in sql */
-    enum view_partition_period period; /* when do we rotate to a new shard */
-    int retention;                    /* how many shards are preserved */
-    int nshards;                      /* how many shards */
-    timepart_shard_t *shards;         /* array of shard pointers */
-    int version;      /* in-memory versioning, allowing single view refreshes */
-    char *shard0name; /* original first table name length, used to generate
+    char *name;                          /* name of the view, visible in sql */
+    enum view_partition_period period;   /* when do we rotate to a new shard */
+    int retention;                       /* how many shards are preserved */
+    int nshards;                         /* how many shards */
+    timepart_shard_t *shards;            /* array of shard pointers */
+    int version;                         /* in-memory versioning, allowing single view refreshes */
+    char *shard0name;                    /* original first table name length, used to generate
                          names */
-    int starttime;    /* info about the beginning of the rollout */
-    int roll_time;    /* cached time for next rollout */
-    uuid_t source_id; /* identifier for view, unique as compared to name */
+    int starttime;                       /* info about the beginning of the rollout */
+    int roll_time;                       /* cached time for next rollout */
+    uuid_t source_id;                    /* identifier for view, unique as compared to name */
     enum TIMEPART_ROLLOUT_TYPE rolltype; /* add/drop shard, or truncate */
-    int current_shard; /* where to insert; always 0 for add/drop rollout */
+    int current_shard;                   /* where to insert; always 0 for add/drop rollout */
 };
 
 struct timepart_views {
@@ -128,11 +128,11 @@ static int _generate_evicted_shard_name(timepart_view_t *view,
                                         char *evictedShardName,
                                         int evictedShardNameLen,
                                         int *rolloutTime, int retention);
-static int _validate_view_id(timepart_view_t *view, uuid_t source_id, 
+static int _validate_view_id(timepart_view_t *view, uuid_t source_id,
                              const char *str, struct errstat *err);
 static void _handle_view_event_error(timepart_view_t *view, uuid_t source_id,
                                      struct errstat *err);
-static void print_dbg_verbose(const char *name, uuid_t *source_id, const char *prefix, 
+static void print_dbg_verbose(const char *name, uuid_t *source_id, const char *prefix,
                               const char *fmt, ...);
 static int _view_update_table_version(timepart_view_t *view, tran_type *tran);
 static cron_sched_t *_get_sched_byname(enum view_partition_period period,
@@ -146,7 +146,9 @@ static int _create_inmem_view(timepart_views_t *views, timepart_view_t *view,
 static void _view_find_current_shard(timepart_view_t *view);
 
 enum _check_flags {
-   _CHECK_ONLY_INITIAL_SHARD, _CHECK_ALL_SHARDS, _CHECK_ONLY_CURRENT_SHARDS
+    _CHECK_ONLY_INITIAL_SHARD,
+    _CHECK_ALL_SHARDS,
+    _CHECK_ONLY_CURRENT_SHARDS
 };
 
 static timepart_view_t *_check_shard_collision(timepart_views_t *views,
@@ -592,7 +594,7 @@ int views_handle_replicant_reload(void *tran, const char *name)
     view = timepart_deserialize_view(str, &xerr);
     if (!view) {
         logmsg(LOGMSG_ERROR, "%s: view recreate error %d %s\n", __func__,
-                xerr.errval, xerr.errstr);
+               xerr.errval, xerr.errstr);
         goto done;
     }
 
@@ -997,7 +999,7 @@ done:
                                tmp_str = strdup(name), pShardName, NULL,
                                NULL, &u, err, NULL) == NULL) {
                 logmsg(LOGMSG_ERROR, "%s: failed rc=%d errstr=%s\n", __func__,
-                        err->errval, err->errstr);
+                       err->errval, err->errstr);
                 if (tmp_str)
                     free(tmp_str);
                 if (pShardName)
@@ -1028,14 +1030,14 @@ _view_cron_schedule_next_rollout(timepart_view_t *view, int timeCrtRollout,
         tm = timeCrtRollout + delete_lag;
 
         print_dbg_verbose(view->name, &view->source_id, "LLL",
-                          "Adding phase 3 at %d for %s\n", 
+                          "Adding phase 3 at %d for %s\n",
                           tm, removeShardName);
 
         if (cron_add_event(_get_sched_byname(view->period, view->name), NULL,
                            tm, _view_cron_phase3, removeShardName, NULL, NULL,
                            NULL, &view->source_id, err, NULL) == NULL) {
             logmsg(LOGMSG_ERROR, "%s: failed rc=%d errstr=%s\n", __func__,
-                    err->errval, err->errstr);
+                   err->errval, err->errstr);
             free(removeShardName);
             return VIEW_ERR_GENERIC;
         }
@@ -1044,7 +1046,7 @@ _view_cron_schedule_next_rollout(timepart_view_t *view, int timeCrtRollout,
     /* schedule the next rollout as well */
     tm = timeNextRollout - preemptive_rolltime;
     print_dbg_verbose(view->name, &view->source_id, "LLL",
-                      "Adding phase 1 at %d\n", 
+                      "Adding phase 1 at %d\n",
                       tm);
 
     if (cron_add_event(_get_sched_byname(view->period, view->name), NULL, tm,
@@ -1119,7 +1121,6 @@ void *_view_cron_phase2(struct cron_event *event, struct errstat *err)
             goto done;
         }
 
-
         if (view->nshards > view->retention) {
             errstat_set_rc(err, rc = VIEW_ERR_BUG);
             errstat_set_strf(err, "view %s already rolled, missing purge?",
@@ -1141,9 +1142,9 @@ void *_view_cron_phase2(struct cron_event *event, struct errstat *err)
                 thedb->bdb_env, view->name,
                 0 /*not sure it is safe here to wait, so don't*/, &bdberr);
             if (rc != 0) {
-                logmsg(LOGMSG_ERROR, 
-                        "%s -- bdb_llog_views view %s rc:%d bdberr:%d\n",
-                        __func__, view->name, rc, bdberr);
+                logmsg(LOGMSG_ERROR,
+                       "%s -- bdb_llog_views view %s rc:%d bdberr:%d\n",
+                       __func__, view->name, rc, bdberr);
             }
         }
 
@@ -1215,7 +1216,7 @@ void *_view_cron_phase3(struct cron_event *event, struct errstat *err)
         rc = _views_rollout_phase3(pShardName, err);
         if (rc != VIEW_NOERR) {
             logmsg(LOGMSG_ERROR, "%s: phase 3 failed rc=%d errstr=%s\n", __func__,
-                    err->errval, err->errstr);
+                   err->errval, err->errstr);
         }
 
         Pthread_rwlock_unlock(&views_lk);
@@ -1229,7 +1230,7 @@ done:
     return NULL;
 }
 
-static char* comdb2_partition_info_locked(const char *partition_name, 
+static char *comdb2_partition_info_locked(const char *partition_name,
                                           const char *option)
 {
     timepart_views_t *views = thedb->timepart_views;
@@ -1240,19 +1241,18 @@ static char* comdb2_partition_info_locked(const char *partition_name,
     int crt_len;
     int is_check = 0;
     struct dbtable *db;
-    char *check_rep="";
-
+    char *check_rep = "";
 
     view = _get_view(views, partition_name);
     if (!view)
         goto done;
 
-    if(!strcmp(option, "tables") || (is_check=!strcmp(option, "check"))) {
+    if (!strcmp(option, "tables") || (is_check = !strcmp(option, "check"))) {
         ret_len = 0;
         for (i = 0; i < view->nshards; i++) {
             ret_len += strlen(view->shards[i].tblname);
             ret_len += 1; /* either a separator ; or terminal 0 */
-            if(is_check)
+            if (is_check)
                 ret_len += 128; /* optional qualifier per shard */
         }
 
@@ -1262,24 +1262,24 @@ static char* comdb2_partition_info_locked(const char *partition_name,
 
         crt_len = 0;
         for (i = 0; i < view->nshards; i++) {
-            if(is_check) {
+            if (is_check) {
                 db = get_dbtable_by_name(view->shards[i].tblname);
-                if(!db) {
+                if (!db) {
                     check_rep = " [MISSING!]";
                 } else {
                     check_rep = "";
                 }
             }
 
-            snprintf(ret_str + crt_len, ret_len - crt_len, 
-                     "%s%s%s", view->shards[i].tblname, check_rep, 
+            snprintf(ret_str + crt_len, ret_len - crt_len,
+                     "%s%s%s", view->shards[i].tblname, check_rep,
                      (i < view->nshards) ? ";" : "");
             crt_len += strlen(view->shards[i].tblname);
-            crt_len+=strlen(check_rep);
+            crt_len += strlen(check_rep);
             crt_len += 1;
         }
         assert(crt_len <= ret_len);
-        ret_str[crt_len-1]='\0';
+        ret_str[crt_len - 1] = '\0';
     } else {
         /* cson*/
 
@@ -1298,28 +1298,27 @@ done:
 }
 
 /* needs lock on views_lk */
-static timepart_view_t* _check_shard_collision(timepart_views_t *views, 
+static timepart_view_t *_check_shard_collision(timepart_views_t *views,
                                                const char *tblname, int *indx,
                                                enum _check_flags flag)
 {
     timepart_view_t *view;
-    int i,j;
+    int i, j;
 
-    for(i=0; i<views->nviews; i++) {
+    for (i = 0; i < views->nviews; i++) {
         view = views->views[i];
-        if(flag == _CHECK_ALL_SHARDS ||
-                flag == _CHECK_ONLY_INITIAL_SHARD) {
-            if(!strcasecmp(tblname, view->shard0name)) {
+        if (flag == _CHECK_ALL_SHARDS ||
+            flag == _CHECK_ONLY_INITIAL_SHARD) {
+            if (!strcasecmp(tblname, view->shard0name)) {
                 *indx = -1;
                 return view;
             }
         }
 
-        if(flag == _CHECK_ALL_SHARDS ||
-           flag == _CHECK_ONLY_CURRENT_SHARDS) {
-            for(j=0;j<view->nshards;j++) {
-                if(!strcasecmp(tblname, view->shards[j].tblname))
-                {
+        if (flag == _CHECK_ALL_SHARDS ||
+            flag == _CHECK_ONLY_CURRENT_SHARDS) {
+            for (j = 0; j < view->nshards; j++) {
+                if (!strcasecmp(tblname, view->shards[j].tblname)) {
                     *indx = j;
                     return view;
                 }
@@ -1343,8 +1342,8 @@ int comdb2_partition_check_name_reuse(const char *tblname, char **partname, int 
     Pthread_rwlock_rdlock(&views_lk);
 
     view = _check_shard_collision(views, tblname, indx, _CHECK_ALL_SHARDS);
-    if(view) {
-        if(*indx==-1)
+    if (view) {
+        if (*indx == -1)
             *partname = strdup(view->shard0name);
         else
             *partname = strdup(view->shards[*indx].tblname);
@@ -1370,12 +1369,12 @@ void comdb2_partition_info_all(const char *option)
     rdlock_schema_lk(); /* prevent race with partitions sc */
     Pthread_rwlock_rdlock(&views_lk);
 
-    for(i=0; i<views->nviews; i++) {
+    for (i = 0; i < views->nviews; i++) {
         view = views->views[i];
 
         info = comdb2_partition_info_locked(view->name, option);
 
-        if(!info) {
+        if (!info) {
             logmsg(LOGMSG_ERROR, "Partition \"%s\" has problems!\n", view->name);
         } else {
             logmsg(LOGMSG_USER, "Partition \"%s\":\n%s\n", view->name, info);
@@ -1392,7 +1391,7 @@ void comdb2_partition_info_all(const char *option)
  *
  * Return, if any, is malloc-ed!
  */
-char* comdb2_partition_info(const char *partition_name, const char *option)
+char *comdb2_partition_info(const char *partition_name, const char *option)
 {
     char *ret_str = NULL;
 
@@ -1807,17 +1806,17 @@ static int _view_restart(timepart_view_t *view, struct errstat *err)
 
             i++;
         }
-   }
-
-   /* recover phase 2 */
-   tm = _view_get_next_rollout(view->period, view->retention, view->starttime,
-                               view->shards[0].low, view->nshards, 0);
-   if (tm == INT_MAX) {
-       errstat_set_strf(err, "Failed to compute next rollout time");
-       return err->errval = VIEW_ERR_BUG;
     }
 
-   /**
+    /* recover phase 2 */
+    tm = _view_get_next_rollout(view->period, view->retention, view->starttime,
+                                view->shards[0].low, view->nshards, 0);
+    if (tm == INT_MAX) {
+        errstat_set_strf(err, "Failed to compute next rollout time");
+        return err->errval = VIEW_ERR_BUG;
+    }
+
+    /**
     * Currently, if we have found an existing "evicted" shard, this can either be the oldest
     * shard that was not yet removed due to a master swing, or the next shard which was not 
     * yet integrated (there is an exception, see below).
@@ -1841,11 +1840,11 @@ static int _view_restart(timepart_view_t *view, struct errstat *err)
                         view->shards[view->retention - 1].tblname) == 0)) {
             /* In this unique case, the evicted shard and the next shard have different names!
                Recovering the existing next shard is ok */
-            logmsg(LOGMSG_WARN, "Found existing next shard %s for view %s, recovering\n", 
-                    next_existing_shard, view->name);
+            logmsg(LOGMSG_WARN, "Found existing next shard %s for view %s, recovering\n",
+                   next_existing_shard, view->name);
         } else {
-            logmsg(LOGMSG_WARN, "Found existing next shard %s for view %s, will recreate\n", 
-                    next_existing_shard, view->name);
+            logmsg(LOGMSG_WARN, "Found existing next shard %s for view %s, will recreate\n",
+                   next_existing_shard, view->name);
             rc = VIEW_NOERR;
         }
     } else if (rc != VIEW_NOERR) {
@@ -1858,7 +1857,7 @@ static int _view_restart(timepart_view_t *view, struct errstat *err)
     if (rc == VIEW_NOERR) {
         print_dbg_verbose(view->name, &view->source_id, "RRR",
                           "Adding phase 1 at %d for %s\n",
-                          view->roll_time - preemptive_rolltime, 
+                          view->roll_time - preemptive_rolltime,
                           next_existing_shard);
 
         rc = (cron_add_event(_get_sched_byname(view->period, view->name), NULL,
@@ -1903,7 +1902,7 @@ static int _view_restart(timepart_view_t *view, struct errstat *err)
  */
 int views_cron_restart(timepart_views_t *views)
 {
-    bdb_state_type    *bdb_state = thedb->bdb_env;
+    bdb_state_type *bdb_state = thedb->bdb_env;
     timepart_view_t *view;
     int i;
     int rc;
@@ -1934,8 +1933,7 @@ int views_cron_restart(timepart_views_t *views)
 
     if (thedb->master == gbl_myhostname && !gbl_is_physical_replicant) {
         /* queue all the events required for this */
-        for(i=0;i<views->nviews; i++)
-        {
+        for (i = 0; i < views->nviews; i++) {
 
             /* are the rollouts stopped? */
             if (bdb_attr_get(thedb->bdb_attr, BDB_ATTR_TIMEPART_NO_ROLLOUT)) {
@@ -1951,8 +1949,7 @@ int views_cron_restart(timepart_views_t *views)
             } else {
                 rc = _view_restart(view, &xerr);
             }
-            if(rc!=VIEW_NOERR)
-            {
+            if (rc != VIEW_NOERR) {
                 goto done;
             }
         }
@@ -2018,7 +2015,7 @@ static int _generate_new_shard_name_wrapper(timepart_view_t *view,
      */
 
     /* extract the next id to be used */
-    if (view->shards[view->nshards-1].tblname[0] == '$' || 
+    if (view->shards[view->nshards - 1].tblname[0] == '$' ||
         unlikely(view->period == VIEW_PARTITION_TEST2MIN &&
                  view->retention == view->nshards)) {
         nextNum = _extract_shardname_index(
@@ -2071,7 +2068,7 @@ static int _generate_evicted_shard_name(timepart_view_t *view,
                                view->shards[0].low, view->nshards, 1);
     if ((*rolloutTime) == INT_MAX) {
         logmsg(LOGMSG_ERROR, "%s: failed rc=%d errstr=%s\n", __func__, xerr.errval,
-                xerr.errstr);
+               xerr.errstr);
         return VIEW_ERR_BUG;
     }
 
@@ -2314,10 +2311,10 @@ static int _view_register_shards(timepart_views_t *views,
     Pthread_rwlock_rdlock(&views_lk);
 
     /* check partition name collision */
-    chk_view = _check_shard_collision(views, view->name, &indx, 
+    chk_view = _check_shard_collision(views, view->name, &indx,
                                       _CHECK_ALL_SHARDS);
-    if(chk_view) {
-        if(indx==-1)
+    if (chk_view) {
+        if (indx == -1)
             errstat_set_rcstrf(err, rc = VIEW_ERR_EXIST,
                                "Name %s matches seed shard partition \"%s\"",
                                view->name, chk_view->name);
@@ -2403,7 +2400,7 @@ static void _view_unregister_shards_lkless(timepart_views_t *views,
  *
  */
 int timepart_foreach_shard_lockless(timepart_view_t *view,
-                                    int func(const char*, timepart_view_t**, timepart_sc_arg_t*),
+                                    int func(const char *, timepart_view_t **, timepart_sc_arg_t *),
                                     timepart_sc_arg_t *arg)
 {
     int rc = 0;
@@ -2418,12 +2415,13 @@ int timepart_foreach_shard_lockless(timepart_view_t *view,
     for (i = arg->start; i < view->nshards; i++) {
         if (skip >= 0 && i == skip) {
             logmsg(LOGMSG_INFO, "%s Skipping %p for %s\n", __func__,
-                  func, view->shards[i].tblname);
+                   func, view->shards[i].tblname);
             continue;
         }
         arg->indx = i;
         if (skip < 0) {
-            if (i == view->nshards - 1) arg->pos |= LAST_SHARD;
+            if (i == view->nshards - 1)
+                arg->pos |= LAST_SHARD;
         }
 
         logmsg(LOGMSG_INFO, "%s Applying %p to %s (existing shard)\n", __func__,
@@ -2456,7 +2454,7 @@ timepart_view_t *timepart_reaquire_view(const char *partname)
 {
     timepart_views_t *views;
     timepart_view_t *view;
-    
+
     views_lock();
     views = thedb->timepart_views;
     view = _get_view(views, partname);
@@ -2469,7 +2467,7 @@ timepart_view_t *timepart_reaquire_view(const char *partname)
  * Callback receives the name of the shard and argument struct "arg"
  *
  */
-int timepart_foreach_shard(int func(const char*, timepart_view_t**, timepart_sc_arg_t*),
+int timepart_foreach_shard(int func(const char *, timepart_view_t **, timepart_sc_arg_t *),
                            timepart_sc_arg_t *arg)
 {
     timepart_views_t *views;
@@ -2506,18 +2504,20 @@ done:
     return rc;
 }
 
-static int _validate_view_id(timepart_view_t *view, uuid_t source_id, 
+static int _validate_view_id(timepart_view_t *view, uuid_t source_id,
                              const char *str, struct errstat *err)
 {
     int rc;
 
     rc = !comdb2uuid_is_zero(source_id) &&
-            comdb2uuidcmp(view->source_id, source_id);
-    if(rc && err) {
+         comdb2uuidcmp(view->source_id, source_id);
+    if (rc && err) {
         logmsg(LOGMSG_WARN, "View %s was dropped and added back, "
-                "recovering %s\n", view->name, str);
+                            "recovering %s\n",
+               view->name, str);
         errstat_set_strf(err, "View %s was dropped and added back, "
-                "recovering %s", view->name, str);
+                              "recovering %s",
+                         view->name, str);
         errstat_set_rc(err, rc = VIEW_ERR_BUG);
     }
 
@@ -2529,38 +2529,37 @@ static void _handle_view_event_error(timepart_view_t *view, uuid_t source_id,
 {
     /* update the error */
     struct errstat newerr = {0};
-    if(view)
+    if (view)
         errstat_set_strf(&newerr, "%s: %s", view->name, err->errstr);
     else {
         uuidstr_t us;
-        errstat_set_strf(&newerr, "id %s: %s", 
-                comdb2uuidstr(source_id, us),
-                err->errstr);
+        errstat_set_strf(&newerr, "id %s: %s",
+                         comdb2uuidstr(source_id, us),
+                         err->errstr);
     }
     *err = newerr;
 }
 
-static void print_dbg_verbose(const char *name, uuid_t *source_id, 
+static void print_dbg_verbose(const char *name, uuid_t *source_id,
                               const char *prefix, const char *fmt, ...)
 {
     va_list va;
     uuidstr_t us;
 
-    if(!bdb_attr_get(thedb->bdb_attr, BDB_ATTR_DEBUG_TIMEPART_CRON))
+    if (!bdb_attr_get(thedb->bdb_attr, BDB_ATTR_DEBUG_TIMEPART_CRON))
         return;
 
-    if(name)
+    if (name)
         logmsg(LOGMSG_USER, "%s %s%s%s: ", prefix, name,
-                (source_id)?" ":"",
-                (source_id)?comdb2uuidstr((unsigned char*)source_id, us):"");
+               (source_id) ? " " : "",
+               (source_id) ? comdb2uuidstr((unsigned char *)source_id, us) : "");
     else
         logmsg(LOGMSG_USER, "%s%s%s: ", prefix,
-                (source_id)?" ":"",
-                (source_id)?comdb2uuidstr((unsigned char*)source_id, us):"");
-
+               (source_id) ? " " : "",
+               (source_id) ? comdb2uuidstr((unsigned char *)source_id, us) : "");
 
     va_start(va, fmt);
-    
+
     logmsgv(LOGMSG_USER, fmt, va);
 
     va_end(va);
@@ -2573,22 +2572,20 @@ static void print_dbg_verbose(const char *name, uuid_t *source_id,
  */
 int timepart_update_retention(void *tran, const char *name, int retention, struct errstat *err)
 {
-   timepart_views_t *views = thedb->timepart_views;
-   timepart_view_t *view;
-   int rc = VIEW_NOERR;
+    timepart_views_t *views = thedb->timepart_views;
+    timepart_view_t *view;
+    int rc = VIEW_NOERR;
 
-   /* make sure we are unique */
-   view = _get_view(views, name);
-   if (!view)
-   {
-      errstat_set_strf(err, "Partition %s doesn't exists!", name);
-      errstat_set_rc(err, rc = VIEW_ERR_EXIST);
-      goto done;
-   }
+    /* make sure we are unique */
+    view = _get_view(views, name);
+    if (!view) {
+        errstat_set_strf(err, "Partition %s doesn't exists!", name);
+        errstat_set_rc(err, rc = VIEW_ERR_EXIST);
+        goto done;
+    }
 
-   if(view->retention < retention) 
-   {
-       /* increasing the retention only works if the shard configuration is in a
+    if (view->retention < retention) {
+        /* increasing the retention only works if the shard configuration is in a
           special ordering so that recovering still works;
           examples where increasing is possible (retention  =  4):
           2, 1, orig_table
@@ -2604,79 +2601,79 @@ int timepart_update_retention(void *tran, const char *name, int retention, struc
           numbers are rotating in order and that is used to proper recover when
           master switches/crashes during a rollout sequence
         */
-       if (view->nshards == view->retention &&
-           strcasecmp(view->shard0name,
-                      view->shards[view->nshards - 1].tblname) != 0 &&
-           view->shards[view->nshards-1].tblname[0] == '$' &&
-           view->shards[view->nshards-1].tblname[1] != '0' &&
-           view->shards[view->nshards-1].tblname[1] != '1') {
-           errstat_set_strf(
-               err, "Partition %s retention cannot be increased at this time!",
-               name);
-           errstat_set_rc(err, rc = VIEW_ERR_EXIST);
-           goto done;
-       }
+        if (view->nshards == view->retention &&
+            strcasecmp(view->shard0name,
+                       view->shards[view->nshards - 1].tblname) != 0 &&
+            view->shards[view->nshards - 1].tblname[0] == '$' &&
+            view->shards[view->nshards - 1].tblname[1] != '0' &&
+            view->shards[view->nshards - 1].tblname[1] != '1') {
+            errstat_set_strf(
+                err, "Partition %s retention cannot be increased at this time!",
+                name);
+            errstat_set_rc(err, rc = VIEW_ERR_EXIST);
+            goto done;
+        }
 
-       view->retention = retention;
+        view->retention = retention;
 
-       rc = partition_llmeta_write(tran, view, 1, err);
-       if (rc != VIEW_NOERR) {
-           goto done;
-       }
-   } else if (view->retention > retention) {
-       int i;
-       char **extra_shards = NULL;
-       int n_extra_shards = view->nshards - retention;
-       int old_retention = view->retention;
-       int old_low = view->shards[view->nshards - 1].low;
+        rc = partition_llmeta_write(tran, view, 1, err);
+        if (rc != VIEW_NOERR) {
+            goto done;
+        }
+    } else if (view->retention > retention) {
+        int i;
+        char **extra_shards = NULL;
+        int n_extra_shards = view->nshards - retention;
+        int old_retention = view->retention;
+        int old_low = view->shards[view->nshards - 1].low;
 
-       if (n_extra_shards > 0) {
-           extra_shards = alloca(n_extra_shards * sizeof(char *));
+        if (n_extra_shards > 0) {
+            extra_shards = alloca(n_extra_shards * sizeof(char *));
 
-           /* check if the new retention is less than existing shards,
+            /* check if the new retention is less than existing shards,
               and if so, free the oldest max(0, view->nshards-view->retention)
               shards */
-           for (i = 0; i < n_extra_shards; i++) {
-               extra_shards[i] = view->shards[i + retention].tblname;
-           }
+            for (i = 0; i < n_extra_shards; i++) {
+                extra_shards[i] = view->shards[i + retention].tblname;
+            }
 
-           view->nshards = retention;
-           /* we need to update the LOW of the new oldest shard */
-           old_low = view->shards[view->nshards - 1].low;
-           view->shards[view->nshards - 1].low = INT_MIN;
-       }
-       view->retention = retention;
+            view->nshards = retention;
+            /* we need to update the LOW of the new oldest shard */
+            old_low = view->shards[view->nshards - 1].low;
+            view->shards[view->nshards - 1].low = INT_MIN;
+        }
+        view->retention = retention;
 
-       rc = partition_llmeta_write(tran, view, 1, err);
-       if (rc != VIEW_NOERR) {
-           view->shards[view->nshards - 1].low = old_low;
-           view->retention = old_retention;
-           view->nshards += n_extra_shards;
-           goto done;
-       } else {
-           /* safe now to remove in-memory structure */
-           view->shards = realloc(view->shards,
-                                  sizeof(timepart_shard_t) * view->retention);
-       }
+        rc = partition_llmeta_write(tran, view, 1, err);
+        if (rc != VIEW_NOERR) {
+            view->shards[view->nshards - 1].low = old_low;
+            view->retention = old_retention;
+            view->nshards += n_extra_shards;
+            goto done;
+        } else {
+            /* safe now to remove in-memory structure */
+            view->shards = realloc(view->shards,
+                                   sizeof(timepart_shard_t) * view->retention);
+        }
 
-       if (extra_shards) {
-           int irc = 0;
+        if (extra_shards) {
+            int irc = 0;
 
-           for (i = 0; i < n_extra_shards; i++) {
-               irc =
-                   (cron_add_event(_get_sched_byname(view->period, view->name),
-                                   NULL, 0, _view_cron_phase3, extra_shards[i],
-                                   NULL, NULL, NULL, NULL, err, NULL) == NULL)
-                       ? err->errval
-                       : VIEW_NOERR;
-               if (irc != VIEW_NOERR) {
-                   logmsg(LOGMSG_ERROR, "%s: failed rc=%d errstr=%s\n",
-                          __func__, err->errval, err->errstr);
-                   free(extra_shards[i]);
-               }
-           }
-       }
-   }
+            for (i = 0; i < n_extra_shards; i++) {
+                irc =
+                    (cron_add_event(_get_sched_byname(view->period, view->name),
+                                    NULL, 0, _view_cron_phase3, extra_shards[i],
+                                    NULL, NULL, NULL, NULL, err, NULL) == NULL)
+                        ? err->errval
+                        : VIEW_NOERR;
+                if (irc != VIEW_NOERR) {
+                    logmsg(LOGMSG_ERROR, "%s: failed rc=%d errstr=%s\n",
+                           __func__, err->errval, err->errstr);
+                    free(extra_shards[i]);
+                }
+            }
+        }
+    }
 
 done:
     return rc;
@@ -2714,7 +2711,6 @@ static int _view_update_table_version(timepart_view_t *view, tran_type *tran)
     return rc;
 }
 
-
 /**
  * Get number of shards
  *
@@ -2739,7 +2735,6 @@ int timepart_get_num_shards(const char *view_name)
 
     return nshards;
 }
-
 
 void check_columns_null_and_dbstore(const char *name, struct dbtable *tbl)
 {
@@ -2870,7 +2865,7 @@ timepart_view_t *timepart_new_partition(const char *name, int period,
     }
 
     if (partition_name)
-       *partition_name = view->name;
+        *partition_name = view->name;
 
     assert(period != VIEW_PARTITION_INVALID);
     view->period = period;
@@ -2993,7 +2988,6 @@ static void _view_find_current_shard(timepart_view_t *view)
     int newest_earlier_shard = -1;
     int i;
 
-
     /* Try to find a shard with time interval matching the current time;
      * Corner case: it is possible for the db to be down and miss a few
      * rollouts; at that point, no shard time interval will match; in this
@@ -3008,8 +3002,8 @@ static void _view_find_current_shard(timepart_view_t *view)
                 return;
             }
         }
-        if (newest_earlier_shard < 0 || (view->shards[i].low != INT_MAX && 
-            view->shards[newest_earlier_shard].low < view->shards[i].low))
+        if (newest_earlier_shard < 0 || (view->shards[i].low != INT_MAX &&
+                                         view->shards[newest_earlier_shard].low < view->shards[i].low))
             newest_earlier_shard = i;
     }
     assert(newest_earlier_shard >= 0 && newest_earlier_shard < view->nshards);
@@ -3389,7 +3383,7 @@ int partition_publish(tran_type *tran, struct schema_change_type *sc)
 /* revert partition publish */
 void partition_unpublish(struct schema_change_type *sc)
 {
-   if (sc->partition.type != PARTITION_NONE) {
+    if (sc->partition.type != PARTITION_NONE) {
         switch (sc->partition.type) {
         case PARTITION_ADD_TIMED:
         case PARTITION_ADD_MANUAL: {
@@ -3408,7 +3402,6 @@ void partition_unpublish(struct schema_change_type *sc)
     }
 }
 
-
 /* return the default value for a manual partition */
 int logical_partition_next_rollout(const char *name)
 {
@@ -3422,7 +3415,7 @@ int logical_partition_next_rollout(const char *name)
     }
     ret = view->shards[view->current_shard].high;
     /* legacy manual impementation has high set to INT_MAX */
-    if (ret == INT_MAX) {   
+    if (ret == INT_MAX) {
         ret = view->shards[view->current_shard].low;
         if (ret == INT_MIN) {
             ret = 0;
@@ -3450,12 +3443,12 @@ int timepart_rollout(const char *partname)
     timepart_view_t *view = _get_view(thedb->timepart_views, partname);
     if (!view) {
         goto done;
-    } 
+    }
 
     if (view->rolltype == TIMEPART_ROLLOUT_TRUNCATE) {
         rc = ROLLOUT_TRUNC;
     } else {
-        rc = view->nshards < view->retention ? ROLLOUT_LEG_PART: ROLLOUT_LEG_FULL;
+        rc = view->nshards < view->retention ? ROLLOUT_LEG_PART : ROLLOUT_LEG_FULL;
     }
 
 done:
@@ -3468,4 +3461,3 @@ done:
 #include "views_serial.c"
 
 #include "views_sqlite.c"
-

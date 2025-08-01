@@ -36,12 +36,12 @@
 struct comdb2_metrics_store {
     int64_t cache_hits;
     int64_t cache_misses;
-    double  cache_hit_rate;
+    double cache_hit_rate;
     int64_t commits;
     int64_t connections;
     int64_t connection_timeouts;
-    double  connection_to_sql_ratio;
-    double  cpu_percent;
+    double connection_to_sql_ratio;
+    double cpu_percent;
     int64_t deadlocks;
     int64_t locks_aborted;
     int64_t fstraps;
@@ -377,12 +377,13 @@ comdb2_metric gbl_metrics[] = {
      &stats.legacy_requests, NULL},
 };
 
-const char *metric_collection_type_string(comdb2_collection_type t) {
+const char *metric_collection_type_string(comdb2_collection_type t)
+{
     switch (t) {
-        case STATISTIC_COLLECTION_TYPE_CUMULATIVE:
-            return "cumulative";
-        case STATISTIC_COLLECTION_TYPE_LATEST:
-            return "latest";
+    case STATISTIC_COLLECTION_TYPE_CUMULATIVE:
+        return "cumulative";
+    case STATISTIC_COLLECTION_TYPE_LATEST:
+        return "latest";
     }
     return "???";
 }
@@ -421,7 +422,8 @@ extern int64_t gbl_not_durable_commit_count;
 extern int64_t gbl_incoherent_slow_skips;
 ;
 
-static void update_fastsql_metrics() {
+static void update_fastsql_metrics()
+{
     stats.fastsql_execute_inline_params = gbl_fastsql_execute_inline_params;
     stats.fastsql_set_isolation_level = gbl_fastsql_set_isolation_level;
     stats.fastsql_set_timeout = gbl_fastsql_set_timeout;
@@ -456,13 +458,11 @@ static int64_t refresh_diskspace(struct dbenv *dbenv, tran_type *tran)
     static pthread_mutex_t lk = PTHREAD_MUTEX_INITIALIZER;
     Pthread_mutex_lock(&lk);
 
-    for(ndb = 0; ndb < dbenv->num_dbs; ndb++)
-    {
+    for (ndb = 0; ndb < dbenv->num_dbs; ndb++) {
         db = dbenv->dbs[ndb];
         total += calc_table_size_tran(tran, db, 0);
     }
-    for(ndb = 0; ndb < dbenv->num_qdbs; ndb++)
-    {
+    for (ndb = 0; ndb < dbenv->num_qdbs; ndb++) {
         db = dbenv->qdbs[ndb];
         total += calc_table_size_tran(tran, db, 0);
     }
@@ -561,12 +561,12 @@ int refresh_metrics(void)
     stats.connection_timeouts = net_get_num_accept_timeouts(thedb->handle_sibling);
 
     int64_t total_reqs = stats.sql_count + stats.nonsql;
-    stats.connection_to_sql_ratio = (total_reqs > 0) ? (stats.connections/(double)total_reqs) : 0;
+    stats.connection_to_sql_ratio = (total_reqs > 0) ? (stats.connections / (double)total_reqs) : 0;
 
     /* cache hit rate */
     uint64_t hits, misses;
     bdb_get_cache_stats(thedb->bdb_env, &hits, &misses, NULL, NULL, NULL, NULL);
-    stats.cache_hit_rate = 100 * ((double) hits / ((double) hits + (double) misses));
+    stats.cache_hit_rate = 100 * ((double)hits / ((double)hits + (double)misses));
 
     stats.memory_ulimit = 0;
     stats.memory_usage = 0;
@@ -579,9 +579,8 @@ int refresh_metrics(void)
         if (rl.rlim_cur == RLIM_INFINITY)
             stats.memory_ulimit = 0;
         else
-            stats.memory_ulimit = rl.rlim_cur / (1024*1024);
-    }
-    else {
+            stats.memory_ulimit = rl.rlim_cur / (1024 * 1024);
+    } else {
         stats.memory_ulimit = 0;
     }
     FILE *f = fopen("/proc/self/stat", "r");
@@ -600,7 +599,7 @@ int refresh_metrics(void)
                     &num_threads, &vmsize);
         if (rc == 2) {
             stats.threads = num_threads;
-            stats.memory_usage = vmsize / (1024*1024);
+            stats.memory_usage = vmsize / (1024 * 1024);
         }
     }
     stats.cpu_percent = gbl_cpupercent;
@@ -719,7 +718,7 @@ int init_metrics(void)
     memset(&stats, 0, sizeof(struct comdb2_metrics_store));
 
     t = time(NULL);
-    stats.start_time = (int64_t) t;
+    stats.start_time = (int64_t)t;
     return 0;
 }
 
@@ -738,66 +737,68 @@ const char *metric_type(comdb2_metric_type type)
 
 static time_t queue_start_time = 0;
 
-static time_t metrics_standing_queue_time(void) {
+static time_t metrics_standing_queue_time(void)
+{
     if (queue_start_time == 0)
         return 0;
     else
         return time(NULL) - queue_start_time;
 }
 
-static void update_standing_queue_time(void) {
+static void update_standing_queue_time(void)
+{
     if (time_metric_average(thedb->queue_depth) < 1)
         queue_start_time = 0;
     else if (queue_start_time == 0)
         queue_start_time = time(NULL);
 }
 
-static void update_cpu_percent(void) 
+static void update_cpu_percent(void)
 {
 #if _LINUX_SOURCE
-   static time_t last_time = 0;
-   static int64_t last_counter = 0;
-   int hz = sysconf(_SC_CLK_TCK);
+    static time_t last_time = 0;
+    static int64_t last_counter = 0;
+    int hz = sysconf(_SC_CLK_TCK);
 
-   double cpu_percent = 0;
+    double cpu_percent = 0;
 
-   FILE *f = fopen("/proc/self/stat", "r");
-   if (f) {
-      char line[1024];
-      char *tmp = fgets(line, sizeof(line), f);
-      if (!tmp) {
-          logmsg(LOGMSG_ERROR, "failed to read from /proc/self/stat\n");
-      }
-      fclose(f);
-      unsigned long utime, stime;
-      /* usertime=14 systemtime=15 */
-      int rc = sscanf(
-          line, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu",
-          &utime, &stime);
-      if (rc == 2) {
-         if (last_time == 0) {
-            cpu_percent = 0;
-            last_time = time(NULL);
-            last_counter = utime + stime;
-         }
-         else {
-            stats.cpu_percent = 0;
-            time_t now = time(NULL);
-            int64_t sys_ticks = (now - last_time) * hz;
+    FILE *f = fopen("/proc/self/stat", "r");
+    if (f) {
+        char line[1024];
+        char *tmp = fgets(line, sizeof(line), f);
+        if (!tmp) {
+            logmsg(LOGMSG_ERROR, "failed to read from /proc/self/stat\n");
+        }
+        fclose(f);
+        unsigned long utime, stime;
+        /* usertime=14 systemtime=15 */
+        int rc = sscanf(
+            line, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu",
+            &utime, &stime);
+        if (rc == 2) {
+            if (last_time == 0) {
+                cpu_percent = 0;
+                last_time = time(NULL);
+                last_counter = utime + stime;
+            } else {
+                stats.cpu_percent = 0;
+                time_t now = time(NULL);
+                int64_t sys_ticks = (now - last_time) * hz;
 
-            cpu_percent = ((double) ((utime+stime) - last_counter) / (double) sys_ticks) * 100;
+                cpu_percent = ((double)((utime + stime) - last_counter) / (double)sys_ticks) * 100;
 
-            last_counter = utime+stime;
-            last_time = now;
-         }
-      }
-   }
+                last_counter = utime + stime;
+                last_time = now;
+            }
+        }
+    }
 
-   gbl_cpupercent = cpu_percent;
+    gbl_cpupercent = cpu_percent;
 #endif
 }
 
-void update_metrics(void) {
+void update_metrics(void)
+{
     update_cpu_percent();
     update_standing_queue_time();
     update_weighted_standing_queue_metrics();

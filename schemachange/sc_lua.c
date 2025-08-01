@@ -149,7 +149,8 @@ int dump_spfile(const char *file)
         rc = bdb_get_sp_name(NULL, old_sp, new_sp, &bdberr);
         if (rc || (strcmp(old_sp, new_sp) <= 0)) {
             sbuf2close(sb_out);
-            if (has_sp) return 1;
+            if (has_sp)
+                return 1;
 
             return 0;
         }
@@ -178,7 +179,8 @@ int dump_spfile(const char *file)
                 bdb_get_sp_get_default_version(new_sp, &bdberr);
             for (;;) {
                 bdb_get_lua_highest(NULL, new_sp, &lua_ver, version, &bdberr);
-                if (lua_ver < 1) break;
+                if (lua_ver < 1)
+                    break;
                 char *lua_file;
                 int size;
                 if (bdb_get_sp_lua_source(NULL, NULL, new_sp, &lua_file,
@@ -272,7 +274,8 @@ static void show_all_versioned_sps(struct schema_change_type *sc)
     SBUF2 *sb = sc->sb;
     char **names;
     int count;
-    if (bdb_get_default_versioned_sps(&names, &count) != 0) return;
+    if (bdb_get_default_versioned_sps(&names, &count) != 0)
+        return;
     for (int i = 0; i < count; ++i) {
         char *vstr;
         int vnum, bdberr;
@@ -295,7 +298,8 @@ static void show_versioned_sp(struct schema_change_type *sc, int *num)
     int rc;
     if ((rc = bdb_get_all_for_versioned_sp(name, &versions, num)) != 0)
         goto out;
-    if (*num == 0) goto out;
+    if (*num == 0)
+        goto out;
     for (int i = 0; i < *num; ++i) {
         sbuf2printf(sb, ">Version: '%s'\n", versions[i]);
     }
@@ -415,7 +419,8 @@ static void show_sp(struct schema_change_type *sc, int *num, int *has_default)
     *has_default = -1;
     for (;;) {
         bdb_get_lua_highest(NULL, sc->tablename, &lua_ver, version, &bdberr);
-        if (lua_ver < 1) break;
+        if (lua_ver < 1)
+            break;
         ++(*num);
         sbuf2printf(sb, ">Version: %d\n", lua_ver);
         version = lua_ver;
@@ -621,10 +626,14 @@ int do_show_sp(struct schema_change_type *sc, struct ireq *unused)
 
 int do_add_sp_tran(struct schema_change_type *sc, struct ireq *iq, tran_type *tran, int lock_schema_lk)
 {
-    if (lock_schema_lk) { wrlock_schema_lk(); }
+    if (lock_schema_lk) {
+        wrlock_schema_lk();
+    }
     int rc = do_add_sp_int(sc, iq, tran);
     ++gbl_lua_version;
-    if (lock_schema_lk) { unlock_schema_lk(); }
+    if (lock_schema_lk) {
+        unlock_schema_lk();
+    }
     return !rc && !sc->finalize ? SC_COMMIT_PENDING : rc;
 }
 
@@ -667,10 +676,14 @@ int finalize_del_sp(struct schema_change_type *sc)
 
 int do_default_sp_tran(struct schema_change_type *sc, struct ireq *iq, tran_type *tran, int lock_schema_lk)
 {
-    if (lock_schema_lk) { wrlock_schema_lk(); }
+    if (lock_schema_lk) {
+        wrlock_schema_lk();
+    }
     int rc = do_default_sp_int(sc, iq, tran);
     ++gbl_lua_version;
-    if (lock_schema_lk) { unlock_schema_lk(); }
+    if (lock_schema_lk) {
+        unlock_schema_lk();
+    }
     return !rc && !sc->finalize ? SC_COMMIT_PENDING : rc;
 }
 
@@ -683,7 +696,7 @@ int do_default_cons(struct schema_change_type *sc, struct ireq *iq)
 {
     wrlock_schema_lk();
     javasp_splock_wrlock();
-    
+
     tran_type *ltran = NULL;
     int rc = trans_start_logical_sc(iq, &ltran);
     if (rc) {
@@ -726,8 +739,11 @@ int do_default_cons(struct schema_change_type *sc, struct ireq *iq)
     }
 
 done:
-    if (ltran) { trans_abort(iq, ltran); }
-    else if (tran) { trans_abort(iq, tran); }
+    if (ltran) {
+        trans_abort(iq, ltran);
+    } else if (tran) {
+        trans_abort(iq, tran);
+    }
 
     unlock_schema_lk();
     javasp_splock_unlock();
@@ -748,12 +764,12 @@ int finalize_default_cons(struct schema_change_type *sc)
 // -----------------
 // LUA SQL FUNCTIONS
 // -----------------
-#define reload_lua_funcs(type, pfx)                                            \
-    BDB_BUMP_DBOPEN_GEN(type, NULL);                                           \
-    ++gbl_lua_version;                                                         \
-    do {                                                                       \
-       lua_func_list_free(&thedb->lua_##pfx##funcs);                           \
-       return llmeta_load_lua_##pfx##funcs();                                  \
+#define reload_lua_funcs(type, pfx)                   \
+    BDB_BUMP_DBOPEN_GEN(type, NULL);                  \
+    ++gbl_lua_version;                                \
+    do {                                              \
+        lua_func_list_free(&thedb->lua_##pfx##funcs); \
+        return llmeta_load_lua_##pfx##funcs();        \
     } while (0)
 
 int reload_lua_sfuncs()
@@ -766,12 +782,13 @@ int reload_lua_afuncs()
     reload_lua_funcs(lua_afunc, a);
 }
 
-#define finalize_lua_func(pfx)                                                 \
-    do {                                                                       \
-        int rc = reload_lua_##pfx##funcs();                                    \
-        if (rc != 0) return rc;                                                \
-        int bdberr;                                                            \
-        return bdb_llog_luafunc(thedb->bdb_env, lua_##pfx##func, 1, &bdberr);  \
+#define finalize_lua_func(pfx)                                                \
+    do {                                                                      \
+        int rc = reload_lua_##pfx##funcs();                                   \
+        if (rc != 0)                                                          \
+            return rc;                                                        \
+        int bdberr;                                                           \
+        return bdb_llog_luafunc(thedb->bdb_env, lua_##pfx##func, 1, &bdberr); \
     } while (0)
 
 int finalize_lua_sfunc(struct schema_change_type *unused)
@@ -803,7 +820,7 @@ int finalize_lua_afunc(struct schema_change_type *unused)
             rc = SC_COMMIT_PENDING;                                            \
     } while (0)
 
-int do_lua_sfunc(struct schema_change_type *sc, struct ireq * iq)
+int do_lua_sfunc(struct schema_change_type *sc, struct ireq *iq)
 {
     int rc = 0;
     char *tbl = 0;

@@ -23,7 +23,7 @@
 #include "comdb2rle.h"
 
 #ifndef BYTE_ORDER
-#   error "BYTE_ORDER not defined"
+#error "BYTE_ORDER not defined"
 #endif
 
 #ifdef CRLE_VERBOSE
@@ -34,14 +34,13 @@ static int doprint = 0;
 
 #define CNT(x) (sizeof(x) / sizeof(x[0]))
 
-#define STATIC_ASSERT(condition, name)                                         \
-    static void assert_failed_##name(void)                                     \
-    {                                                                          \
-        switch (0) {                                                           \
-        case 0:                                                                \
-        case condition:                                                        \
-            ;                                                                  \
-        }                                                                      \
+#define STATIC_ASSERT(condition, name)     \
+    static void assert_failed_##name(void) \
+    {                                      \
+        switch (0) {                       \
+        case 0:                            \
+        case condition:;                   \
+        }                                  \
     }
 
 /* Various NULLs */
@@ -61,7 +60,7 @@ static uint8_t p7[] = { 0x08, 0x7f, 0xff, 0xff, 0xff };
 static uint8_t p8[] = { 0x08, 0x7f, 0xff }; */
 /* Floating point -1 */
 static uint8_t p9[] = {0x08, 0x40, 0x0f, 0xff, 0xff,
-                       0xff, 0xff, 0xff, 0xff}; // double
+                       0xff, 0xff, 0xff, 0xff};       // double
 static uint8_t pa[] = {0x08, 0x40, 0x7f, 0xff, 0xff}; // float
 /* Misc */
 static uint8_t pb[] = {0x00}; // null
@@ -70,19 +69,19 @@ static uint8_t pc[] = {0x30}; // ascii 0
 //	           pe ONEBYTE
 //	           pf RESERVED
 
-#define PATTERNS                                                               \
-    XMACRO_PATTERNS(p0, sizeof(p0), "p0")                                      \
-    XMACRO_PATTERNS(p0, 5, "p1")                                               \
-    XMACRO_PATTERNS(p0, 3, "p2")                                               \
-    XMACRO_PATTERNS(p3, sizeof(p3), "p3")                                      \
-    XMACRO_PATTERNS(p3, 5, "p4")                                               \
-    XMACRO_PATTERNS(p3, 3, "p5")                                               \
-    XMACRO_PATTERNS(p6, sizeof(p6), "p6")                                      \
-    XMACRO_PATTERNS(p6, 5, "p7")                                               \
-    XMACRO_PATTERNS(p6, 3, "p8")                                               \
-    XMACRO_PATTERNS(p9, sizeof(p9), "p9")                                      \
-    XMACRO_PATTERNS(pa, sizeof(pa), "pa")                                      \
-    XMACRO_PATTERNS(pb, sizeof(pb), "pb")                                      \
+#define PATTERNS                          \
+    XMACRO_PATTERNS(p0, sizeof(p0), "p0") \
+    XMACRO_PATTERNS(p0, 5, "p1")          \
+    XMACRO_PATTERNS(p0, 3, "p2")          \
+    XMACRO_PATTERNS(p3, sizeof(p3), "p3") \
+    XMACRO_PATTERNS(p3, 5, "p4")          \
+    XMACRO_PATTERNS(p3, 3, "p5")          \
+    XMACRO_PATTERNS(p6, sizeof(p6), "p6") \
+    XMACRO_PATTERNS(p6, 5, "p7")          \
+    XMACRO_PATTERNS(p6, 3, "p8")          \
+    XMACRO_PATTERNS(p9, sizeof(p9), "p9") \
+    XMACRO_PATTERNS(pa, sizeof(pa), "pa") \
+    XMACRO_PATTERNS(pb, sizeof(pb), "pb") \
     XMACRO_PATTERNS(pc, sizeof(pc), "pc")
 
 #define XMACRO_PATTERNS(pattern, size, name) pattern,
@@ -149,29 +148,34 @@ static uint8_t varint_need(uint32_t i)
     return 5;
 }
 
-#define ENCODE_NUMBER(i, o)                                                    \
-    do {                                                                       \
-        uint8_t need = varint_need(i);                                         \
-        switch (need) {                                                        \
-        case 5: o[need - 5] = 0x80 | (i >> 28);                                \
-        case 4: o[need - 4] = 0x80 | (i >> 21);                                \
-        case 3: o[need - 3] = 0x80 | (i >> 14);                                \
-        case 2: o[need - 2] = 0x80 | (i >> 7);                                 \
-        case 1: o[need - 1] = 0x7f & i;                                        \
-        }                                                                      \
-        o += need;                                                             \
+#define ENCODE_NUMBER(i, o)                 \
+    do {                                    \
+        uint8_t need = varint_need(i);      \
+        switch (need) {                     \
+        case 5:                             \
+            o[need - 5] = 0x80 | (i >> 28); \
+        case 4:                             \
+            o[need - 4] = 0x80 | (i >> 21); \
+        case 3:                             \
+            o[need - 3] = 0x80 | (i >> 14); \
+        case 2:                             \
+            o[need - 2] = 0x80 | (i >> 7);  \
+        case 1:                             \
+            o[need - 1] = 0x7f & i;         \
+        }                                   \
+        o += need;                          \
     } while (0)
 
-#define DECODE_NUMBER(i, o)                                                    \
-    do {                                                                       \
-        o = 0;                                                                 \
-        while (*i & 0x80) {                                                    \
-            uint8_t t = *i & 0x7f;                                             \
-            o |= t;                                                            \
-            o <<= 7;                                                           \
-            ++i;                                                               \
-        }                                                                      \
-        o |= *i++;                                                             \
+#define DECODE_NUMBER(i, o)        \
+    do {                           \
+        o = 0;                     \
+        while (*i & 0x80) {        \
+            uint8_t t = *i & 0x7f; \
+            o |= t;                \
+            o <<= 7;               \
+            ++i;                   \
+        }                          \
+        o |= *i++;                 \
     } while (0)
 
 /* p:ointer to pattern
@@ -412,7 +416,7 @@ static int verify(Comdb2RLE *c)
 #ifdef VERIFY_CRLE
     uint8_t bad = 0;
     uint8_t buf[c->insz];
-    Comdb2RLE d = { .in = c->out, .insz = c->outsz, .out = buf, .outsz = c->insz};
+    Comdb2RLE d = {.in = c->out, .insz = c->outsz, .out = buf, .outsz = c->insz};
     if (decompressComdb2RLE(&d) != 0) {
         fprintf(stderr, "Comdb2RLE decompress error size:%zu data:0x", c->insz);
         print_hex(c->in, c->insz);
@@ -441,9 +445,9 @@ int compressComdb2RLE(Comdb2RLE *c)
     int greedy = input.sz > 1024;
 next:
     while (input.sz) {
-        uint32_t w; // wellknown pattern of bytes?
-        uint32_t r; // pattern repeats
-        uint32_t s; // pattern size
+        uint32_t w;          // wellknown pattern of bytes?
+        uint32_t r;          // pattern repeats
+        uint32_t s;          // pattern size
         uint32_t bw, br, bs; // best w, r, s
         uint32_t best, saved;
         best = saved = 0;
@@ -629,7 +633,11 @@ int compressComdb2RLE_hints(Comdb2RLE *c, uint16_t *fld_hints)
         }
         uint32_t tmp_r;
         switch (sz) {
-        case 1: case 2: case 3: case 5: case 9:
+        case 1:
+        case 2:
+        case 3:
+        case 5:
+        case 9:
             if (well_known(input.dt, sz, &w)) {
                 which = 'w';
                 break;
@@ -643,7 +651,7 @@ int compressComdb2RLE_hints(Comdb2RLE *c, uint16_t *fld_hints)
                     break;
                 }
                 uint32_t need, tmp_prev, tmp_need;
-                need = space_reqd(r, sz); //total space to encode 'r'
+                need = space_reqd(r, sz);    //total space to encode 'r'
                 tmp_prev = sz - (tmp_r + 1); //bytes which don't repeat
                 tmp_need = space_reqd(0, tmp_prev) + space_reqd(tmp_r, 1);
                 tmp_need *= (r + 1); // total space to encode 'v'

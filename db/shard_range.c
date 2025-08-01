@@ -32,8 +32,8 @@ static Expr *_create_high(Parse *pParse, struct Token *col, int iColumn,
                           ExprList *list, int shard);
 static int _colIndex(Table *pTab, const char *zCol);
 
-#define GET_CLNT                                                               \
-    struct sql_thread *thd = pthread_getspecific(query_info_key);              \
+#define GET_CLNT                                                  \
+    struct sql_thread *thd = pthread_getspecific(query_info_key); \
     struct sqlclntstate *clnt = thd->clnt;
 
 /* Create a range structure */

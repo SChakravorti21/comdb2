@@ -104,17 +104,17 @@ int (*comdb2_ipc_master_set)(char *host) = 0;
  *
  * Ha! Dont need IX_EMPTY but do need IX_NOTFND and IX_PASTEOF.
  * Just use is_good_ix_find_rc() */
-#define VTAG(rc, db)                                                           \
-    if (is_good_ix_find_rc((rc)))                                              \
+#define VTAG(rc, db)              \
+    if (is_good_ix_find_rc((rc))) \
     vtag_to_ondisk((db), fnddta, fndlen, args.ver, *genid)
-#define VTAG_GENID(rc, db)                                                     \
-    if (is_good_ix_find_rc((rc)))                                              \
+#define VTAG_GENID(rc, db)        \
+    if (is_good_ix_find_rc((rc))) \
     vtag_to_ondisk((db), fnddta, fndlen, args.ver, genid)
-#define VTAG_PTR(rc, db)                                                       \
-    if (is_good_ix_find_rc((rc)))                                              \
+#define VTAG_PTR(rc, db)          \
+    if (is_good_ix_find_rc((rc))) \
     vtag_to_ondisk((db), fnddta, fndlen, args->ver, *genid)
-#define VTAG_PTR_GENID(rc, db)                                                 \
-    if (is_good_ix_find_rc((rc)))                                              \
+#define VTAG_PTR_GENID(rc, db)    \
+    if (is_good_ix_find_rc((rc))) \
     vtag_to_ondisk((db), fnddta, fndlen, args->ver, genid)
 
 extern int verbose_deadlocks;
@@ -264,8 +264,8 @@ void set_tran_verify_updateid(tran_type *tran)
 /*        TRANSACTIONAL STUFF        */
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 static int trans_start_int(struct ireq *iq, tran_type *parent_trans,
-                               tran_type **out_trans, int logical, int sc,
-                               struct txn_properties *props, int force_physical)
+                           tran_type **out_trans, int logical, int sc,
+                           struct txn_properties *props, int force_physical)
 {
     int bdberr;
     bdb_state_type *bdb_handle = thedb->bdb_env;
@@ -280,7 +280,7 @@ static int trans_start_int(struct ireq *iq, tran_type *parent_trans,
         */
 
         *out_trans = bdb_tran_begin_set_prop(bdb_handle, parent_trans,
-                                                props, &bdberr);
+                                             props, &bdberr);
     } else {
         *out_trans = bdb_tran_begin_logical(bdb_handle, 0, &bdberr);
         if ((force_physical || iq->tranddl) && sc && *out_trans) {
@@ -412,14 +412,14 @@ int trans_start_set_retries(struct ireq *iq, tran_type *parent_trans,
 {
     int rc = 0;
 
-    struct txn_properties props = { .retries = retries, .priority = priority };
+    struct txn_properties props = {.retries = retries, .priority = priority};
 
     rc = trans_start_int(iq, (gbl_rowlocks ? NULL : parent_trans),
-                             out_trans, gbl_rowlocks, 0, &props, 0);
+                         out_trans, gbl_rowlocks, 0, &props, 0);
 
     if (verbose_deadlocks && retries != 0)
         logmsg(LOGMSG_USER, "%s ptran %p tran %p with retries %d\n", __func__,
-                parent_trans, *out_trans, retries);
+               parent_trans, *out_trans, retries);
 
     return rc;
 }
@@ -593,7 +593,7 @@ static int trans_commit_seqnum_int(void *bdb_handle, struct dbenv *dbenv,
     else {
         bdb_tran_commit_logical_with_seqnum_size(
             bdb_handle, trans, blkseq, blklen, blkkey, blkkeylen,
-            (seqnum_type*)seqnum, &iq->txnsize, &bdberr);
+            (seqnum_type *)seqnum, &iq->txnsize, &bdberr);
     }
     iq->total_txnsize += iq->txnsize;
     iq->gluewhere = "bdb_tran_commit_with_seqnum_size done";
@@ -1026,8 +1026,10 @@ int ix_isnullk(const dbtable *tbl, void *key, int ixnum)
             int offset = dbixfield->offset;
             if (offset >= 0) {
                 char bkey = *((char *)key + offset);
-                if (dbixfield->flags & INDEX_DESCEND) bkey = ~bkey;
-                if (stype_is_null(&bkey)) return 1;
+                if (dbixfield->flags & INDEX_DESCEND)
+                    bkey = ~bkey;
+                if (stype_is_null(&bkey))
+                    return 1;
             }
         }
     }
@@ -1507,7 +1509,7 @@ static int map_unhandled_bdb_rcode(const char *func, int bdberr, int dirtyread)
     } else {
         if (!dirtyread)
             logmsg(LOGMSG_ERROR, "*ERROR* %s return unhandled rc %d\n", func,
-                    bdberr);
+                   bdberr);
         return ERR_CORRUPT;
     }
 }
@@ -1554,7 +1556,7 @@ retry:
                 goto retry;
             }
             logmsg(LOGMSG_ERROR, "*ERROR* bdb_fetch_lastdupe_recnum too much contention %d "
-                   "count %d\n",
+                                 "count %d\n",
                    bdberr, retries);
             return ERR_INTERNAL;
         }
@@ -2086,7 +2088,7 @@ int ix_find_auxdb_by_rrn_and_genid_tran(int auxdb, struct ireq *iq, int rrn,
     void *bdb_handle;
     int bdberr;
     char *req;
-    bdb_fetch_args_t args = { .for_write = for_write };
+    bdb_fetch_args_t args = {.for_write = for_write};
 
     bdb_handle = get_bdb_handle(iq->usedb, auxdb);
     if (!bdb_handle)
@@ -2287,20 +2289,19 @@ int ix_find_by_rrn_and_genid_tran(struct ireq *iq, int rrn,
 }
 
 int ix_load_for_write_by_genid_tran(struct ireq *iq, int rrn,
-        unsigned long long genid, void *fnddta,
-        int *fndlen, int maxlen, void *trans)
+                                    unsigned long long genid, void *fnddta,
+                                    int *fndlen, int maxlen, void *trans)
 {
     int rc = 0;
 
     rc = ix_find_auxdb_by_rrn_and_genid_tran(AUXDB_NONE, iq, rrn, genid, fnddta,
-            fndlen, maxlen, trans, NULL, 1 /* for_write */);
+                                             fndlen, maxlen, trans, NULL, 1 /* for_write */);
 
     if (rc == IX_EMPTY)
         rc = IX_NOTFND;
 
     return rc;
 }
-
 
 int ix_find_ver_by_rrn_and_genid_tran(struct ireq *iq, int rrn,
                                       unsigned long long genid, void *fnddta,
@@ -2946,7 +2947,7 @@ retry:
             goto retry;
         }
         logmsg(LOGMSG_ERROR, "*ERROR* bdb_fetch_next_dtastripe_record too much contention %d "
-               "count %d\n",
+                             "count %d\n",
                bdberr, retries);
         return ERR_INTERNAL;
     }
@@ -3001,7 +3002,8 @@ static void thedb_set_master_int(char *master)
 static pthread_mutex_t new_master_lk = PTHREAD_MUTEX_INITIALIZER;
 void thedb_set_master(char *master)
 {
-    if (gbl_create_mode) return;
+    if (gbl_create_mode)
+        return;
     Pthread_mutex_lock(&new_master_lk);
     char *old = thedb->master;
     thedb_set_master_int(master);
@@ -3058,7 +3060,8 @@ static void new_master_callback_int(void *bdb_handle, int assert_sc_clear)
 
 static int new_master_callback(void *bdb_handle, char *host, int assert_sc_clear)
 {
-    if (gbl_create_mode) return 0;
+    if (gbl_create_mode)
+        return 0;
     Pthread_mutex_lock(&new_master_lk);
     new_master_callback_int(bdb_handle, assert_sc_clear);
     Pthread_mutex_unlock(&new_master_lk);
@@ -3132,7 +3135,10 @@ int serial_check_callback(char *tbname, int idxnum, void *key, int keylen,
     return 0;
 }
 
-int getroom_callback(void *dummy, const char *host) { return machine_dc(host); }
+int getroom_callback(void *dummy, const char *host)
+{
+    return machine_dc(host);
+}
 
 static int nodeup_drtest_callback(void *bdb_handle, const char *host, int *is_drtest)
 {
@@ -3458,14 +3464,13 @@ static void net_trigger_start(void *hndl, void *uptr, char *fromnode,
 }
 
 static void net_authentication_check(void *hndl, void *uptr, char *fromhost,
-                             struct interned_string *frominterned,
-                             int usertype, void *dtap, int dtalen,
-                             uint8_t is_tcp)
+                                     struct interned_string *frominterned,
+                                     int usertype, void *dtap, int dtalen,
+                                     uint8_t is_tcp)
 {
     gbl_check_access_controls = 1;
     ++gbl_bpfunc_auth_gen;
 }
-
 
 int send_to_all_nodes(void *dta, int len, int type, int waittime)
 {
@@ -3693,7 +3698,7 @@ int open_bdb_env(struct dbenv *dbenv)
     /* Some sanity checks that ideally would be compile time */
     if (SIZEOF_SEQNUM != sizeof(db_seqnum_type)) {
         logmsg(LOGMSG_FATAL, "open_bdb_env: sizeof(seqnum_type) != "
-                        "sizeof(db_seqnum_type)!\n");
+                             "sizeof(db_seqnum_type)!\n");
         exit(1);
     }
 
@@ -3777,7 +3782,8 @@ int open_bdb_env(struct dbenv *dbenv)
 
         /* get the max rec len, or a sane default */
         gbl_maxreclen = get_max_reclen(dbenv);
-        if (gbl_maxreclen < 0) gbl_maxreclen = 512;
+        if (gbl_maxreclen < 0)
+            gbl_maxreclen = 512;
 
         net_register_child_net(dbenv->handle_sibling,
                                dbenv->handle_sibling_offload, NET_SQL,
@@ -3793,10 +3799,10 @@ int open_bdb_env(struct dbenv *dbenv)
                 dbenv->handle_sibling, intern(dbenv->sibling_hostname[ii]),
                 dbenv->sibling_port[ii][NET_REPLICATION]);
             if (rcv == 0) {
-                logmsg(LOGMSG_ERROR, 
-                        "open_bdb_env:failed add_to_netinfo host %s port %d\n",
-                        dbenv->sibling_hostname[ii],
-                        dbenv->sibling_port[ii][NET_REPLICATION]);
+                logmsg(LOGMSG_ERROR,
+                       "open_bdb_env:failed add_to_netinfo host %s port %d\n",
+                       dbenv->sibling_hostname[ii],
+                       dbenv->sibling_port[ii][NET_REPLICATION]);
                 return -1;
             }
         }
@@ -3984,8 +3990,7 @@ static void get_disable_skipscan(struct dbtable *tbl, tran_type *tran)
     free(str);
 }
 
-
-void get_disable_skipscan_all() 
+void get_disable_skipscan_all()
 {
 #ifdef DEBUGSKIPSCAN
     logmsg(LOGMSG_WARN, "get_disable_skipscan_all() called\n");
@@ -3997,8 +4002,6 @@ void get_disable_skipscan_all()
     }
     curtran_puttran(tran);
 }
- 
-
 
 /* open the db files, etc */
 int backend_open_tran(struct dbenv *dbenv, tran_type *tran, uint32_t flags)
@@ -4208,9 +4211,7 @@ int backend_open_tran(struct dbenv *dbenv, tran_type *tran, uint32_t flags)
     if (gbl_create_mode) {
         if (gbl_init_with_rowlocks &&
             (rc = bdb_set_rowlocks_state(
-                 NULL, (gbl_init_with_rowlocks == 1)
-                           ? LLMETA_ROWLOCKS_ENABLED
-                           : LLMETA_ROWLOCKS_ENABLED_MASTER_ONLY,
+                 NULL, (gbl_init_with_rowlocks == 1) ? LLMETA_ROWLOCKS_ENABLED : LLMETA_ROWLOCKS_ENABLED_MASTER_ONLY,
                  &bdberr)) != 0) {
             logmsg(LOGMSG_ERROR, "Set rowlocks llmeta failed, rc=%d bdberr=%d\n", rc, bdberr);
             return -1;
@@ -4428,7 +4429,6 @@ void backend_thread_event(struct dbenv *dbenv, int event)
     bdb_thread_event(dbenv->bdb_env, event);
 }
 
-
 int ix_find_rnum_by_recnum(struct ireq *iq, int recnum_in, int ixnum,
                            void *fndkey, int *fndrrn, unsigned long long *genid,
                            void *fnddta, int *fndlen, int *recnum, int maxlen)
@@ -4500,7 +4500,7 @@ int put_csc2_file(const char *table, void *tran, int version, const char *text)
     if (bdb_new_csc2(tran, table, version, (char *)text, &bdberr) ||
         bdberr != BDBERR_NOERROR) {
         logmsg(LOGMSG_ERROR, "put_csc2_file had an error for csc2 version %d table %s, rc: "
-               "%d\n",
+                             "%d\n",
                version, table, bdberr);
         return -1;
     }
@@ -4518,7 +4518,7 @@ int get_csc2_file_tran(const char *table, int version, char **text, int *len,
     if (bdb_get_csc2(tran, table, version, text, &bdberr) ||
         bdberr != BDBERR_NOERROR) {
         logmsg(LOGMSG_ERROR, "get_csc2_file had an error for csc2 version %d table %s, rc: "
-               "%d\n",
+                             "%d\n",
                version, table, bdberr);
         return -1;
     }
@@ -4944,7 +4944,7 @@ static int meta_get_tran(tran_type *tran, struct dbtable *db, struct metahdr *ke
     } else {
         if (tran) {
             logmsg(LOGMSG_ERROR, "meta_get: using a transaction with a non-lite "
-                            "meta table is not implemented\n");
+                                 "meta table is not implemented\n");
             return 1;
         }
         rc = ix_find_auxdb(AUXDB_META, &iq, 0, key, sizeof(struct metahdr),
@@ -5009,7 +5009,7 @@ static int meta_get_var_tran(tran_type *tran, struct dbtable *db,
 
         if (tran) {
             logmsg(LOGMSG_ERROR, "meta_get_var: using a transaction with a non-lite "
-                            "meta table is not implemented\n");
+                                 "meta table is not implemented\n");
             return 1;
         }
         do {
@@ -5041,7 +5041,10 @@ int meta_get_var(struct dbtable *db, struct metahdr *key1, void **dta, int *fndl
     return meta_get_var_tran(NULL /*tran*/, db, key1, dta, fndlen);
 }
 
-void purgerrns(struct dbtable *db) { return; }
+void purgerrns(struct dbtable *db)
+{
+    return;
+}
 
 void flush_db(void)
 {
@@ -5104,7 +5107,7 @@ retry:
                 goto retry;
             }
             logmsg(LOGMSG_ERROR, "*ERROR* bdb_lite_exact_fetch too much contention %d count "
-                   "%d\n",
+                                 "%d\n",
                    bdberr, retries);
             return ERR_INTERNAL;
         } else if (bdberr == BDBERR_FETCH_DTA) {
@@ -5144,7 +5147,7 @@ retry:
                 goto retry;
             }
             logmsg(LOGMSG_ERROR, "*ERROR* bdb_lite_exact_fetch too much contention %d count "
-                   "%d\n",
+                                 "%d\n",
                    bdberr, retries);
             return ERR_INTERNAL;
         } else if (bdberr == BDBERR_FETCH_DTA) {
@@ -5184,7 +5187,7 @@ retry:
                 goto retry;
             }
             logmsg(LOGMSG_ERROR, "*ERROR* bdb_lite_fetch_keys_fwd too much contention %d "
-                   "count %d\n",
+                                 "count %d\n",
                    bdberr, retries);
             return ERR_INTERNAL;
         }
@@ -5281,7 +5284,8 @@ int dbq_add(struct ireq *iq, void *trans, const void *dta, size_t dtalen)
     recorded_hit:
         /* Add this genid to the replication list; queue consumers will block
          * on this until it has replicated. */
-        if (genid) iq->repl_list = add_genid_to_repl_list(genid, iq->repl_list);
+        if (genid)
+            iq->repl_list = add_genid_to_repl_list(genid, iq->repl_list);
         return 0;
     }
     if (bdberr == BDBERR_DEADLOCK)
@@ -5310,7 +5314,7 @@ int dbq_consume(struct ireq *iq, void *trans, int consumer, const struct bdb_que
     if (bdberr == BDBERR_READONLY)
         return ERR_NOMASTER;
     if (bdberr == BDBERR_DELNOTFOUND)
-        return  bdb_get_type(bdb_handle) == BDBTYPE_QUEUEDB ? ERR_UNCOMMITTABLE_TXN: IX_NOTFND;
+        return bdb_get_type(bdb_handle) == BDBTYPE_QUEUEDB ? ERR_UNCOMMITTABLE_TXN : IX_NOTFND;
     return map_unhandled_bdb_wr_rcode("bdb_queue_consume", bdberr);
 }
 
@@ -5347,7 +5351,7 @@ retry:
                 goto retry;
             }
             logmsg(LOGMSG_ERROR, "*ERROR* bdb_queue_check_goose too much contention %d count "
-                   "%d\n",
+                                 "%d\n",
                    bdberr, retries);
             return ERR_INTERNAL;
         }
@@ -5572,7 +5576,8 @@ int dbq_walk(struct ireq *iq, int flags, dbq_walk_callback_t callback,
 
     if (tran == NULL) {
         // int trans_start(struct ireq *iq, tran_type *parent_trans, tran_type **out_trans)
-        rc = trans_start(iq, NULL, &tran);;
+        rc = trans_start(iq, NULL, &tran);
+        ;
         if (rc)
             goto done;
         created_tran = 1;
@@ -5625,7 +5630,7 @@ void diagnostics_dump_dta(struct dbtable *db, int dtanum)
     fh = fopen(filename, "w");
     if (!fh) {
         logmsg(LOGMSG_ERROR, "diagnostics_dump_dta: cannot open %s: %s\n", filename,
-                strerror(errno));
+               strerror(errno));
         free(filename);
         return;
     }
@@ -5647,7 +5652,10 @@ void start_exclusive_backend_request(struct dbenv *env)
     bdb_start_exclusive_request(env->bdb_env);
 }
 
-void end_backend_request(struct dbenv *env) { bdb_end_request(env->bdb_env); }
+void end_backend_request(struct dbenv *env)
+{
+    bdb_end_request(env->bdb_env);
+}
 
 uint64_t calc_table_size_tran(tran_type *tran, struct dbtable *db, int skip_blobs)
 {
@@ -5673,7 +5681,7 @@ uint64_t calc_table_size_tran(tran_type *tran, struct dbtable *db, int skip_blob
         db->totalsize = bdb_queue_size(db->handle, &db->numextents);
     } else {
         logmsg(LOGMSG_ERROR, "%s: db->dbtype=%d (what the heck is this?)\n",
-                __func__, db->dbtype);
+               __func__, db->dbtype);
     }
 
     if (skip_blobs)
@@ -5701,7 +5709,7 @@ void compr_print_stats()
 
         logmsg(LOGMSG_USER, "[%-16s] ", db->tablename);
         logmsg(LOGMSG_USER, "ODH: %3s Compress: %-8s Blob compress: %-8s  in-place updates: "
-               "%-3s  instant schema change: %-3s",
+                            "%-3s  instant schema change: %-3s",
                odh ? "yes" : "no", bdb_algo2compr(compr),
                bdb_algo2compr(blob_compr), db->inplace_updates ? "yes" : "no",
                db->instant_schema_change ? "yes" : "no");
@@ -6096,9 +6104,10 @@ int setup_net_listen_all(struct dbenv *dbenv)
         }
         dbenv->sibling_port[0][NET_REPLICATION] = port;
     } else {
-            // Ignore if this fails; we're hard coded to use this port.
-            // Just go ahead and use it.
-use:        portmux_use("comdb2", "replication", dbenv->envname, port);
+        // Ignore if this fails; we're hard coded to use this port.
+        // Just go ahead and use it.
+    use:
+        portmux_use("comdb2", "replication", dbenv->envname, port);
     }
     if (gbl_accept_on_child_nets) {
         int osql_port = dbenv->sibling_port[0][NET_SQL];
@@ -6139,15 +6148,16 @@ use:        portmux_use("comdb2", "replication", dbenv->envname, port);
 int table_version_upsert(struct dbtable *db, void *trans, int *bdberr)
 {
     int rc = bdb_table_version_upsert(db->handle, trans, bdberr);
-    if(rc) return rc;
+    if (rc)
+        return rc;
 
-    //select needs to be done with the same transaction to avoid 
+    //select needs to be done with the same transaction to avoid
     //undetectable deadlock for writing and reading from same thread
     unsigned long long version;
     rc = bdb_table_version_select(db->tablename, trans, &version, bdberr);
     if (rc || *bdberr) {
         logmsg(LOGMSG_ERROR, "%s error version=%llu rc=%d bdberr=%d\n", __func__,
-                version, rc, *bdberr);
+               version, rc, *bdberr);
         return -1;
     }
 
@@ -6168,7 +6178,7 @@ unsigned long long table_version_select(struct dbtable *db, tran_type *tran)
     rc = bdb_table_version_select(db->tablename, tran, &version, &bdberr);
     if (rc || bdberr) {
         logmsg(LOGMSG_ERROR, "%s error version=%llu rc=%d bdberr=%d\n", __func__,
-                version, rc, bdberr);
+               version, rc, bdberr);
         return -1;
     }
 
@@ -6337,27 +6347,30 @@ int comdb2_is_user_op(char *user, char *password)
     return rc;
 }
 
-int comdb2_iam_master() {
+int comdb2_iam_master()
+{
     return (thedb->master == gbl_myhostname) ? 1 : 0;
 }
 
-int sync_state_to_protobuf(int sync) {
+int sync_state_to_protobuf(int sync)
+{
     switch (sync) {
-        case REP_SYNC_FULL:
-            return CDB2_SYNC_MODE__SYNC;
-        case REP_SYNC_SOURCE:
-            return CDB2_SYNC_MODE__SYNC_SOURCE;
-        case REP_SYNC_NONE:
-            return CDB2_SYNC_MODE__ASYNC;
-        case REP_SYNC_ROOM:
-            return CDB2_SYNC_MODE__SYNC_ROOM;
-        case REP_SYNC_N:
-            return CDB2_SYNC_MODE__SYNC_N;
-        default:
-            return 0;
+    case REP_SYNC_FULL:
+        return CDB2_SYNC_MODE__SYNC;
+    case REP_SYNC_SOURCE:
+        return CDB2_SYNC_MODE__SYNC_SOURCE;
+    case REP_SYNC_NONE:
+        return CDB2_SYNC_MODE__ASYNC;
+    case REP_SYNC_ROOM:
+        return CDB2_SYNC_MODE__SYNC_ROOM;
+    case REP_SYNC_N:
+        return CDB2_SYNC_MODE__SYNC_N;
+    default:
+        return 0;
     }
 }
 
-static int syncmode_callback(bdb_state_type *bdb_state) {
+static int syncmode_callback(bdb_state_type *bdb_state)
+{
     return sync_state_to_protobuf(thedb->rep_sync);
 }

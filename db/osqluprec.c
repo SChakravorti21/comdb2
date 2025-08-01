@@ -40,7 +40,7 @@ static struct uprec_tag {
     size_t nbads;     /* number of bad responses recv'd from master */
     size_t ngoods;    /* number of good responses recv'd from master */
     size_t ntimeouts; /* number of timeouts */
-} * uprec;
+} *uprec;
 
 /* Offload the internal block request.
    And wait on a fake for reply inline. */

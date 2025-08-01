@@ -46,7 +46,8 @@ struct quantize {
 struct quantize *quantize_new(int step, int qmax, char *units_name)
 {
     struct quantize *q = (struct quantize *)malloc(sizeof(*q));
-    if (!q) return NULL;
+    if (!q)
+        return NULL;
     q->step = step;
     q->qmax = qmax;
     q->qnum = qmax / step;
@@ -57,7 +58,7 @@ struct quantize *quantize_new(int step, int qmax, char *units_name)
     q->maxval = 0;
     q->minval = 0;
     /* preallocate this so wwe can always safely look at the histogram */
-    q->cnts=(int*)calloc(q->qnum+1,sizeof(int));
+    q->cnts = (int *)calloc(q->qnum + 1, sizeof(int));
     return q;
 }
 
@@ -179,8 +180,8 @@ int quantize_dump(struct quantize *q, FILE *ff)
         if (maxcnt < cnt[i])
             maxcnt = cnt[i];
     logmsg(LOGMSG_USER, "<=%.4s  -- avg %-8lld -- min %-8d -- max %-8d -- count\n",
-            q->units_name, (long long)(q->sumval / q->numvals), q->minval,
-            q->maxval);
+           q->units_name, (long long)(q->sumval / q->numvals), q->minval,
+           q->maxval);
     zerosinarow = 0;
     for (i = 0; i <= q->qnum; i++) {
         if (maxcnt == 0)
@@ -252,7 +253,7 @@ void qcount_count(struct qcount *q, void *obj, int val)
         o = malloc(size);
         if (o == 0) {
             logmsg(LOGMSG_ERROR, "qcount_count:failed alloc new obj, size %d\n",
-                    size);
+                   size);
             return;
         }
         o->numvals = 0;
@@ -279,7 +280,10 @@ void qcount_count(struct qcount *q, void *obj, int val)
 }
 
 /* how many objects are tracked */
-int qcount_numobjs(struct qcount *q) { return hash_get_num_entries(q->h_objs); }
+int qcount_numobjs(struct qcount *q)
+{
+    return hash_get_num_entries(q->h_objs);
+}
 
 struct qfceargs {
     struct qcount *q;

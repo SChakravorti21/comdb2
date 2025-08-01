@@ -43,7 +43,8 @@ typedef struct cron_sched cron_sched_t;
  * Define the multiple types of schedulers
  *
  */
-enum cron_type { CRON_TIMEPART = 0, CRON_LOGICAL = 1 };
+enum cron_type { CRON_TIMEPART = 0,
+                 CRON_LOGICAL = 1 };
 
 /* this is the callback prototype for each event */
 struct cron_event;
@@ -56,10 +57,11 @@ struct cron_event {
     void *arg1; /* arguments 1-4 for "func"; note: 2-4 are for convenience */
     void *arg2;
     void *arg3;
-    void *arg4; /* NOT OWNED: NEVER FREED */
-    uuid_t source_id; /* source id, if any, used to map events to sources */
+    void *arg4;               /* NOT OWNED: NEVER FREED */
+    uuid_t source_id;         /* source id, if any, used to map events to sources */
     struct sched_if *schedif; /* implicit scheduler */
-    LINKC_T(struct cron_event) lnk;
+    LINKC_T(struct cron_event)
+    lnk;
 };
 typedef struct cron_event cron_event_t;
 

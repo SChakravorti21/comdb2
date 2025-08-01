@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include "parse_lsn.h"
 
-#define skipws(p)                                                              \
-    {                                                                          \
-        while (*p != '\0' && *p == ' ')                                        \
-            p++;                                                               \
+#define skipws(p)                       \
+    {                                   \
+        while (*p != '\0' && *p == ' ') \
+            p++;                        \
     }
 #define isnum(p) (*p >= '0' && *p <= '9')
 

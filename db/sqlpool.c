@@ -26,9 +26,9 @@ extern void rcache_destroy(void);
 
 typedef struct pool_foreach_data {
     thdpool_foreach_fn callback; /* in: foreach_all_sql_pools */
-    void *user;  /* in: foreach_all_sql_pools */
-    SBUF2 *sb;   /* in: list_all_sql_pools */
-    int64_t sum; /* out: list_all_sql_pools, get_all_sql_pool_timeouts */
+    void *user;                  /* in: foreach_all_sql_pools */
+    SBUF2 *sb;                   /* in: list_all_sql_pools */
+    int64_t sum;                 /* out: list_all_sql_pools, get_all_sql_pool_timeouts */
 } pool_foreach_data_t;
 
 static struct thdpool *sqlengine_pool = NULL;
@@ -95,13 +95,13 @@ void sqlengine_thd_end(struct thdpool *pool, struct sqlthdstate *thd)
 
 static void thdpool_sqlengine_start(struct thdpool *pool, void *thd)
 {
-    sqlengine_thd_start(pool, (struct sqlthdstate *) thd,
+    sqlengine_thd_start(pool, (struct sqlthdstate *)thd,
                         THRTYPE_SQLENGINEPOOL);
 }
 
 static void thdpool_sqlengine_end(struct thdpool *pool, void *thd)
 {
-    sqlengine_thd_end(pool, (struct sqlthdstate *) thd);
+    sqlengine_thd_end(pool, (struct sqlthdstate *)thd);
 }
 
 static void thdpool_sqlengine_dque(struct thdpool *pool, struct workitem *item,
@@ -123,7 +123,8 @@ static struct thdpool *create_sql_pool(const char *zName, int nThreads)
         (zName != NULL) ? zName : SQL_POOL_LEGACY_NAME,
         sizeof(struct sqlthdstate));
 
-    if (pool == NULL) return NULL;
+    if (pool == NULL)
+        return NULL;
 
     if (!gbl_exit_on_pthread_create_fail)
         thdpool_unset_exit(pool);
@@ -157,18 +158,20 @@ static struct thdpool *create_sql_pool(const char *zName, int nThreads)
 static int try_add_sql_pool(const char *zName, int nThreads,
                             struct thdpool *pool)
 {
-    if (pool == NULL) return -1; /* cannot add, invalid pool */
-    if (sqlengine_pool_hash == NULL)
-    {
+    if (pool == NULL)
+        return -1; /* cannot add, invalid pool */
+    if (sqlengine_pool_hash == NULL) {
         sqlengine_pool_hash = hash_init_strptr(offsetof(pool_entry_t, zName));
-        if (sqlengine_pool_hash == NULL) return -2; /* OOM (?) */
+        if (sqlengine_pool_hash == NULL)
+            return -2; /* OOM (?) */
     }
-    const char *zEntryName = (zName != NULL) ?
-        thdpool_get_name(pool) : SQL_POOL_DEFLT_NAME;
+    const char *zEntryName = (zName != NULL) ? thdpool_get_name(pool) : SQL_POOL_DEFLT_NAME;
     pool_entry_t *entry = hash_find(sqlengine_pool_hash, &zEntryName);
-    if (entry != NULL) return -3; /* cannot add, already present */
+    if (entry != NULL)
+        return -3; /* cannot add, already present */
     entry = calloc(1, sizeof(pool_entry_t));
-    if (entry == NULL) return -4; /* OOM */
+    if (entry == NULL)
+        return -4; /* OOM */
     entry->zName = zEntryName;
     entry->nThreads = nThreads; /* as specified */
     entry->pPool = pool;
@@ -200,13 +203,15 @@ struct thdpool *get_default_sql_pool(int bCreate)
         }
         Pthread_mutex_unlock(&sqlengine_pool_mutex);
     }
-    if (pool == NULL) abort(); /* NOTE: Default pool MUST exist. */
+    if (pool == NULL)
+        abort(); /* NOTE: Default pool MUST exist. */
     return pool;
 }
 
 struct thdpool *get_sql_pool(struct sqlclntstate *clnt)
 {
-    if ((clnt != NULL) && (clnt->pPool != NULL)) return clnt->pPool;
+    if ((clnt != NULL) && (clnt->pPool != NULL))
+        return clnt->pPool;
     return get_default_sql_pool(0);
 }
 
@@ -239,9 +244,11 @@ struct thdpool *get_named_sql_pool(const char *zName, int bCreate, int nThreads)
 static int get_timeout_sql_pool_func(void *obj, void *arg)
 {
     pool_entry_t *entry = (pool_entry_t *)obj;
-    if ((entry == NULL) || (entry->pPool == NULL)) return 0;
+    if ((entry == NULL) || (entry->pPool == NULL))
+        return 0;
     pool_foreach_data_t *data = (pool_foreach_data_t *)arg;
-    if (data == NULL) return 0;
+    if (data == NULL)
+        return 0;
     data->sum += thdpool_get_timeouts(entry->pPool);
     return 0;
 }
@@ -260,7 +267,8 @@ int64_t get_all_sql_pool_timeouts(void)
 static int list_all_sql_pools_func(void *obj, void *arg)
 {
     pool_entry_t *entry = (pool_entry_t *)obj;
-    if (entry == NULL) return 0;
+    if (entry == NULL)
+        return 0;
     struct thdpool *pool = entry->pPool;
     pool_foreach_data_t *data = (pool_foreach_data_t *)arg;
     SBUF2 *sb = (data != NULL) ? data->sb : NULL;
@@ -304,7 +312,8 @@ int list_all_sql_pools(SBUF2 *sb)
 static int print_sql_pool_func(void *obj, void *arg)
 {
     pool_entry_t *entry = (pool_entry_t *)obj;
-    if ((entry == NULL) || (entry->pPool == NULL)) return 0;
+    if ((entry == NULL) || (entry->pPool == NULL))
+        return 0;
     thdpool_print_stats(stdout, entry->pPool);
     return 0;
 }
@@ -321,11 +330,14 @@ void print_all_sql_pool_stats(FILE *hFile)
 static int foreach_sql_pool_func(void *obj, void *arg)
 {
     pool_entry_t *entry = (pool_entry_t *)obj;
-    if (entry == NULL) return 0;
+    if (entry == NULL)
+        return 0;
     struct thdpool *pool = entry->pPool;
-    if (pool == NULL) return 0;
+    if (pool == NULL)
+        return 0;
     pool_foreach_data_t *data = (pool_foreach_data_t *)arg;
-    if (data == NULL) return 0;
+    if (data == NULL)
+        return 0;
     Pthread_mutex_unlock(&sqlengine_pool_mutex);
     thdpool_foreach(pool, data->callback, data->user);
     Pthread_mutex_lock(&sqlengine_pool_mutex);
@@ -347,7 +359,8 @@ void foreach_all_sql_pools(thdpool_foreach_fn foreach_fn, void *user)
 static int stop_sql_pool_func(void *obj, void *arg)
 {
     pool_entry_t *entry = (pool_entry_t *)obj;
-    if ((entry == NULL) || (entry->pPool == NULL)) return 0;
+    if ((entry == NULL) || (entry->pPool == NULL))
+        return 0;
     thdpool_stop(entry->pPool);
     return 0;
 }
@@ -364,7 +377,8 @@ void stop_all_sql_pools(void)
 static int resume_sql_pool_func(void *obj, void *arg)
 {
     pool_entry_t *entry = (pool_entry_t *)obj;
-    if ((entry == NULL) || (entry->pPool == NULL)) return 0;
+    if ((entry == NULL) || (entry->pPool == NULL))
+        return 0;
     thdpool_resume(entry->pPool);
     return 0;
 }
@@ -381,7 +395,8 @@ void resume_all_sql_pools(void)
 static int destroy_sql_pool_func(void *obj, void *arg)
 {
     pool_entry_t *entry = (pool_entry_t *)obj;
-    if (entry == NULL) return 0;
+    if (entry == NULL)
+        return 0;
     /* NOTE: The "default" SQL engine pool cannot be destroyed here. */
     if ((entry->pPool != NULL) && (entry->pPool != sqlengine_pool)) {
         thdpool_destroy(&entry->pPool, SQL_POOL_STOP_TIMEOUT_US);

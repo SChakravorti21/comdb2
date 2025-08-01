@@ -34,9 +34,9 @@
 #include "net_appsock.h"
 #include "machcache.h"
 
-#define revconn_logmsg(lvl, ...)                                               \
-    do {                                                                       \
-        logmsg(lvl, "revconn: " __VA_ARGS__);                                  \
+#define revconn_logmsg(lvl, ...)              \
+    do {                                      \
+        logmsg(lvl, "revconn: " __VA_ARGS__); \
     } while (0)
 
 typedef struct reverse_conn_host_st {
@@ -45,8 +45,9 @@ typedef struct reverse_conn_host_st {
 
     pthread_t thd; // Worker thread handle
     pthread_mutex_t mu;
-    int worker_state;    // State of the worker thread
-    LINKC_T(struct reverse_conn_host_st) lnk;
+    int worker_state; // State of the worker thread
+    LINKC_T(struct reverse_conn_host_st)
+    lnk;
 } reverse_conn_host_tp;
 
 typedef LISTC_T(reverse_conn_host_tp) reverse_conn_host_list_tp;
@@ -131,9 +132,11 @@ cleanup:
     return rc;
 }
 
-int replace_tier_by_hostname(reverse_conn_host_list_tp *new_reverse_conn_hosts) {
+int replace_tier_by_hostname(reverse_conn_host_list_tp *new_reverse_conn_hosts)
+{
     reverse_conn_host_tp *new_host;
-    LISTC_FOR_EACH(new_reverse_conn_hosts, new_host, lnk) {
+    LISTC_FOR_EACH(new_reverse_conn_hosts, new_host, lnk)
+    {
         if (is_valid_mach_class(new_host->host)) {
             cdb2_hndl_tp *hndl;
             int rc;
@@ -161,7 +164,8 @@ int replace_tier_by_hostname(reverse_conn_host_list_tp *new_reverse_conn_hosts) 
 }
 
 // Work performed by a 'reverse-connection' worker thread.
-static void *reverse_connection_worker(void *args) {
+static void *reverse_connection_worker(void *args)
+{
     reverse_conn_host_tp *host = args;
     time_t last_conn_attempt = 0;
     backend_thread_event(thedb, COMDB2_THR_EVENT_START_RDONLY);
@@ -208,8 +212,8 @@ static void *reverse_connection_worker(void *args) {
 
         int rc = send_reversesql_request(host->dbname, host->host, "");
         if (rc != 0) {
-          revconn_logmsg(LOGMSG_ERROR, "%s:%d Failed to send 'reversesql' request to %s@%s\n",
-                         __func__, __LINE__, host->dbname, host->host);
+            revconn_logmsg(LOGMSG_ERROR, "%s:%d Failed to send 'reversesql' request to %s@%s\n",
+                           __func__, __LINE__, host->dbname, host->host);
         } else if (gbl_revsql_debug == 1) {
             revconn_logmsg(LOGMSG_USER, "%s:%d 'reversesql' request sent to %s@%s\n",
                            __func__, __LINE__, host->dbname, host->host);
@@ -255,7 +259,8 @@ static int add_reverse_host(const char *dbname, const char *host, reverse_conn_h
 int gbl_reverse_hosts_v2 = 0;
 
 // Refresh the 'reverse connection host' list
-static int refresh_reverse_conn_hosts() {
+static int refresh_reverse_conn_hosts()
+{
     reverse_conn_host_tp *old_host;
     reverse_conn_host_tp *new_host;
     reverse_conn_host_tp *tmp;
@@ -266,7 +271,8 @@ static int refresh_reverse_conn_hosts() {
     // Remove the 'EXITED' reverse-connection hosts from the main list.
     pthread_mutex_lock(&reverse_conn_hosts_mu);
     {
-        LISTC_FOR_EACH_SAFE(&reverse_conn_hosts, old_host, tmp, lnk) {
+        LISTC_FOR_EACH_SAFE(&reverse_conn_hosts, old_host, tmp, lnk)
+        {
             if (old_host->worker_state == REVERSE_CONN_WORKER_EXITED) {
                 if (gbl_revsql_debug == 1) {
                     revconn_logmsg(LOGMSG_USER, "%s:%d %s@%s removed from 'reverse-connection' hosts list\n",
@@ -365,9 +371,11 @@ static int refresh_reverse_conn_hosts() {
 
     // Mark all existing 'reverse-connection hosts' as 'EXITING' that are not
     // in the new list.
-    LISTC_FOR_EACH(&reverse_conn_hosts, old_host, lnk) {
+    LISTC_FOR_EACH(&reverse_conn_hosts, old_host, lnk)
+    {
         int found = 0;
-        LISTC_FOR_EACH(&new_reverse_conn_hosts, new_host, lnk) {
+        LISTC_FOR_EACH(&new_reverse_conn_hosts, new_host, lnk)
+        {
             if (strcmp(old_host->dbname, new_host->dbname) == 0 &&
                 strcmp(old_host->host, new_host->host) == 0) {
                 found = 1;
@@ -382,9 +390,11 @@ static int refresh_reverse_conn_hosts() {
     }
 
     // Add all new 'reverse-connection hosts' to the main list.
-    LISTC_FOR_EACH_SAFE(&new_reverse_conn_hosts, new_host, tmp, lnk) {
+    LISTC_FOR_EACH_SAFE(&new_reverse_conn_hosts, new_host, tmp, lnk)
+    {
         int found = 0;
-        LISTC_FOR_EACH(&reverse_conn_hosts, old_host, lnk) {
+        LISTC_FOR_EACH(&reverse_conn_hosts, old_host, lnk)
+        {
             if (strcmp(old_host->dbname, new_host->dbname) == 0 &&
                 strcmp(old_host->host, new_host->host) == 0) {
                 found = 1;
@@ -413,7 +423,8 @@ err:
     return rc;
 }
 
-static void *reverse_connection_manager(void *args) {
+static void *reverse_connection_manager(void *args)
+{
     int rc = 0;
     static time_t last_refreshed = 0;
 
@@ -444,7 +455,8 @@ static void *reverse_connection_manager(void *args) {
 
         pthread_mutex_lock(&reverse_conn_hosts_mu);
         {
-            LISTC_FOR_EACH(&reverse_conn_hosts, host, lnk) {
+            LISTC_FOR_EACH(&reverse_conn_hosts, host, lnk)
+            {
                 rc = 0;
 
                 pthread_mutex_lock(&host->mu);
@@ -467,7 +479,8 @@ static void *reverse_connection_manager(void *args) {
     return 0;
 }
 
-int start_reverse_connections_manager() {
+int start_reverse_connections_manager()
+{
     if (reverse_conn_manager_running == 1) {
         revconn_logmsg(LOGMSG_ERROR, "Reverse connections manager thread is already running!\n");
         return 0;
@@ -488,7 +501,8 @@ int start_reverse_connections_manager() {
     return 0;
 }
 
-int stop_reverse_connections_manager() {
+int stop_reverse_connections_manager()
+{
     int rc = 0;
 
     if (reverse_conn_manager_running == 0) {
@@ -509,27 +523,34 @@ int stop_reverse_connections_manager() {
     return 0;
 }
 
-static char *state2str(int worker_state) {
-    switch(worker_state) {
-    case REVERSE_CONN_WORKER_NEW: return "new";
-    case REVERSE_CONN_WORKER_RUNNING: return "running";
-    case REVERSE_CONN_WORKER_EXITING: return "exiting";
-    case REVERSE_CONN_WORKER_EXITED: return "exited";
+static char *state2str(int worker_state)
+{
+    switch (worker_state) {
+    case REVERSE_CONN_WORKER_NEW:
+        return "new";
+    case REVERSE_CONN_WORKER_RUNNING:
+        return "running";
+    case REVERSE_CONN_WORKER_EXITING:
+        return "exiting";
+    case REVERSE_CONN_WORKER_EXITED:
+        return "exited";
     }
     return "unknown";
 }
 
-int dump_reverse_connection_host_list() {
+int dump_reverse_connection_host_list()
+{
     reverse_conn_host_tp *host;
 
     revconn_logmsg(LOGMSG_USER, "Reverse-connection host list:\n");
     pthread_mutex_lock(&reverse_conn_hosts_mu);
     {
-        LISTC_FOR_EACH(&reverse_conn_hosts, host, lnk) {
+        LISTC_FOR_EACH(&reverse_conn_hosts, host, lnk)
+        {
             pthread_mutex_lock(&host->mu);
             {
                 revconn_logmsg(LOGMSG_USER, "dbname: %s host: %s worker state: %s\n",
-                       host->dbname, host->host, state2str(host->worker_state));
+                               host->dbname, host->host, state2str(host->worker_state));
             }
             pthread_mutex_unlock(&host->mu);
         }

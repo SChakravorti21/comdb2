@@ -18,7 +18,7 @@
 #define INCLUDE_SC_IMPORT_H
 
 int do_import(struct ireq *iq, struct schema_change_type *s,
-                   tran_type *tran);
+              tran_type *tran);
 int finalize_import(struct ireq *iq, struct schema_change_type *s,
-                         tran_type *transac);
+                    tran_type *transac);
 #endif

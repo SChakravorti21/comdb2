@@ -42,9 +42,9 @@
 struct sess_impl {
     int clients; /* number of threads using the session */
 
-    unsigned dispatched : 1; /* Set when session is dispatched to handle_buf */
-    unsigned terminate : 1;  /* Set when this session is about to be terminated */
-    unsigned socket : 1;     /* Set if request comes over socket instead of net */
+    unsigned dispatched : 1;   /* Set when session is dispatched to handle_buf */
+    unsigned terminate : 1;    /* Set when this session is about to be terminated */
+    unsigned socket : 1;       /* Set if request comes over socket instead of net */
     unsigned embedded_sql : 1; /* Set if sql is part of session malloc object */
 
     pthread_mutex_t mtx; /* dispatched/terminate/clients protection */
@@ -111,12 +111,10 @@ osql_sess_t *osql_sess_create_socket(const char *sql, char *tzname, int type,
                              is_reorder_on);
 }
 
-
 static inline int is_sess_from_sockbplog(osql_sess_t *sess)
 {
     return !!sess->impl->socket;
 }
-
 
 /**
  * Terminates an in-use osql session (for which we could potentially
@@ -163,7 +161,6 @@ int osql_sess_close(osql_sess_t **psess, int is_linked)
     return 0;
 }
 
-
 static void _free_participants(osql_sess_t *sess)
 {
     struct participant *p = NULL;
@@ -206,7 +203,7 @@ static void _destroy_session(osql_sess_t **psess)
     if (!sess->impl->embedded_sql)
         free((char *)sess->sql);
 #ifndef NDEBUG
-      memset(sess, 0xdb, sizeof(osql_sess_t) + sizeof(sess_impl_t));
+    memset(sess, 0xdb, sizeof(osql_sess_t) + sizeof(sess_impl_t));
 #endif
     free(sess); // sess->impl is freed thru this free
 
@@ -410,7 +407,6 @@ int osql_sess_rcvop(uuid_t uuid, int type, void *data, int datalen, int *found)
     int rc = 0;
     int is_msg_done = 0;
     struct errstat *perr = NULL;
-
 
     /* get the session; dispatched sessions are ignored */
     osql_sess_t *sess = osql_repository_get(uuid);
@@ -724,7 +720,7 @@ int osql_sess_save_sc(osql_sess_t *sess, char *rpl, int rplen)
     sc = osqlcomm_get_schemachange(rpl, rplen);
     if (!sc) {
         logmsg(LOGMSG_ERROR, "%s:%d failed to read schema change object\n",
-                __func__, __LINE__);
+               __func__, __LINE__);
         return -1;
     }
 
@@ -740,7 +736,8 @@ static void _destroy_schema_changes(osql_sess_t *sess)
 {
     struct schema_change_type *sc = NULL, *tmp = NULL;
 
-    LISTC_FOR_EACH_SAFE(&sess->scs, sc, tmp, scs_lnk) {
+    LISTC_FOR_EACH_SAFE(&sess->scs, sc, tmp, scs_lnk)
+    {
         listc_rfl(&sess->scs, sc);
         free_schema_change_type(sc);
     }
@@ -757,7 +754,7 @@ static int _write_sc_list(sc_list_t *scl)
         goto done;
     }
 
-    uint8_t *p_buf = (uint8_t*)payload;
+    uint8_t *p_buf = (uint8_t *)payload;
     uint8_t *p_buf_end = p_buf + payload_len;
 
     p_buf = osqlcomm_scl_put(scl, p_buf, p_buf_end);
@@ -772,7 +769,7 @@ static int _write_sc_list(sc_list_t *scl)
     osqlcomm_scl_put_key(scl, key, key + sizeof(key));
 
     int bdberr = 0;
-    rc = bdb_llmeta_set_schema_change_list(NULL, (char*)key, sizeof(key),
+    rc = bdb_llmeta_set_schema_change_list(NULL, (char *)key, sizeof(key),
                                            payload, payload_len, &bdberr);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s failed to write sc list rc %d bdberr %d\n",
@@ -799,7 +796,7 @@ int osql_delete_sc_list(uuid_t uuid, tran_type *trans)
     osqlcomm_scl_put_key(&scl, key, key + sizeof(key));
 
     int bdberr = 0;
-    rc = bdb_llmeta_set_schema_change_list(trans, (char*)key, sizeof(key),
+    rc = bdb_llmeta_set_schema_change_list(trans, (char *)key, sizeof(key),
                                            NULL, 0, &bdberr);
     if (rc) {
         logmsg(LOGMSG_ERROR, "%s uuid %s failed to delete sc list rc %d bdberr %d\n",

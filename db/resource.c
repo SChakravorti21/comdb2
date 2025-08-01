@@ -44,7 +44,8 @@ struct resource {
     char *name;
     char *filepath;
 
-    LINKC_T(struct resource) link;
+    LINKC_T(struct resource)
+    link;
 };
 
 static char *lrlname = NULL;

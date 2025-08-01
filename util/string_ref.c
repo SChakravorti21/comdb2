@@ -35,17 +35,19 @@ struct string_ref {
     size_t len;
     const char *func;
     int line;
-    LINKC_T(struct string_ref) lnk;
+    LINKC_T(struct string_ref)
+    lnk;
     int stackid;
     char str[1];
 };
 
 static int inited = 0;
-LISTC_T(struct string_ref) sr_list;
+LISTC_T(struct string_ref)
+sr_list;
 
 /* Makes a copy of the string passed and uses that as a reference counted object
  */
-struct string_ref * create_string_ref_internal(const char *str, const char *func, int line)
+struct string_ref *create_string_ref_internal(const char *str, const char *func, int line)
 {
     assert(str);
     size_t len = strlen(str);
@@ -69,11 +71,11 @@ struct string_ref * create_string_ref_internal(const char *str, const char *func
 }
 
 /* Get a reference by increasing the count */
-struct string_ref * get_ref(struct string_ref *ref)
+struct string_ref *get_ref(struct string_ref *ref)
 {
     assert(ref);
     int cnt = ATOMIC_ADD32(ref->cnt, 1);
-    if(cnt <= 1) // create has a reference, this can only be > 1
+    if (cnt <= 1) // create has a reference, this can only be > 1
         abort();
 
     return ref;

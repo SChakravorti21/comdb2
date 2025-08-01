@@ -80,7 +80,10 @@ const char *get_my_mach_class_str(void)
     return mach_class_class2name(get_my_mach_class());
 }
 
-enum mach_class get_mach_class(const char *host) { return machine_class(host); }
+enum mach_class get_mach_class(const char *host)
+{
+    return machine_class(host);
+}
 
 const char *get_mach_class_str(char *host)
 {

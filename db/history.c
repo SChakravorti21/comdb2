@@ -135,40 +135,40 @@ void hist_dump(history *h, unsigned int skip, unsigned int count)
     }
 }
 
-#define search_hist(A)                                                         \
-    static void search_history_##A(history *h, int minval, int maxval,         \
-                                   int count, int skip)                        \
-    {                                                                          \
-        int i;                                                                 \
-        history_request *req;                                                  \
-        int cnt = 0;                                                           \
-        int need_header = 1;                                                   \
-        for (i = mod(h->tail - skip - 1, h->size); cnt < count;                \
-             i = mod(i - 1, h->size)) {                                        \
-            if ((((cnt + 1) % 10) == 1) && need_header == 1) {                 \
-                hist_print_header(h);                                          \
-                need_header = 0;                                               \
-            }                                                                  \
-            req = h->hist[i];                                                  \
-            if (minval == -1 && maxval != -1 && req->A <= maxval) {            \
-                cnt++;                                                         \
-                need_header = 1;                                               \
-                hist_print_event(h, req);                                      \
-            }                                                                  \
-            if (minval != -1 && maxval == -1 && req->A >= minval) {            \
-                need_header = 1;                                               \
-                cnt++;                                                         \
-                hist_print_event(h, req);                                      \
-            }                                                                  \
-            if (minval != -1 && maxval != -1 && req->A >= minval &&            \
-                req->A <= maxval) {                                            \
-                need_header = 1;                                               \
-                cnt++;                                                         \
-                hist_print_event(h, req);                                      \
-            }                                                                  \
-            if (i == h->head)                                                  \
-                break;                                                         \
-        }                                                                      \
+#define search_hist(A)                                                 \
+    static void search_history_##A(history *h, int minval, int maxval, \
+                                   int count, int skip)                \
+    {                                                                  \
+        int i;                                                         \
+        history_request *req;                                          \
+        int cnt = 0;                                                   \
+        int need_header = 1;                                           \
+        for (i = mod(h->tail - skip - 1, h->size); cnt < count;        \
+             i = mod(i - 1, h->size)) {                                \
+            if ((((cnt + 1) % 10) == 1) && need_header == 1) {         \
+                hist_print_header(h);                                  \
+                need_header = 0;                                       \
+            }                                                          \
+            req = h->hist[i];                                          \
+            if (minval == -1 && maxval != -1 && req->A <= maxval) {    \
+                cnt++;                                                 \
+                need_header = 1;                                       \
+                hist_print_event(h, req);                              \
+            }                                                          \
+            if (minval != -1 && maxval == -1 && req->A >= minval) {    \
+                need_header = 1;                                       \
+                cnt++;                                                 \
+                hist_print_event(h, req);                              \
+            }                                                          \
+            if (minval != -1 && maxval != -1 && req->A >= minval &&    \
+                req->A <= maxval) {                                    \
+                need_header = 1;                                       \
+                cnt++;                                                 \
+                hist_print_event(h, req);                              \
+            }                                                          \
+            if (i == h->head)                                          \
+                break;                                                 \
+        }                                                              \
     }
 
 search_hist(fromnode) search_hist(frompid) search_hist(master)
@@ -258,7 +258,10 @@ usage:
     return;
 }
 
-int hist_is_empty(history *hist) { return hist->total == 0; }
+int hist_is_empty(history *hist)
+{
+    return hist->total == 0;
+}
 
 int hist_num_entries(history *h)
 {

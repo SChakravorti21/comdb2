@@ -100,7 +100,7 @@ static int portmux_route_to(struct in_addr in, const char *app,
                             int timeoutms);
 static int portmux_poll(portmux_fd_t *fds, int timeoutms,
                         void (*accept_hndl)(int fd, void *user_data),
-                          void *user_data, struct sockaddr_in *);
+                        void *user_data, struct sockaddr_in *);
 static int portmux_poll_v(portmux_fd_t **fds, nfds_t nfds, int timeoutms,
                           int (*accept_hndl)(int which, int fd,
                                              void *user_data),
@@ -134,8 +134,8 @@ static void portmux_validate_name(const char *name, const char *caller)
     }
     if (found_non_trailing_whitespace) {
         logmsg(LOGMSG_ERROR, "API_MISUSE_ALMN: %s called with name '%s' which "
-                        "contains whitespace\n",
-                caller, name);
+                             "contains whitespace\n",
+               caller, name);
     }
 }
 
@@ -302,7 +302,7 @@ static int portmux_get_int(const struct in_addr *in, const char *remote_host,
         fd = tcpconnecth_to(remote_host, get_portmux_port(), 0, timeout_ms);
     } else {
         logmsg(LOGMSG_ERROR, "%s: INTERNAL ERROR - neither in nor remote_host set\n",
-                __func__);
+               __func__);
         return -1;
     }
     if (fd < 0)
@@ -325,7 +325,7 @@ static int portmux_get_int(const struct in_addr *in, const char *remote_host,
         rc = setsockopt(fd, SOL_SOCKET, SO_LINGER, &lg, sizeof(struct linger));
         if (rc == -1) {
             logmsg(LOGMSG_ERROR, "%s: setsockopt(SO_LINGER) failed: %s\n", __func__,
-                    strerror(errno));
+                   strerror(errno));
         }
     }
 
@@ -366,14 +366,14 @@ static int portmux_get_int(const struct in_addr *in, const char *remote_host,
         tok = strtok_r(NULL, delims, &lasts);
         if (!tok) {
             logmsg(LOGMSG_ERROR, "%s: service name missing from response\n",
-                    __func__);
+                   __func__);
             return -1;
         }
         if (strcmp(tok, name) != 0) {
-            logmsg(LOGMSG_ERROR, 
-                    "%s: mismatched response from portmux for request '%s'"
-                    " - got '%s'\n",
-                    __func__, name, tok);
+            logmsg(LOGMSG_ERROR,
+                   "%s: mismatched response from portmux for request '%s'"
+                   " - got '%s'\n",
+                   __func__, name, tok);
             return -1;
         }
     }
@@ -547,14 +547,14 @@ static int portmux_get_unix_socket(const char *unix_bind_path)
     listenfd = socket(AF_UNIX, SOCK_STREAM, 0 /*default proto*/);
     if (listenfd < 0) {
         logmsg(LOGMSG_ERROR, "%s:%d error socket errno=[%d] %s\n", __func__,
-                __LINE__, errno, strerror(errno));
+               __LINE__, errno, strerror(errno));
         return -1;
     }
 
     /*bind to give a name to our unix socket*/
     if (unlink(unix_bind_path) == -1 && (errno != ENOENT)) {
         logmsg(LOGMSG_ERROR, "%s:%d warning unlinking '%s' errno=[%d] %s\n",
-                __func__, __LINE__, unix_bind_path, errno, strerror(errno));
+               __func__, __LINE__, unix_bind_path, errno, strerror(errno));
     }
 
     memset(&addr, 0, sizeof(addr));
@@ -562,7 +562,7 @@ static int portmux_get_unix_socket(const char *unix_bind_path)
     len = strlen(unix_bind_path);
     if (len >= sizeof(addr.sun_path)) {
         logmsg(LOGMSG_ERROR, "%s:%d Filename too long: %s\n", __func__, __LINE__,
-                unix_bind_path);
+               unix_bind_path);
         return -1;
     }
     strncpy(addr.sun_path, unix_bind_path, sizeof(addr.sun_path) - 1);
@@ -570,12 +570,12 @@ static int portmux_get_unix_socket(const char *unix_bind_path)
 
     if (fcntl(listenfd, F_SETFD, 1 /*TRUE: close-on-exec*/) < 0) {
         logmsg(LOGMSG_ERROR, "%s:%d erro fcntl(F_SETFD) errno[%d]=%s\n", __func__,
-                __LINE__, errno, strerror(errno));
+               __LINE__, errno, strerror(errno));
     }
 
     if (bind(listenfd, (const struct sockaddr *)&addr, len) == -1) {
         logmsg(LOGMSG_ERROR, "%s:%d error bind errno=[%d] %s\n", __func__, __LINE__,
-                errno, strerror(errno));
+               errno, strerror(errno));
     }
     unlink(unix_bind_path); /*unneeded now*/
 
@@ -701,9 +701,9 @@ static int portmux_recover_route(portmux_fd_t *fds)
         if (port != fds->port) {
             if (fds->port != 0) {
                 logmsg(LOGMSG_ERROR, "%s:%d portmux port# inconsistency: "
-                                "myport# %d newport# %d for <%s/%s/%s>\n",
-                        __func__, __LINE__, fds->port, port, fds->app,
-                        fds->service, fds->instance);
+                                     "myport# %d newport# %d for <%s/%s/%s>\n",
+                       __func__, __LINE__, fds->port, port, fds->app,
+                       fds->service, fds->instance);
             }
 
             if (fds->tcplistenfd >= 0) {
@@ -722,8 +722,8 @@ static int portmux_recover_route(portmux_fd_t *fds)
             /*set close-on-exec*/
             if (fcntl(fds->tcplistenfd, F_SETFD, 1) < 0) {
                 logmsg(LOGMSG_ERROR, "%s:%d error "
-                                "fcntl(F_SETFD) errno[%d]=%s\n",
-                        __func__, __LINE__, errno, strerror(errno));
+                                     "fcntl(F_SETFD) errno[%d]=%s\n",
+                       __func__, __LINE__, errno, strerror(errno));
             }
         }
     }
@@ -761,8 +761,8 @@ static int portmux_handle_recover(portmux_fd_t *fds, int timeoutms)
     while ((rc = portmux_recover_route(fds)) != 0) {
         if (fds->nretries == 1) {
             logmsg(LOGMSG_ERROR, "%s:%d no connectivity with portmux "
-                            "for <%s/%s/%s> ... recovering ...\n",
-                    __func__, __LINE__, fds->app, fds->service, fds->instance);
+                                 "for <%s/%s/%s> ... recovering ...\n",
+                   __func__, __LINE__, fds->app, fds->service, fds->instance);
         }
         /*this is bad: no connection at all, wait a bit
          *and try connecting again */
@@ -777,8 +777,8 @@ static int portmux_handle_recover(portmux_fd_t *fds, int timeoutms)
         sleep(1);
         if ((fds->nretries % 10) == 0) {
             logmsg(LOGMSG_ERROR, "%s:%d WARNING connectivity with "
-                            "portmux still not established for <%s/%s/%s>\n",
-                    __func__, __LINE__, fds->app, fds->service, fds->instance);
+                                 "portmux still not established for <%s/%s/%s>\n",
+                   __func__, __LINE__, fds->app, fds->service, fds->instance);
         }
         /* retry */
         ++fds->nretries;
@@ -799,8 +799,11 @@ static int portmux_handle_recover(portmux_fd_t *fds, int timeoutms)
 /* we read/write the request and response values as a single byte to avoid
  * endian and size issues.
  */
-enum request { V_WHO = 1, V_NAK = 2, V_ACK = 3 };
-enum response { V_NONE = 0, V_ID = 1 };
+enum request { V_WHO = 1,
+               V_NAK = 2,
+               V_ACK = 3 };
+enum response { V_NONE = 0,
+                V_ID = 1 };
 
 static bool portmux_client_side_validation(int fd, const char *app,
                                            const char *service,
@@ -883,26 +886,26 @@ static bool portmux_client_side_validation(int fd, const char *app,
                  */
                 char buf[512];
                 if (size < sizeof(uint32_t) + 6 || size > sizeof(buf)) {
-                    logmsg(LOGMSG_ERROR, 
-                            "%s: Bad size (%u) received from server %s.\n",
-                            __func__, size, dotted_quad);
+                    logmsg(LOGMSG_ERROR,
+                           "%s: Bad size (%u) received from server %s.\n",
+                           __func__, size, dotted_quad);
                 } else if (tcpread(fd, buf, size,
                                    remaining_timeoutms(startms, timeoutms)) !=
                            size) {
-                    logmsg(LOGMSG_ERROR, 
-                            "%s: failed to tcpread %u byte buffer from %s.\n",
-                            __func__, size, dotted_quad);
+                    logmsg(LOGMSG_ERROR,
+                           "%s: failed to tcpread %u byte buffer from %s.\n",
+                           __func__, size, dotted_quad);
                 } else if (buf[size - 1] != '\0') {
                     int len = (size > 32) ? 32 : size;
                     logmsg(LOGMSG_ERROR, "%s: %d byte buffer from %s ends with %d, "
-                                    "expected a nul.  First %d bytes are '",
-                            __func__, size, dotted_quad, buf[size - 1], len);
+                                         "expected a nul.  First %d bytes are '",
+                           __func__, size, dotted_quad, buf[size - 1], len);
                     for (int ii = 0; ii < len; ++ii) {
                         if (isprint(buf[ii])) {
                             fputc(buf[ii], stderr);
                         } else {
                             logmsg(LOGMSG_ERROR, "\\%03o",
-                                    ((unsigned char)buf[ii]) & 0xff);
+                                   ((unsigned char)buf[ii]) & 0xff);
                         }
                     }
                     logmsg(LOGMSG_ERROR, "'\n");
@@ -926,15 +929,15 @@ static bool portmux_client_side_validation(int fd, const char *app,
                     if (app_s == NULL || service_s == NULL ||
                         instance_s == NULL) {
                         logmsg(LOGMSG_ERROR, "%s: Badly formed app/service/instance "
-                                        "received from server %s.\n",
-                                __func__, dotted_quad);
+                                             "received from server %s.\n",
+                               __func__, dotted_quad);
                     } else if (strcmp(app, app_s) != 0 ||
                                strcmp(service, service_s) != 0 ||
                                strcmp(instance, instance_s) != 0) {
                         logmsg(LOGMSG_ERROR, "%s: Wanted '%s/%s/%s' but connected "
-                                        "to '%s/%s/%s' on %s\n",
-                                __func__, app, service, instance, app_s,
-                                service_s, instance_s, dotted_quad);
+                                             "to '%s/%s/%s' on %s\n",
+                               __func__, app, service, instance, app_s,
+                               service_s, instance_s, dotted_quad);
                     } else {
                         request = V_ACK;
                         next_state = 100;
@@ -961,9 +964,9 @@ static bool portmux_client_side_validation(int fd, const char *app,
                            remaining_timeoutms(startms, timeoutms)) != 1) {
                 return false;
             } else if (actual_response != expected_response) {
-                logmsg(LOGMSG_ERROR, 
-                    "%s: Response from %s was %d but I expected %d\n",
-                    __func__, dotted_quad, actual_response, expected_response);
+                logmsg(LOGMSG_ERROR,
+                       "%s: Response from %s was %d but I expected %d\n",
+                       __func__, dotted_quad, actual_response, expected_response);
                 return false;
             }
         }
@@ -1238,7 +1241,8 @@ static int portmux_handle_recover_v(portmux_fd_t *fds)
     /* See if we can connect to pmux. */
     if (reconnect_callback) {
         rc = reconnect_callback(reconnect_callback_arg);
-        if (rc) return rc;
+        if (rc)
+            return rc;
     }
 
     fds->nretries += 1;
@@ -1247,13 +1251,13 @@ static int portmux_handle_recover_v(portmux_fd_t *fds)
     if ((rc = portmux_recover_route(fds)) != 0) {
         if (fds->nretries == 1) {
             logmsg(LOGMSG_ERROR, "%s:%d no connectivity with portmux "
-                            "for <%s/%s/%s> ... recovering ...\n",
-                    __func__, __LINE__, fds->app, fds->service, fds->instance);
+                                 "for <%s/%s/%s> ... recovering ...\n",
+                   __func__, __LINE__, fds->app, fds->service, fds->instance);
         }
         if ((fds->nretries % 10) == 0) {
             logmsg(LOGMSG_ERROR, "%s:%d WARNING connectivity with "
-                            "portmux still not established for <%s/%s/%s>\n",
-                    __func__, __LINE__, fds->app, fds->service, fds->instance);
+                                 "portmux still not established for <%s/%s/%s>\n",
+                   __func__, __LINE__, fds->app, fds->service, fds->instance);
         }
         ++fds->nretries;
     }
@@ -1289,7 +1293,7 @@ static int portmux_poll_v(portmux_fd_t **fds, nfds_t nfds, int timeoutms,
     struct polldata {
         bool is_tcp;
         nfds_t slot;
-    } * polldata;
+    } *polldata;
 
     /* I used to determine the exact number of file descriptors we will be
      * polling by inspecting fds[]; however, it seems much safer
@@ -1480,8 +1484,8 @@ static int portmux_poll_v(portmux_fd_t **fds, nfds_t nfds, int timeoutms,
                         }
                     }
                     socklen_t addrlen = sizeof(struct sockaddr_in);
-                    int rc = getpeername(clientfd, (struct sockaddr*) cliaddr, &addrlen);
-                    if (rc ) {
+                    int rc = getpeername(clientfd, (struct sockaddr *)cliaddr, &addrlen);
+                    if (rc) {
                         close(clientfd);
                         clientfd = -1;
                     }
@@ -1549,9 +1553,9 @@ portmux_fd_t *portmux_listen_options_setup(const char *app, const char *service,
             } else {
                 tcplistenfd = -1;
             }
-        } else if (listenfd  < 0) {
+        } else if (listenfd < 0) {
             logmsg(LOGMSG_ERROR, "%s:%d portmux listen errno=[%d] %s\n", __func__,
-                    __LINE__, errno, strerror(errno));
+                   __LINE__, errno, strerror(errno));
             return NULL;
         }
     }
@@ -1561,7 +1565,7 @@ portmux_fd_t *portmux_listen_options_setup(const char *app, const char *service,
         port = portmux_register(app, service, instance);
         if (port < 0) {
             logmsg(LOGMSG_ERROR, "%s:%d portmux_register(%s, %s, %s) failure\n",
-                    __func__, __LINE__, app, service, instance);
+                   __func__, __LINE__, app, service, instance);
             return NULL;
         }
 
@@ -1569,7 +1573,7 @@ portmux_fd_t *portmux_listen_options_setup(const char *app, const char *service,
         tcplistenfd = tcplisten(port);
         if (tcplistenfd < 0) {
             logmsg(LOGMSG_ERROR, "%s:%d tpclisten errno=[%d] %s\n", __func__,
-                    __LINE__, errno, strerror(errno));
+                   __LINE__, errno, strerror(errno));
             return NULL;
         }
     }
@@ -1603,7 +1607,7 @@ portmux_fd_t *portmux_listen_options_setup(const char *app, const char *service,
         /*set close-on-exec*/
         if (fcntl(fds->tcplistenfd, F_SETFD, 1) < 0) {
             logmsg(LOGMSG_ERROR, "%s:%d erro fcntl(F_SETFD) errno[%d]=%s\n",
-                    __func__, __LINE__, errno, strerror(errno));
+                   __func__, __LINE__, errno, strerror(errno));
         }
     }
 
@@ -1837,25 +1841,30 @@ int portmux_hello(char *host, char *name, int *fdout)
     int fd;
     int rc;
 
-    if (fdout) *fdout = -1;
+    if (fdout)
+        *fdout = -1;
 
     rc = tcpresolve(host, &addr, &port);
-    if (rc) return rc;
+    if (rc)
+        return rc;
 
     fd = tcpconnect_to(addr, get_portmux_port(), 0, 5000);
-    if (fd == -1) return 1;
+    if (fd == -1)
+        return 1;
     portmux_denagle(fd);
 
     SBUF2 *sb = sbuf2open(fd, SBUF2_WRITE_LINE | SBUF2_NO_CLOSE_FD);
     sbuf2printf(sb, "hello %s\n", name);
     rc = sbuf2flush(sb);
-    if (rc < 0) return 2;
+    if (rc < 0)
+        return 2;
     char line[10];
     /* The reponse is always ok. We read it to make sure
      * pmux had a chance to register us. */
     sbuf2gets(line, sizeof(line), sb);
     sbuf2close(sb);
-    if (fdout) *fdout = fd;
+    if (fdout)
+        *fdout = fd;
     return 0;
 }
 
