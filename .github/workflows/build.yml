@@ -3,7 +3,7 @@ name: Build
 on:
   # Run anytime a new commit is pushed to main.
   push:
-    branches: [main]
+    branches: [tcl]
 
   # Run on every PR that is opened against main.
   pull_request:
@@ -95,6 +95,8 @@ jobs:
             ncurses-dev          \
             protobuf-c-compiler  \
             tcl                  \
+            tcl-dev              \
+            tk-dev               \
             uuid-dev             \
             zlib1g-dev
 
