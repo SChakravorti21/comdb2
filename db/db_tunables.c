@@ -603,6 +603,9 @@ int64_t gbl_test_tunable_int64_signed_limit = INT64_MAX;
 int gbl_always_request_log_req = 0;
 int gbl_nudge_replication_when_idle = 0;
 
+/* berkdb/rep/rep_record.c */
+extern int gbl_debug_always_reload_schemas_after_recovery;
+
 int parse_int64(const char *value, int64_t *num);
 
 /*
