@@ -3241,6 +3241,7 @@ static int get_prepared_stmt_int(struct sqlthdstate *thd,
     int prepareOnly = (flags & PREPARE_ONLY);
 
     int rc = sqlengine_prepare_engine(thd, clnt, flags);
+    thd->sqldb->flags |= SQLITE_VdbeTrace;
 
     if (thd->sqldb == NULL) {
         return handle_bad_engine(clnt);

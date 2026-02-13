@@ -396,7 +396,12 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   i64 iValue;
   u8 enc = pRec->enc;
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real))==MEM_Str );
-  if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
+  int rc;
+  if( (rc = sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)) == 0 ) {
+    return;
+  } else {
+    printf("rc=%d\n", rc);
+  }
   if( 0==sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
     pRec->u.i = iValue;
     pRec->flags |= MEM_Int;
@@ -752,7 +757,7 @@ static void registerTrace(int iReg, Mem *p){
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) || defined(SQLITE_DEBUG) */
 
 #ifdef SQLITE_DEBUG
-#  define REGISTER_TRACE(R,M) if(db->flags&SQLITE_VdbeTrace)registerTrace(R,M)
+#  define REGISTER_TRACE(R,M) registerTrace(R,M)
 #else
 #  define REGISTER_TRACE(R,M)
 #endif

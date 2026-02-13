@@ -1,0 +1,138 @@
+Non-registered tunable 'dbnum'.
+unknown opcode 'dbnum' in lrl /tmp/riageodb/riageodb.lrl
+thedb_set_master: (null) -> (null)
+FULL CLUSTER CACHE COHERENCY
+LOG DELETE ENABLED
+LOG DELETE POLICY: delete all eligible log files
+thedb_set_master: (null) -> .invalid
+Recovery pass #0
+ .. done
+Recovery pass #1
+running forward pass from 1:3496550 -> 1:3521986
+ 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100% .. done
+Recovery pass #2
+running backward pass from 1:3496550 <- 1:3521986
+ 0% 10% 20% 30% 40% 50% 60% 70% 80% 90% 100% .. done
+Recovery pass #3
+running forward pass from 1:3496506 -> 1:3521986
+ 0%__txn_ckp_recover line 1097 setting rep->gen from 0 to 30, egen from 1 to 31
+__txn_ckp_recover line 1098 setting rep->log_gen from 0 to 30
+ 10% 20% 30% 40% 50% 60% 70% 80% 90% 100% .. done
+Libevent:2.1.12-stable method:epoll
+__rep_start line 346 setting rep->gen from 30 to 31, egen from 31 to 32
+__rep_start line 365 setting rep->gen from 31 to 32, egen from 32 to 33
+__rep_start line 386 setting rep->log_gen from 30 to 32
+unix_connect fd:79
+process_reg_reply: svc:replication accepting on unix socket fd:79
+bdb_open_int line 6021 calling rep_start as master with egen 32
+new_master_callback_int:  master:.invalid->schakravorti-cc1b64  old-gen:0->32  old-egen:0->33
+I AM NEW MASTER NODE schakravorti-cc1b64
+Collecting table aliases
+user authentication disabled (bdberr: 15)
+
+VDBE Trace:
+   0 Init             0   21    0               00 Start at 21
+  21 Transaction      0    0    0 0             01 usesStmtJournal=0
+  22 Goto             0    1    0               00 
+   1 Null             0    1    1               00 r[1..1]=NULL
+REG[1] =  NULL
+   2 OpenRead         1   18    0 k(4,,,-,)     00 root=18 iDb=0; $RISK_KEY_415677C4
+   3 ColumnsUsed      1    0    0 2             00 
+   4 Explain          4    0    0 SEARCH TABLE company_location_mapping AS clm USING COVERING INDEX $RISK_KEY_415677C4 (ANY(risk_location) AND id_bb_company=?) (~1152 rows) 00 
+   5 Rewind           1   16    0               00 begin skip-scan on $RISK_KEY_415677C4
+   6 Goto             0    8    0               00 
+   8 Column           1    0    2               00 r[2]=risk_location
+REG[2] =   s2[BR](8)
+   9 String8          0    3    0  ohai         00 r[3]=' ohai '
+REG[3] =   t6[ ohai ](8)
+  10 Affinity         2    2    0 BK            00 affinity(r[2..3])
+  11 SeekGE           1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[BR](8)
+[ERROR] debug: sqlite<->comdb2 numeric conversion mismatch
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[BR](8)
+REG[3] =   t6[ ohai ](8)
+  13 AggStep          0    0    1 count(0)      00 accum=r[1] step(r[0])
+  14 Next             1   12    0               00 
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[BR](8)
+REG[3] =   t6[ ohai ](8)
+  15 Goto             0    7    0               00 next skip-scan on $RISK_KEY_415677C4
+   7 SeekGT           1   16    2 1             800 key=r[2]
+REG[2] =   s2[BR](8)
+   8 Column           1    0    2               00 r[2]=risk_location
+REG[2] =   s2[DK](8)
+   9 String           6    3    0  ohai         00 r[3]=' ohai ' (len=6)
+REG[3] =   t6[ ohai ](8)
+  10 Affinity         2    2    0 BK            00 affinity(r[2..3])
+  11 SeekGE           1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[DK](8)
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[DK](8)
+REG[3] =   t6[ ohai ](8)
+  13 AggStep1         0    0    1 count(0)      00 accum=r[1] step(r[0])
+  14 Next             1   12    0               00 
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[DK](8)
+REG[3] =   t6[ ohai ](8)
+  15 Goto             0    7    0               00 next skip-scan on $RISK_KEY_415677C4
+   7 SeekGT           1   16    2 1             800 key=r[2]
+REG[2] =   s2[DK](8)
+   8 Column           1    0    2               00 r[2]=risk_location
+REG[2] =   s2[GB](8)
+   9 String           6    3    0  ohai         00 r[3]=' ohai ' (len=6)
+REG[3] =   t6[ ohai ](8)
+  10 Affinity         2    2    0 BK            00 affinity(r[2..3])
+  11 SeekGE           1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[GB](8)
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[GB](8)
+REG[3] =   t6[ ohai ](8)
+  13 AggStep1         0    0    1 count(0)      00 accum=r[1] step(r[0])
+  14 Next             1   12    0               00 
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[GB](8)
+REG[3] =   t6[ ohai ](8)
+  15 Goto             0    7    0               00 next skip-scan on $RISK_KEY_415677C4
+   7 SeekGT           1   16    2 1             800 key=r[2]
+REG[2] =   s2[GB](8)
+   8 Column           1    0    2               00 r[2]=risk_location
+REG[2] =   s2[US](8)
+   9 String           6    3    0  ohai         00 r[3]=' ohai ' (len=6)
+REG[3] =   t6[ ohai ](8)
+  10 Affinity         2    2    0 BK            00 affinity(r[2..3])
+  11 SeekGE           1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[US](8)
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[US](8)
+REG[3] =   t6[ ohai ](8)
+  13 AggStep1         0    0    1 count(0)      00 accum=r[1] step(r[0])
+  14 Next             1   12    0               00 
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s2[US](8)
+REG[3] =   t6[ ohai ](8)
+  15 Goto             0    7    0               00 next skip-scan on $RISK_KEY_415677C4
+   7 SeekGT           1   16    2 1             800 key=r[2]
+REG[2] =   s2[US](8)
+   8 Column           1    0    2               00 r[2]=risk_location
+REG[2] =   s12[ZONE_CHN_003](8)
+   9 String           6    3    0  ohai         00 r[3]=' ohai ' (len=6)
+REG[3] =   t6[ ohai ](8)
+  10 Affinity         2    2    0 BK            00 affinity(r[2..3])
+  11 SeekGE           1   15    2 2             00 key=r[2..3]
+REG[2] =   s12[ZONE_CHN_003](8)
+  12 IdxGT            1   15    2 2             00 key=r[2..3]
+REG[2] =   s12[ZONE_CHN_003](8)
+REG[3] =   t6[ ohai ](8)
+  13 AggStep1         0    0    1 count(0)      00 accum=r[1] step(r[0])
+  14 Next             1   12    0               00 
+  15 Goto             0    7    0               00 next skip-scan on $RISK_KEY_415677C4
+   7 SeekGT           1   16    2 1             800 key=r[2]
+REG[2] =   s12[ZONE_CHN_003](8)
+  16 Close            1    0    0               00 
+  17 AggFinal         1    0    0 count(0)      00 accum=r[1] N=0
+  18 Copy             1    4    0               00 r[4]=r[1]
+REG[4] =  i:5
+  19 ResultRow        4    1    0               00 output=r[4]
+REG[4] =  i:5
+  20 Halt             0    0    0               00 
