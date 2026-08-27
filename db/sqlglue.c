@@ -799,7 +799,7 @@ void clear_query_hash(hash_t *h, int destroy)
         hash_free(h);
 }
 
-static void addSorterCost(const VdbeSorter *pSorter, hash_t *h, void *l)
+static void addSorterCost(int nfind, int nmove, int nwrite, hash_t *h, void *l)
 {
     struct query_path_component fnd = {{0}}, *qc;
 
@@ -812,10 +812,10 @@ static void addSorterCost(const VdbeSorter *pSorter, hash_t *h, void *l)
         listc_abl(l, qc);
     }
 
-    qc->nfind += pSorter->nfind;
-    qc->nnext += pSorter->nmove;
+    qc->nfind += nfind;
+    qc->nnext += nmove;
     /* note: we record writes in record routines on the master */
-    qc->nwrite += pSorter->nwrite;
+    qc->nwrite += nwrite;
 }
 
 static void addCursorCost(BtCursor *pCur, hash_t *h, void *l)
@@ -1525,7 +1525,8 @@ int sqlite_to_ondisk(struct schema *s, const void *inp, int len, void *outp,
         hdroffset += sqlite3GetVarint32(in + hdroffset, &type);
         info.null = (type == 0);
         f = &s->member[fld];
-        dataoffset += sqlite3VdbeSerialGet(in + dataoffset, type, &m);
+        sqlite3VdbeSerialGet(in + dataoffset, type, &m);
+        dataoffset += sqlite3VdbeSerialTypeLen(type);
 
         info.fldidx = fld;
 
@@ -3240,7 +3241,7 @@ static inline int sqlite3VdbeCompareRecordPacked(KeyInfo *pKeyInfo, int k1len,
                         "sqlite3VdbeAllocUnpackedRecord()\n");
         return 0;
     }
-    sqlite3VdbeRecordUnpack(pKeyInfo, k2len, key2, rec);
+    sqlite3VdbeRecordUnpack(k2len, key2, rec);
 
     int cmp = sqlite3VdbeRecordCompare(k1len, key1, rec);
     sqlite3DbFree(pKeyInfo->db, rec);
@@ -6546,15 +6547,15 @@ void addVdbeToThdCost(int type, int *data)
 }
 
 /* append the costs of the sorter to the thd query stats */
-void addVdbeSorterCost(const VdbeSorter *pSorter)
+void addVdbeSorterCost(int nfind, int nmove, int nwrite)
 {
     struct sql_thread *thd = pthread_getspecific(query_info_key);
     if (thd == NULL)
         return;
 
     if (!thd->clnt->loading_stat) {
-        addSorterCost(pSorter, thd->query_hash, &thd->query_stats);
-        addSorterCost(pSorter, thd->query_hash_subrequest, &thd->query_stats_subrequest);
+        addSorterCost(nfind, nmove, nwrite, thd->query_hash, &thd->query_stats);
+        addSorterCost(nfind, nmove, nwrite, thd->query_hash_subrequest, &thd->query_stats_subrequest);
     }
 }
 
@@ -8996,7 +8997,7 @@ int sqlite3BtreeInsert(
                                 "sqlite3VdbeAllocUnpackedRecord()\n");
                 return 0;
             }
-            sqlite3VdbeRecordUnpack(pCur->pKeyInfo, nKey, pKey, rec);
+            sqlite3VdbeRecordUnpack(nKey, pKey, rec);
         }
 
         if (pCur->ixnum == -1) {
@@ -11784,8 +11785,9 @@ void fdb_packedsqlite_process_sqlitemaster_row(char *row, int rowlen,
         hdroffset +=
             sqlite3GetVarint32((unsigned char *)row + hdroffset, &type);
         prev_dataoffset = dataoffset;
-        dataoffset += sqlite3VdbeSerialGet(
+        sqlite3VdbeSerialGet(
             (unsigned char *)row + prev_dataoffset, type, &m);
+        dataoffset += sqlite3VdbeSerialTypeLen(type);
 
         if (fld < 7 && fld != 3 && fld != 6) {
             str = (char *)malloc(m.n + 1);
@@ -11972,8 +11974,8 @@ void stat4dump(int more, char *table, int istrace)
                 u32 type;
                 Mem m = {{0}};
                 hdroffset += sqlite3GetVarint32(((uint8_t*)in) + hdroffset, &type);
-                dataoffset +=
-                    sqlite3VdbeSerialGet(((uint8_t*)in) + dataoffset, type, &m);
+                sqlite3VdbeSerialGet(((uint8_t*)in) + dataoffset, type, &m);
+                dataoffset += sqlite3VdbeSerialTypeLen(type);
                 if (m.flags & MEM_Null) {
                     outFunc("%sNULL", sep);
                 } else if (m.flags & MEM_Int) {
