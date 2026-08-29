@@ -84,7 +84,7 @@ extern int db_is_exiting();
 extern int upsert_collision_should_force_verify_error(int flags, int ixnum);
 
 static int osql_net_type_to_net_uuid_type(int type);
-static void osql_extract_snap_info(osql_sess_t *sess, void *rpl, int rpllen);
+static int osql_extract_snap_info(osql_sess_t *sess, void *rpl, int rpllen);
 
 
 #ifdef XMACRO_OSQL_RPL_TYPES
@@ -3811,11 +3811,10 @@ static void net_snap_uid_rpl(void *hndl, void *uptr, char *fromhost,
 int gbl_disable_cnonce_blkseq;
 
 /**
- * If "rpl" is a done packet, set xerr to error if any and return 1
- * If "rpl" is a recognizable packet, returns the length of the data type is
- *recognized,
- * or -1 otherwise
+ * If "rpl" is a done packet, set xerr to error if any, collect the snap info
+ * and query effects the packet carries, and return 1.
  *
+ * Returns 1 if done, 0 if not done, negative if "rpl" is too short to parse.
  */
 int osql_comm_is_done(osql_sess_t *sess, int type, char *rpl, int rpllen,
                       struct errstat **xerr, struct query_effects *effects)
@@ -3831,7 +3830,8 @@ int osql_comm_is_done(osql_sess_t *sess, int type, char *rpl, int rpllen,
     case OSQL_STARTGEN:
         break;
     case OSQL_DONE_SNAP:
-        osql_extract_snap_info(sess, rpl, rpllen);
+        if (osql_extract_snap_info(sess, rpl, rpllen))
+            return -1;
         /* fall-through */
     case OSQL_DONE:
         if (xerr)
@@ -3840,6 +3840,9 @@ int osql_comm_is_done(osql_sess_t *sess, int type, char *rpl, int rpllen,
         break;
     case OSQL_DONE_WITH_EFFECTS:
         if (effects) {
+            if (rpllen < (int)(sizeof(osql_uuid_rpl_t) + sizeof(osql_done_t)))
+                return -1;
+
             const uint8_t *p_buf =
                 (uint8_t *)rpl + sizeof(osql_done_t) + sizeof(osql_uuid_rpl_t);
 
@@ -3855,6 +3858,8 @@ int osql_comm_is_done(osql_sess_t *sess, int type, char *rpl, int rpllen,
         rc = 1;
         break;
     case OSQL_XERR:
+        if (rpllen < (int)OSQLCOMM_DONE_XERR_UUID_RPL_LEN)
+            return -1;
         /* keep this un-endianized.  the code will swap what it needs to */
         if (xerr) {
             *xerr = &((osql_done_xerr_uuid_t *)rpl)->dt;
@@ -8922,17 +8927,21 @@ int osql_send_test(void)
     return rc;
 }
 
-static void osql_extract_snap_info(osql_sess_t *sess, void *rpl, int rpllen)
+/* Returns 0 on success, negative if "rpl" is too short to hold the snap info. */
+static int osql_extract_snap_info(osql_sess_t *sess, void *rpl, int rpllen)
 {
 
     // TODO (NC) : check this
     if (gbl_disable_cnonce_blkseq)
-        return;
+        return 0;
+
+    if (rpllen < (int)(sizeof(osql_uuid_rpl_t) + sizeof(osql_done_t)))
+        return -1;
 
     snap_uid_t *snap_info = calloc(1, sizeof(snap_uid_t));
     if (!snap_info) {
         logmsg(LOGMSG_ERROR, "%s malloc failure, no cnonce\n", __func__);
-        return;
+        return 0;
     }
 
     const uint8_t *p_buf =
@@ -8951,6 +8960,8 @@ static void osql_extract_snap_info(osql_sess_t *sess, void *rpl, int rpllen)
     sess->snap_info->effects.num_updated = 0;
     sess->snap_info->effects.num_deleted = 0;
     sess->snap_info->effects.num_inserted = 0;
+
+    return 0;
 }
 
 #define UNK_ERR_SEND_RETRY 10

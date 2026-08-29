@@ -420,8 +420,14 @@ int osql_sess_rcvop(uuid_t uuid, int type, void *data, int datalen, int *found)
         return 0;
     }
 
-    is_msg_done =
-        osql_comm_is_done(sess, type, data, datalen, &perr, NULL) != 0;
+    rc = osql_comm_is_done(sess, type, data, datalen, &perr, NULL);
+    if (rc < 0) {
+        logmsg(LOGMSG_ERROR, "%s: malformed osql op type %d len %d\n", __func__,
+               type, datalen);
+        goto failed_stream;
+    }
+    is_msg_done = (rc != 0);
+    rc = 0;
 
     /* we have received an OSQL_XERR; replicant wants to abort the transaction;
        discard the session and be done */
@@ -517,8 +523,14 @@ int osql_sess_rcvop_socket(osql_sess_t *sess, int type, void *data, int datalen,
     int rc = 0;
     struct errstat *perr = NULL;
 
-    *is_msg_done =
-        osql_comm_is_done(sess, type, data, datalen, &perr, NULL) != 0;
+    rc = osql_comm_is_done(sess, type, data, datalen, &perr, NULL);
+    if (rc < 0) {
+        logmsg(LOGMSG_ERROR, "%s: malformed osql op type %d len %d\n", __func__,
+               type, datalen);
+        return rc;
+    }
+    *is_msg_done = (rc != 0);
+    rc = 0;
 
     /* we have received an OSQL_XERR; replicant wants to abort the transaction;
        discard the session and be done */
