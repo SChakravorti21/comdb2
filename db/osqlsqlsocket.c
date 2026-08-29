@@ -350,8 +350,9 @@ int osqlcomm_bplog_socket(COMDB2BUF *sb, osql_sess_t *sess)
             goto done;
         }
 
-        if (buflen < 0 || buflen > MAXQUERYLEN) {
-            logmsg(LOGMSG_ERROR, "%s: buflen %d exceeds maximum %d\n", __func__, buflen, MAXQUERYLEN);
+        if (buflen < OSQL_MIN_UUID_OP_LEN || buflen > MAXQUERYLEN) {
+            logmsg(LOGMSG_ERROR, "%s: buflen %d out of range [%d, %d]\n", __func__, buflen, OSQL_MIN_UUID_OP_LEN,
+                   MAXQUERYLEN);
             rc = -1;
             goto done;
         }

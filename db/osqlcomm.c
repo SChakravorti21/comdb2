@@ -468,6 +468,8 @@ enum { OSQLCOMM_UUID_RPL_TYPE_LEN = 4 + 4 + 16 };
 
 BB_COMPILE_TIME_ASSERT(osqlcomm_rpl_uuid_type_len,
                        sizeof(osql_uuid_rpl_t) == OSQLCOMM_UUID_RPL_TYPE_LEN);
+BB_COMPILE_TIME_ASSERT(osql_min_uuid_op_len,
+                       (int)OSQL_MIN_UUID_OP_LEN == (int)OSQLCOMM_UUID_RPL_TYPE_LEN);
 
 uuid_t zero_uuid = {0};
 

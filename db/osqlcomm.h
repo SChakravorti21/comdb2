@@ -26,6 +26,10 @@
 
 #define OSQL_SEND_ERROR_WRONGMASTER (-1234)
 
+/* minimum bytes for any osql op: the uuid reply header (type + padding + uuid).
+ * Kept in sync with OSQLCOMM_UUID_RPL_TYPE_LEN by a compile-time assert. */
+enum { OSQL_MIN_UUID_OP_LEN = 4 + 4 + 16 };
+
 enum { OSQL_PROCESS_FLAGS_BLOB_OPTIMIZATION = 0x00000001, };
 
 /**
