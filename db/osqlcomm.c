@@ -6888,15 +6888,18 @@ out:
 }
 
 
-static const uint8_t *_get_txn_info(char *msg, int *type)
+static const uint8_t *_get_txn_info(const char *msg, int msglen, int *type)
 {
     const uint8_t *p_buf;
     const uint8_t *p_buf_end;
 
     osql_uuid_rpl_t rpl;
+    *type = -1;
     p_buf = (const uint8_t *)msg;
-    p_buf_end = (uint8_t *)p_buf + sizeof(rpl);
+    p_buf_end = p_buf + msglen;
     p_buf = osqlcomm_uuid_rpl_type_get(&rpl, p_buf, p_buf_end);
+    if (!p_buf)
+        return NULL;
     *type = rpl.type;
 
     return p_buf;
@@ -6909,14 +6912,14 @@ struct schema_change_type *osqlcomm_get_schemachange(char *msg, int msglen)
     const uint8_t *p_buf_end;
     int type;
 
-    p_buf = _get_txn_info(msg, &type);
+    p_buf = _get_txn_info(msg, msglen, &type);
     if (!p_buf)
         return NULL;
     assert(type == OSQL_SCHEMACHANGE);
 
     sc = new_schemachange_type();
 
-    p_buf_end = p_buf + msglen;
+    p_buf_end = (const uint8_t *)msg + msglen;
     p_buf = osqlcomm_schemachange_type_get(sc, p_buf, p_buf_end);
     if (!p_buf)
         return NULL;
@@ -7159,6 +7162,22 @@ int osql_finalize_scs(struct ireq *iq, tran_type *trans)
     return error ? ERR_SC : 0;
 }
 
+static int osql_reject_op(struct ireq *iq, uuid_t uuid, int type, int step,
+                          struct block_err *err, const char *why)
+{
+    uuidstr_t us;
+    const char *name = (type >= 0 && type < MAX_OSQL_TYPES)
+                           ? osql_reqtype_str(type)
+                           : "OSQL_UNKNOWN";
+
+    logmsg(LOGMSG_ERROR, "%s %s rejecting %s (%d) operation: %s\n", __func__,
+           comdb2uuidstr(uuid, us), name, type, why);
+    reqerrstr(iq, COMDB2_BLK_RC_UNKN_OP, "malformed osql %s operation: %s",
+              name, why);
+
+    return conv_rc_sql2blkop(iq, step, -1, ERR_BADREQ, err, NULL, 0);
+}
+
 /**
  * Handles each packet and calls record.c functions
  * to apply to received row updates
@@ -7170,20 +7189,23 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
                         struct block_err *err, int *receivedrows)
 {
     const uint8_t *p_buf;
-    const uint8_t *p_buf_end;
     int rc = 0;
     struct dbtable *db = (iq->usedb) ? iq->usedb : &thedb->static_table;
     const unsigned char tag_name_ondisk[] = ".ONDISK";
     const size_t tag_name_ondisk_len = 8 /*includes NUL*/;
     int type;
     char *msg = *pmsg;
+    const uint8_t *p_buf_end = (const uint8_t *)msg + msglen;
 
-    p_buf = _get_txn_info(msg, &type);
+    p_buf = _get_txn_info(msg, msglen, &type);
 
     if (type >= 0 && type < MAX_OSQL_TYPES)
         db->blockosqltypcnt[type]++;
     else
         db->blockosqltypcnt[0]++; /* invalids */
+
+    if (!p_buf)
+        return osql_reject_op(iq, uuid, type, step, err, "short header");
 
 #if DEBUG_REORDER
     const char *osql_reqtype_str(int type);
