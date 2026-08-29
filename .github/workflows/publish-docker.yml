@@ -97,11 +97,16 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
 
-      # Hand the digest to the merge job. Artifact names can't contain "/".
+      # Hand the digest to the merge job as an empty file named after it. The
+      # "sha256:" prefix has to come off: upload-artifact rejects colons in paths,
+      # since they are not legal filename characters on NTFS. The merge job puts
+      # the prefix back when it assembles the manifest.
       - name: Export digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p /tmp/digests
-          touch "/tmp/digests/${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${DIGEST#sha256:}"
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
@@ -225,11 +230,22 @@ jobs:
           container="$(docker run -d "${IMAGE}:${VERSION}")"
           trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
 
-          # Creating the database takes a moment; wait for it to answer.
-          for _ in $(seq 1 60); do
-              docker exec "$container" cdb2sql testdb local "select 1" >/dev/null 2>&1 && break
+          # Creating the database takes a moment; wait for it to answer. Fail
+          # loudly on timeout rather than falling through to a confusing error
+          # from the first real query.
+          ready=
+          for _ in $(seq 1 120); do
+              if docker exec "$container" cdb2sql testdb local "select 1" >/dev/null 2>&1; then
+                  ready=1
+                  break
+              fi
               sleep 1
           done
+          if [ -z "$ready" ]; then
+              echo "testdb did not come up; container logs follow:" >&2
+              docker logs "$container" >&2 || true
+              exit 1
+          fi
 
           docker exec "$container" cdb2sql testdb local "create table t(i int)"
           docker exec "$container" cdb2sql testdb local "insert into t values(42)"
