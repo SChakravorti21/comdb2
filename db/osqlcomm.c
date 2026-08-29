@@ -747,10 +747,13 @@ static const uint8_t *osqlcomm_bpfunc_type_get(osql_bpfunc_t **p_osql_bpfunc,
 
     p_buf = buf_get(&data_len, sizeof(data_len), p_buf, p_buf_end);
 
+    if (data_len < 0 || data_len > (p_buf_end - p_buf))
+        return NULL;
+
     *p_osql_bpfunc = malloc(sizeof(osql_bpfunc_t) + data_len);
 
     if (!*p_osql_bpfunc)
-        return p_buf;
+        return NULL;
 
     (*p_osql_bpfunc)->data_len = data_len;
 
@@ -8125,7 +8128,6 @@ done_delete:
     } break;
 
     case OSQL_BPFUNC: {
-        uint8_t *p_buf_end = (uint8_t *)msg + sizeof(osql_bpfunc_t) + msglen;
         osql_bpfunc_t *rpl = NULL;
 
         const uint8_t *n_p_buf = osqlcomm_bpfunc_type_get(&rpl, p_buf, p_buf_end);
