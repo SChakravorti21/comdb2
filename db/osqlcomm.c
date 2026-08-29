@@ -7330,13 +7330,17 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
         }
     } break;
     case OSQL_DBQ_CONSUME: {
-        genid_t *genid = (genid_t *)p_buf;
+        genid_t genid;
 
-        rc = dbq_consume_genid(iq, trans, 0, *genid);
+        if (!buf_no_net_get(&genid, sizeof(genid), p_buf, p_buf_end))
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "short dbq consume");
+
+        rc = dbq_consume_genid(iq, trans, 0, genid);
         EVENTLOG_DEBUG(
             uuidstr_t ustr;
             comdb2uuidstr(uuid, ustr);
-            eventlog_debug("%s:%d uuid %s dbq_consume %"PRIx64" rc %d", __func__, __LINE__, ustr, *genid, rc);
+            eventlog_debug("%s:%d uuid %s dbq_consume %"PRIx64" rc %d", __func__, __LINE__, ustr, genid, rc);
         );
 
         if (rc != 0) {
