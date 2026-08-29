@@ -7038,17 +7038,28 @@ int osql_process_schemachange(struct schema_change_type *sc, uuid_t uuid)
 
 /* get the table name part of the rpl request
  */
-const char *get_tablename_from_rpl(int is_uuid, const uint8_t *rpl,
+const char *get_tablename_from_rpl(int is_uuid, const uint8_t *rpl, int rpllen,
                                    int *tableversion)
 {
-    osql_usedb_t dt;
+    osql_usedb_t dt = {0};
     const uint8_t *p_buf =
         rpl + (is_uuid ? sizeof(osql_uuid_rpl_t) : sizeof(osql_rpl_t));
-    const uint8_t *p_buf_end = p_buf + sizeof(osql_usedb_t);
+    const uint8_t *p_buf_end = rpl + rpllen;
     const char *tablename;
 
+    if (p_buf_end < p_buf)
+        return NULL;
+
     tablename = (const char *)osqlcomm_usedb_type_get(&dt, p_buf, p_buf_end);
-    if (tableversion && tablename)
+    if (!tablename)
+        return NULL;
+
+    if (dt.tablenamelen < 1 ||
+        dt.tablenamelen > (p_buf_end - (const uint8_t *)tablename) ||
+        tablename[dt.tablenamelen - 1] != '\0')
+        return NULL;
+
+    if (tableversion)
         *tableversion = dt.tableversion;
     return tablename;
 }
@@ -9147,26 +9158,32 @@ int need_views_lock(char *msg, int msglen, int use_uuid)
 {
     const uint8_t *p_buf, *p_buf_end;
 
+    p_buf_end = (const uint8_t *)msg + msglen;
+
     if (use_uuid) {
         osql_uuid_rpl_t rpl;
         p_buf = (const uint8_t *)msg;
-        p_buf_end = (uint8_t *)p_buf + sizeof(rpl);
         p_buf = osqlcomm_uuid_rpl_type_get(&rpl, p_buf, p_buf_end);
     } else {
         osql_rpl_t rpl;
         p_buf = (const uint8_t *)msg;
-        p_buf_end = (uint8_t *)p_buf + sizeof(rpl);
         p_buf = osqlcomm_rpl_type_get(&rpl, p_buf, p_buf_end);
     }
 
-    osql_bpfunc_t *rpl = NULL;
-    p_buf_end = (const uint8_t *)p_buf + sizeof(osql_bpfunc_t) + msglen;
-    const uint8_t *n_p_buf = osqlcomm_bpfunc_type_get(&rpl, p_buf, p_buf_end);
-
-    if (!n_p_buf || !rpl)
+    if (!p_buf)
         return -1;
 
-    return bpfunc_check(rpl->data, rpl->data_len, BPFUNC_TIMEPART_RETENTION);
+    osql_bpfunc_t *rpl = NULL;
+    const uint8_t *n_p_buf = osqlcomm_bpfunc_type_get(&rpl, p_buf, p_buf_end);
+
+    if (!n_p_buf || !rpl) {
+        free(rpl);
+        return -1;
+    }
+
+    int rc = bpfunc_check(rpl->data, rpl->data_len, BPFUNC_TIMEPART_RETENTION);
+    free(rpl);
+    return rc;
 }
 
 #define GETI(field) \

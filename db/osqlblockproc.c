@@ -113,7 +113,7 @@ static int apply_changes(struct ireq *iq, blocksql_tran_t *tran, void *iq_tran,
                                      struct block_err *, int *));
 static int req2blockop(int reqtype);
 extern const char *get_tablename_from_rpl(int is_uuid, const char *rpl,
-                                          int *tableversion);
+                                          int rpllen, int *tableversion);
 
 void get_dist_txnid_from_dist_txn_rpl(int is_uuid, char *rpl, int rplen, char **dist_txnid, int64_t *timestamp);
 void get_dist_txnid_from_prepare_rpl(int is_uuid, char *rpl, int rplen, char **dist_txnid, int64_t *timestamp);
@@ -428,7 +428,7 @@ void osql_bplog_close(blocksql_tran_t **ptran)
 }
 
 static int setup_reorder_key(blocksql_tran_t *tran, int type, osql_sess_t *sess, unsigned long long rqid, char *rpl,
-                             oplog_key_t *key)
+                             int rplen, oplog_key_t *key)
 {
     char *tablename = tran->tablename;
 
@@ -486,7 +486,9 @@ static int setup_reorder_key(blocksql_tran_t *tran, int type, osql_sess_t *sess,
 #endif
         } else {
             const char *p_buf = rpl + OSQLCOMM_UUID_RPL_TYPE_LEN;
-            buf_no_net_get(&genid, sizeof(genid), p_buf, p_buf + sizeof(genid));
+            if (!buf_no_net_get(&genid, sizeof(genid), p_buf,
+                                (const char *)rpl + rplen))
+                return -1;
 #if DEBUG_REORDER
             logmsg(LOGMSG_DEBUG, "REORDER: Received genid 0x%llx\n", genid);
 #endif
@@ -542,7 +544,7 @@ static int setup_reorder_key(blocksql_tran_t *tran, int type, osql_sess_t *sess,
     return 0;
 }
 
-static void osql_cache_selectv(blocksql_tran_t *tran, char *rpl, int type);
+static int osql_cache_selectv(blocksql_tran_t *tran, char *rpl, int rplen, int type);
 
 static void sess_save_participant(osql_sess_t *sess, int is_uuid, char *rpl, int rplen)
 {
@@ -573,8 +575,9 @@ static int _pre_process_saveop(osql_sess_t *sess, blocksql_tran_t *tran,
         if (tran->is_selectv_wl_upd || tran->is_reorder_on) {
             int tableversion = 0;
             const char *tblname =
-                get_tablename_from_rpl(tran->is_uuid, rpl, &tableversion);
-            assert(tblname); // table or queue name
+                get_tablename_from_rpl(tran->is_uuid, rpl, rplen, &tableversion);
+            if (!tblname) /* table or queue name */
+                return -1;
             tran->tablename = intern(tblname);
             tran->tableversion = tableversion;
         }
@@ -627,7 +630,8 @@ static int _pre_process_saveop(osql_sess_t *sess, blocksql_tran_t *tran,
         default:
             break;
         }
-        osql_cache_selectv(tran, rpl, type);
+        if (osql_cache_selectv(tran, rpl, rplen, type))
+            return -1;
     }
     return rc;
 }
@@ -685,7 +689,7 @@ int osql_bplog_saveop(osql_sess_t *sess, blocksql_tran_t *tran, char *rpl,
 
     struct temp_table *tmptbl = tran->db;
     if (tran->is_reorder_on) {
-        rc = setup_reorder_key(tran, type, sess, sess->rqid, rpl, &key);
+        rc = setup_reorder_key(tran, type, sess, sess->rqid, rpl, rplen, &key);
         if (rc != 0) {
             Pthread_mutex_unlock(&tran->store_mtx);
             logmsg(LOGMSG_ERROR, "%s: setup_reorder_key failed for type=%d (%s) seq=%u\n", __func__, type,
@@ -1284,7 +1288,7 @@ void osql_bplog_time_done(osql_bp_timings_t *tms)
     logmsg(LOGMSG_USER, "%s]\n", msg);
 }
 
-static void osql_cache_selectv(blocksql_tran_t *tran, char *rpl, int type)
+static int osql_cache_selectv(blocksql_tran_t *tran, char *rpl, int rplen, int type)
 {
     char *p_buf;
     selectv_genid_t *sgenid, fnd = {0};
@@ -1299,8 +1303,8 @@ static void osql_cache_selectv(blocksql_tran_t *tran, char *rpl, int type)
     case OSQL_DELREC:
         p_buf = rpl + (tran->is_uuid ? OSQLCOMM_UUID_RPL_TYPE_LEN
                                      : OSQLCOMM_RPL_TYPE_LEN);
-        buf_no_net_get(&fnd.genid, sizeof(fnd.genid), p_buf,
-                       p_buf + sizeof(fnd.genid));
+        if (!buf_no_net_get(&fnd.genid, sizeof(fnd.genid), p_buf, rpl + rplen))
+            return -1;
         assert(tran->tablename);
         fnd.tablename = tran->tablename;
         fnd.tableversion = tran->tableversion;
@@ -1310,8 +1314,8 @@ static void osql_cache_selectv(blocksql_tran_t *tran, char *rpl, int type)
     case OSQL_RECGENID:
         p_buf = rpl + (tran->is_uuid ? OSQLCOMM_UUID_RPL_TYPE_LEN
                                      : OSQLCOMM_RPL_TYPE_LEN);
-        buf_no_net_get(&fnd.genid, sizeof(fnd.genid), p_buf,
-                       p_buf + sizeof(fnd.genid));
+        if (!buf_no_net_get(&fnd.genid, sizeof(fnd.genid), p_buf, rpl + rplen))
+            return -1;
         assert(tran->tablename);
         fnd.tablename = tran->tablename;
         fnd.tableversion = tran->tableversion;
@@ -1325,6 +1329,7 @@ static void osql_cache_selectv(blocksql_tran_t *tran, char *rpl, int type)
         }
         break;
     }
+    return 0;
 }
 
 /**

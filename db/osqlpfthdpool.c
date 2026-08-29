@@ -568,10 +568,12 @@ int osql_page_prefault(char *rpl, int rplen, struct dbtable **last_db,
 {
     static int last_step_idex = 0;
     int *ii;
-    osql_rpl_t rpl_op;
+    osql_rpl_t rpl_op = {0};
     uint8_t *p_buf = (uint8_t *)rpl;
     uint8_t *p_buf_end = p_buf + rplen;
-    osqlcomm_rpl_type_get(&rpl_op, p_buf, p_buf_end);
+
+    if (!osqlcomm_rpl_type_get(&rpl_op, p_buf, p_buf_end))
+        return 0;
 
     if (seq == 0) {
         Pthread_mutex_lock(&osqlpf_mutex);
@@ -596,6 +598,10 @@ int osql_page_prefault(char *rpl, int rplen, struct dbtable **last_db,
 
         tablename =
             (const char *)osqlcomm_usedb_type_get(&dt, p_buf, p_buf_end);
+        if (!tablename || dt.tablenamelen < 1 ||
+            dt.tablenamelen > (p_buf_end - (const uint8_t *)tablename) ||
+            tablename[dt.tablenamelen - 1] != '\0')
+            return 0;
 
         db = get_dbtable_by_name(tablename);
         if (db == NULL) {
@@ -611,26 +617,32 @@ int osql_page_prefault(char *rpl, int rplen, struct dbtable **last_db,
         p_buf = (uint8_t *)&((osql_del_rpl_t *)rpl)->dt;
         p_buf = (uint8_t *)osqlcomm_del_type_get(&dt, p_buf, p_buf_end,
                                                  rpl_op.type == OSQL_DELETE);
+        if (!p_buf)
+            return 0;
         enque_osqlpfault_olddata_oldkeys(*last_db, dt.genid, last_step_idex,
                                          rqid, uuid, seq);
     } break;
     case OSQL_INSREC:
     case OSQL_INSERT: {
-        osql_ins_t dt;
+        osql_ins_t dt = {0};
         unsigned char *pData = NULL;
         uint8_t *p_buf = (uint8_t *)&((osql_ins_rpl_t *)rpl)->dt;
         pData = (uint8_t *)osqlcomm_ins_type_get(&dt, p_buf, p_buf_end,
                                                  rpl_op.type == OSQL_INSREC);
+        if (!pData || dt.nData < 0 || dt.nData > (p_buf_end - pData))
+            return 0;
         enque_osqlpfault_newdata_newkeys(*last_db, pData, dt.nData,
                                          last_step_idex, rqid, uuid, seq);
     } break;
     case OSQL_UPDREC:
     case OSQL_UPDATE: {
-        osql_upd_t dt;
+        osql_upd_t dt = {0};
         uint8_t *p_buf = (uint8_t *)&((osql_upd_rpl_t *)rpl)->dt;
         unsigned char *pData;
         pData = (uint8_t *)osqlcomm_upd_type_get(&dt, p_buf, p_buf_end,
                                                  rpl_op.type == OSQL_UPDATE);
+        if (!pData || dt.nData < 0 || dt.nData > (p_buf_end - pData))
+            return 0;
         enque_osqlpfault_olddata_oldkeys_newkeys(*last_db, dt.genid, pData,
                                                  dt.nData, last_step_idex, rqid,
                                                  uuid, seq);
