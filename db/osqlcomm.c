@@ -7442,20 +7442,20 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
     } break;
     case OSQL_INSREC:
     case OSQL_INSERT: {
-        osql_ins_t dt;
+        osql_ins_t dt = {0};
         unsigned char *pData = NULL;
         int rrn = 0;
         unsigned long long newgenid = 0;
         int is_legacy = (type == OSQL_INSREC);
 
-        const uint8_t *p_buf_end;
-        if (is_legacy)
-            p_buf_end = p_buf + OSQLCOMM_INS_LEGACY_TYPE_LEN;
-        else
-            p_buf_end = p_buf + OSQLCOMM_INS_TYPE_LEN;
+        pData = (unsigned char *)osqlcomm_ins_type_get(&dt, p_buf, p_buf_end,
+                                                       is_legacy);
+        if (!pData)
+            return osql_reject_op(iq, uuid, type, step, err, "short insert");
 
-        pData =
-            (uint8_t *)osqlcomm_ins_type_get(&dt, p_buf, p_buf_end, is_legacy);
+        if (dt.nData < 0 || dt.nData > (p_buf_end - pData))
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad insert data length");
 
         if (gbl_enable_osql_logging) {
             int jj = 0;
