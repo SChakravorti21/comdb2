@@ -7276,8 +7276,6 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
     }
     case OSQL_USEDB: {
         osql_usedb_t dt = {0};
-        p_buf_end = (uint8_t *)p_buf + sizeof(osql_usedb_t);
-
 
         /* IDEA: don't store the usedb in the defered_table, rather right before
          * loading a new usedb, process the curret one,
@@ -7288,6 +7286,15 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
         }
         */
         const char *tablename = (const char *)osqlcomm_usedb_type_get(&dt, p_buf, p_buf_end);
+        if (!tablename)
+            return osql_reject_op(iq, uuid, type, step, err, "short usedb");
+
+        if (dt.tablenamelen < 1 ||
+            dt.tablenamelen > (p_buf_end - (const uint8_t *)tablename) ||
+            tablename[dt.tablenamelen - 1] != '\0')
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad usedb tablename length");
+
         if (iq->usedb && strcmp(iq->usedb->tablename, tablename) == 0) {
             assert(bdb_has_trans_tablename_locked(thedb->bdb_env, tablename, trans, TABLENAME_LOCKED_READ));
             return 0; /* already have tbl lock from before */
