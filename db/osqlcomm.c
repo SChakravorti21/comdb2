@@ -7789,20 +7789,16 @@ done_delete:
     } break;
     case OSQL_UPDCOLS: {
         osql_updcols_t dt = {0};
-        const uint8_t *p_buf_end = p_buf + sizeof(osql_updcols_t);
         int i;
 
-        p_buf = (uint8_t *)osqlcomm_updcols_type_get(&dt, p_buf, p_buf_end);
+        p_buf = osqlcomm_updcols_type_get(&dt, p_buf, p_buf_end);
+        if (!p_buf)
+            return osql_reject_op(iq, uuid, type, step, err, "short updcols");
 
-        if (gbl_enable_osql_logging) {
-            int jj;
-            uuidstr_t us;
-            logmsg(LOGMSG_DEBUG, "%s OSQL_UPDCOLS %d [\n",
-                   comdb2uuidstr(uuid, us), dt.ncols);
-            for (jj = 0; jj < dt.ncols; jj++)
-                logmsg(LOGMSG_DEBUG, "%d ", dt.clist[jj]);
-            logmsg(LOGMSG_DEBUG, "\n");
-        }
+        if (dt.ncols < 0 ||
+            (size_t)dt.ncols > (size_t)(p_buf_end - p_buf) / sizeof(int))
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad updcols column count");
 
         if (NULL != *updCols) {
             logmsg(LOGMSG_WARN, "%s recieved multiple update columns!  (ignoring duplicates)\n",
@@ -7811,8 +7807,6 @@ done_delete:
             int sz = sizeof(int) * (dt.ncols + 1);
             *updCols = (int *)malloc(sz);
 
-            /* reset to the end of the buffer */
-            p_buf_end = p_buf + sz;
             if (!*updCols) {
                 logmsg(LOGMSG_ERROR, "%s failed to allocate memory for an upd_cols "
                                 "request, size %d\n",
@@ -7822,8 +7816,17 @@ done_delete:
             }
             (*updCols)[0] = dt.ncols;
             for (i = 0; i < dt.ncols; i++) {
-                p_buf = (uint8_t *)buf_get(&(*updCols)[i + 1], sizeof(int),
-                                           p_buf, p_buf_end);
+                p_buf = buf_get(&(*updCols)[i + 1], sizeof(int), p_buf,
+                                p_buf_end);
+            }
+
+            if (gbl_enable_osql_logging) {
+                uuidstr_t us;
+                logmsg(LOGMSG_DEBUG, "%s OSQL_UPDCOLS %d [\n",
+                       comdb2uuidstr(uuid, us), dt.ncols);
+                for (i = 0; i < dt.ncols; i++)
+                    logmsg(LOGMSG_DEBUG, "%d ", (*updCols)[i + 1]);
+                logmsg(LOGMSG_DEBUG, "\n");
             }
         }
         EVENTLOG_DEBUG(
