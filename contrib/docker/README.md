@@ -9,6 +9,34 @@ plus a client container, with a single command and no manual steps.
 - [Docker Engine](https://docs.docker.com/engine/install/) with the
   [Compose](https://docs.docker.com/compose/install/) plugin (`docker compose`).
 
+## Using the published image
+
+If you just want a Comdb2 to poke at, pull the prebuilt image instead of compiling
+anything:
+
+```sh
+docker run -d --name comdb2 -p 5105:5105 ghcr.io/bloomberg/comdb2:latest mydb
+docker exec comdb2 cdb2sql mydb local "create table t(i int)"
+docker exec comdb2 cdb2sql mydb local "insert into t values(42)"
+docker exec comdb2 cdb2sql mydb local "select * from t"
+```
+
+Name as many databases as you like (`... comdb2:latest db1 db2`); with no arguments
+you get a single database named `testdb`. See
+[Running a standalone database](#running-a-standalone-database) below for details on
+how these containers behave.
+
+The image is built from [`Dockerfile.dev`](Dockerfile.dev) — the very same one the
+Compose setup below uses — for `linux/amd64` and `linux/arm64`. Available tags:
+
+| Tag | Meaning |
+| --- | --- |
+| `latest` | Built from the current tip of `main`. |
+| `sha-<short>` | Built from a specific commit, if you need to pin one. |
+
+Build from source instead (see below) if you want to run a cluster, or to test
+changes in your working tree.
+
 ## Quick start
 
 From this directory (`contrib/docker/`):
@@ -109,7 +137,9 @@ docker compose ps
 The same image can also run one or more **standalone** (non-clustered)
 databases in a single container.
 
-First make sure the image is built (Compose builds it, or build it directly):
+First make sure the image is built (Compose builds it, or build it directly). Skip
+this if you are using the published image, and substitute
+`ghcr.io/bloomberg/comdb2:latest` for `comdb2-dev:latest` below:
 
 ```sh
 docker compose build
@@ -157,6 +187,9 @@ docker rm -f comdb2
 | `client-entrypoint.sh` | Keeps the `dev` container alive so you can exec into it. |
 | `testdb.cfg` | `cdb2sql` client config pointing at the cluster. |
 | `maven-settings.xml` | Maven settings used by the JDBC builder image. |
+
+The image is published by
+[`.github/workflows/publish-docker.yml`](../../.github/workflows/publish-docker.yml).
 
 ## Notes
 

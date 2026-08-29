@@ -1,0 +1,241 @@
+name: Publish Docker image
+
+# Builds contrib/docker/Dockerfile.dev and publishes it to the GitHub Container
+# Registry (ghcr.io) as a multi-platform (amd64 + arm64) image.
+#
+# Note that this repo does not currently cut GitHub releases, and its newest tag
+# predates this workflow by some margin, so pushes to main are what actually keep
+# the published image fresh. The tag trigger and the semver tags below are here so
+# that versioned images appear automatically if tagging ever resumes.
+on:
+  push:
+    branches: [main]
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+# Never cancel a run in progress: doing so between the per-arch pushes and the
+# manifest merge would leave dangling digests with no tag pointing at them.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Build each architecture on a native runner and push it "by digest" only, i.e.
+  # without a tag. Compiling Comdb2 under QEMU emulation would take hours, and both
+  # of these runner labels are free for public repositories.
+  build:
+    name: Build [${{ matrix.platform }}]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+
+    # The default GITHUB_TOKEN is all we need to push to ghcr.io; "packages: write"
+    # is not granted by default, so ask for it explicitly.
+    permissions:
+      contents: read
+      packages: write
+
+    defaults:
+      run:
+        shell: bash -o errexit -o nounset -o pipefail {0}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ghcr.io rejects uppercase image names, and neither docker/login-action nor
+      # `buildx imagetools` normalizes case. bloomberg/comdb2 is already lowercase,
+      # but forks used to test this workflow may not be.
+      - name: Compute image name
+        run: echo "IMAGE=${REGISTRY}/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      # Used here only for its labels, most importantly
+      # org.opencontainers.image.source: that label is what links the resulting
+      # package to this repository so it inherits repo permissions. The tags this
+      # produces are unused until the merge job below.
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The build context is the repository root: Dockerfile.dev copies the whole
+      # source tree in and compiles it (see .dockerignore for what is pruned).
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: contrib/docker/Dockerfile.dev
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          # A cold Comdb2 compile dominates this job's runtime. Scope the cache per
+          # platform so the two architectures don't evict each other's layers.
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+
+      # Hand the digest to the merge job. Artifact names can't contain "/".
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${{ steps.build.outputs.digest }}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ strategy.job-index }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Combine the per-arch images pushed above into a single tagged manifest list, so
+  # that `docker pull` resolves to the right architecture automatically.
+  merge:
+    name: Merge manifest
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    # Tell the verify job below which tag to pull. On main this is "latest", but on
+    # a branch or a manual run it is the branch name, so it can't be hardcoded.
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+
+    defaults:
+      run:
+        shell: bash -o errexit -o nounset -o pipefail {0}
+
+    steps:
+      - name: Compute image name
+        run: echo "IMAGE=${REGISTRY}/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - name: Compute tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          # The branch tag matters more than it looks: without it, a manual run on
+          # a non-default branch (how this workflow gets tested on a fork) would
+          # produce no tags at all and the manifest step would have nothing to
+          # push. The explicit priority keeps "latest" as the canonical tag on
+          # main, ahead of the branch tag, since it is what the verify job pulls.
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}},priority=1000
+            type=ref,event=branch
+            type=sha,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf "${IMAGE}@sha256:%s " *)
+
+      - name: Inspect image
+        run: docker buildx imagetools inspect "${IMAGE}:${{ steps.meta.outputs.version }}"
+
+  # Pull what was actually published and exercise it, on both architectures. This
+  # mirrors the standalone half of tests/contrib_docker/runit, which covers the
+  # locally built image rather than the published one.
+  verify:
+    name: Verify [${{ matrix.platform }}]
+    needs: merge
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.runner }}
+
+    permissions:
+      contents: read
+      packages: read
+
+    defaults:
+      run:
+        shell: bash -o errexit -o nounset -o pipefail {0}
+
+    steps:
+      - name: Compute image name
+        run: echo "IMAGE=${REGISTRY}/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      # Needed while the package is still private; harmless once it is public.
+      - name: Log in to ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run a database from the published image
+        env:
+          VERSION: ${{ needs.merge.outputs.version }}
+        run: |
+          # No arguments: this exercises the image's default CMD.
+          container="$(docker run -d "${IMAGE}:${VERSION}")"
+          trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+
+          # Creating the database takes a moment; wait for it to answer.
+          for _ in $(seq 1 60); do
+              docker exec "$container" cdb2sql testdb local "select 1" >/dev/null 2>&1 && break
+              sleep 1
+          done
+
+          docker exec "$container" cdb2sql testdb local "create table t(i int)"
+          docker exec "$container" cdb2sql testdb local "insert into t values(42)"
+
+          out="$(docker exec "$container" cdb2sql testdb local "select * from t")"
+          echo "$out"
+          echo "$out" | grep -q 'i=42'
+
+          echo "PASSED"

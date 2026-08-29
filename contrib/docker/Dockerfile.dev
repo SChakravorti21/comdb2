@@ -78,3 +78,12 @@ EXPOSE 5105
 COPY contrib/docker/standalone-entrypoint.sh /standalone-entrypoint.sh
 RUN chmod +x /standalone-entrypoint.sh
 ENTRYPOINT ["/standalone-entrypoint.sh"]
+
+# The entrypoint serves the database(s) named in its arguments, so without a
+# default a bare `docker run <image>` would start nothing and exit immediately.
+# Name your own to override: `docker run <image> mydb`.
+#
+# Compose overrides "entrypoint" but not "command", so this is appended to every
+# service in compose.yaml. The cluster scripts ignore their arguments, but the
+# "dev" service must set `command: []` or its entrypoint will try to exec this.
+CMD ["testdb"]

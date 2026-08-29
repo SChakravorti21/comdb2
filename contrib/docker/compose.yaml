@@ -70,6 +70,9 @@ services:
   dev:
     <<: *comdb2
     entrypoint: ["/bin/bash", "/client-entrypoint.sh"]
+    # Drop the image's default CMD: this entrypoint execs any arguments it is
+    # given, and would otherwise try to run the default database name as a command.
+    command: []
     volumes:
       - ./client-entrypoint.sh:/client-entrypoint.sh:ro
       - ./testdb.cfg:/opt/bb/etc/cdb2/config.d/testdb.cfg:ro
