@@ -7892,12 +7892,21 @@ done_delete:
         osql_index_t dt = {0};
         unsigned char *pData = NULL;
         int isDelete = (type == OSQL_DELIDX);
-        const uint8_t *p_buf_end;
         uint8_t *pIdx = NULL;
+        uint8_t **idx;
 
-        p_buf_end = p_buf + sizeof(osql_index_t);
+        pData = (unsigned char *)osqlcomm_index_type_get(&dt, p_buf, p_buf_end);
+        if (!pData)
+            return osql_reject_op(iq, uuid, type, step, err, "short index");
 
-        pData = (uint8_t *)osqlcomm_index_type_get(&dt, p_buf, p_buf_end);
+        if (dt.ixnum < 0 || dt.ixnum >= MAXINDEX)
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad index number");
+
+        if (dt.nData < 0 || dt.nData > (p_buf_end - pData))
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad index data length");
+
         if (gbl_enable_osql_logging) {
             int jj = 0;
             uuidstr_t us;
@@ -7917,10 +7926,10 @@ done_delete:
                 return ERR_INTERNAL;
             }
         }
-        if (isDelete)
-            iq->idxDelete[dt.ixnum] = pIdx = malloc(dt.nData);
-        else
-            iq->idxInsert[dt.ixnum] = pIdx = malloc(dt.nData);
+        idx = isDelete ? iq->idxDelete : iq->idxInsert;
+        if (idx[dt.ixnum])
+            free(idx[dt.ixnum]);
+        idx[dt.ixnum] = pIdx = malloc(dt.nData);
         if (pIdx == NULL) {
             logmsg(LOGMSG_ERROR, "%s failed to allocated indexes data, len %d\n",
                     __func__, dt.nData);
