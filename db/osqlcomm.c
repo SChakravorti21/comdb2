@@ -7594,9 +7594,10 @@ done_delete:
     case OSQL_STARTGEN: {
         osql_startgen_t dt = {0};
         uint32_t cur_gen;
-        const uint8_t *p_buf_end;
-        p_buf_end = p_buf + sizeof(osql_startgen_t);
-        osqlcomm_startgen_type_get(&dt, p_buf, p_buf_end);
+
+        if (!osqlcomm_startgen_type_get(&dt, p_buf, p_buf_end))
+            return osql_reject_op(iq, uuid, type, step, err, "short startgen");
+
         cur_gen = bdb_get_rep_gen(thedb->bdb_env);
         if (cur_gen != dt.start_gen) {
             err->errcode = OP_FAILED_VERIFY;
@@ -7611,9 +7612,8 @@ done_delete:
 
     case OSQL_FINGERPRINT: {
         osql_fingerprint_t dt = {{0}};
-        /* p_buf_end from the struct size, as OSQL_USEDB / OSQL_STARTGEN do;
-         * the _get below still bounds-checks against it. */
-        const uint8_t *p_buf_end = p_buf + sizeof(osql_fingerprint_t);
+
+        /* Metrics only, so a malformed one must not fail the transaction. */
         if (!osqlcomm_fingerprint_type_get(&dt, p_buf, p_buf_end)) {
             logmsg(LOGMSG_ERROR, "%s: failed to read OSQL_FINGERPRINT\n", __func__);
             break;
@@ -8038,9 +8038,9 @@ done_delete:
     case OSQL_DBGLOG: {
         osql_dbglog_t dbglog = {0};
         const uint8_t *p_buf = (const uint8_t *)msg;
-        const uint8_t *p_buf_end = p_buf + sizeof(osql_dbglog_t);
 
-        osqlcomm_dbglog_type_get(&dbglog, p_buf, p_buf_end);
+        if (!osqlcomm_dbglog_type_get(&dbglog, p_buf, p_buf_end))
+            return osql_reject_op(iq, uuid, type, step, err, "short dbglog");
 
         if (!iq->dbglog_file)
             iq->dbglog_file = open_dbglog_file(dbglog.dbglog_cookie);
@@ -8053,9 +8053,8 @@ done_delete:
         int bdberr = 0;
         unsigned long long lclgenid;
 
-        const uint8_t *p_buf_end = p_buf + sizeof(osql_recgenid_t);
-
-        osqlcomm_recgenid_type_get(&dt, p_buf, p_buf_end);
+        if (!osqlcomm_recgenid_type_get(&dt, p_buf, p_buf_end))
+            return osql_reject_op(iq, uuid, type, step, err, "short recgenid");
 
         lclgenid = bdb_genid_to_host_order(dt.genid);
 
