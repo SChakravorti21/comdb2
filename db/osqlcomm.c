@@ -7837,20 +7837,32 @@ done_delete:
     } break;
     case OSQL_SERIAL:
     case OSQL_SELECTV: {
-        uint8_t *p_buf = (uint8_t *)&((osql_serial_uuid_rpl_t *)msg)->dt;
-        uint8_t *p_buf_end = p_buf + sizeof(osql_serial_t);
         osql_serial_t dt = {0};
-        CurRangeArr *arr = malloc(sizeof(CurRangeArr));
-        currangearr_init(arr);
+        CurRangeArr *arr;
 
-        p_buf = (uint8_t *)osqlcomm_serial_type_get(&dt, p_buf, p_buf_end);
+        p_buf = osqlcomm_serial_type_get(&dt, p_buf, p_buf_end);
+        if (!p_buf)
+            return osql_reject_op(iq, uuid, type, step, err, "short serial");
+
+        if (dt.buf_size < 0 || dt.buf_size > (p_buf_end - p_buf) ||
+            dt.arr_size < 0 ||
+            (size_t)dt.arr_size > (size_t)dt.buf_size / (2 * sizeof(int)))
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad serial readset size");
+
+        arr = malloc(sizeof(CurRangeArr));
+        if (!arr)
+            return conv_rc_sql2blkop(iq, step, -1, ERR_INTERNAL, err, NULL, 0);
+        currangearr_init(arr);
         arr->file = dt.file;
         arr->offset = dt.offset;
 
-        p_buf_end = p_buf + dt.buf_size;
-
-        p_buf = (uint8_t *)serial_readset_get(arr, dt.buf_size, dt.arr_size,
-                                              p_buf, p_buf_end);
+        if (!serial_readset_get(arr, dt.buf_size, dt.arr_size, p_buf,
+                                p_buf_end)) {
+            currangearr_free(arr);
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad serial readset");
+        }
 
         /* build up range hash */
         currangearr_build_hash(arr);
