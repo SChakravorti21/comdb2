@@ -7216,10 +7216,26 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
     switch (type) {
     case OSQL_DONE:
     case OSQL_DONE_SNAP: {
-        p_buf_end = p_buf + sizeof(osql_done_t);
         osql_done_t dt = {0};
 
         p_buf = osqlcomm_done_type_get(&dt, p_buf, p_buf_end);
+        if (!p_buf)
+            return osql_reject_op(iq, uuid, type, step, err, "short done");
+
+        if (type == OSQL_DONE_SNAP) {
+            snap_uid_t snap_info;
+
+            /* Initial query effects for a transaction from replicants are
+             * received by the master here. With, gbl_master_sends_query_effect
+             * enabled, master zeros all the non-select counts and repopulates
+             * them as it plows through the transaction's osql stream, and
+             * finally sends them to the replicant as part of 'done'.
+             */
+            p_buf = snap_uid_get(&snap_info, p_buf, p_buf_end);
+            if (!p_buf)
+                return osql_reject_op(iq, uuid, type, step, err,
+                                      "short snap info");
+        }
 
         if (gbl_enable_osql_logging) {
             uuidstr_t us;
@@ -7249,19 +7265,6 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
 
         /* dt.nops carries the possible conversion error index */
         rc = conv_rc_sql2blkop(iq, step, -1, dt.rc, err, NULL, dt.nops);
-
-        if (type == OSQL_DONE_SNAP) {
-            snap_uid_t snap_info;
-            p_buf_end = (const uint8_t *)msg + msglen;
-
-            /* Initial query effects for a transaction from replicants are
-             * received by the master here. With, gbl_master_sends_query_effect
-             * enabled, master zeros all the non-select counts and repopulates
-             * them as it plows through the transaction's osql stream, and
-             * finally sends them to the replicant as part of 'done'.
-             */
-            p_buf = snap_uid_get(&snap_info, p_buf, p_buf_end);
-        }
 
         if (!rc && gbl_toblock_random_deadlock_trans && (rand() % 100) == 0) {
             logmsg(LOGMSG_USER, "%s throwing random deadlock\n", __func__);
