@@ -7633,20 +7633,21 @@ done_delete:
 
     case OSQL_UPDREC:
     case OSQL_UPDATE: {
-        osql_upd_t dt;
-        const uint8_t *p_buf_end;
+        osql_upd_t dt = {0};
         unsigned char *pData;
         int rrn = 2;
         unsigned long long genid;
         int recv_dk = (type == OSQL_UPDATE);
-        if (recv_dk)
-            p_buf_end = p_buf + sizeof(osql_upd_t);
-        else
-            p_buf_end = p_buf + sizeof(osql_upd_t) -
-                        sizeof(unsigned long long) - sizeof(unsigned long long);
 
-        pData =
-            (uint8_t *)osqlcomm_upd_type_get(&dt, p_buf, p_buf_end, recv_dk);
+        pData = (unsigned char *)osqlcomm_upd_type_get(&dt, p_buf, p_buf_end,
+                                                       recv_dk);
+        if (!pData)
+            return osql_reject_op(iq, uuid, type, step, err, "short update");
+
+        if (dt.nData < 0 || dt.nData > (p_buf_end - pData))
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad update data length");
+
         if (!recv_dk) {
             dt.ins_keys = -1ULL;
             dt.del_keys = -1ULL;
