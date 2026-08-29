@@ -1077,38 +1077,64 @@ static const uint8_t *serial_readset_get(CurRangeArr *arr, int buf_size,
         return NULL;
     for (i = 0; i < arr_size; i++) {
         cr = currange_new();
+        /* append first so a bail-out below leaves cr owned by arr */
+        currangearr_append(arr, cr);
 
         p_buf = buf_get(&tmp, sizeof(tmp), p_buf, p_buf_end);
-        cr->tbname = malloc(sizeof(char) * tmp);
+        if (!p_buf || tmp < 1 || tmp > (p_buf_end - p_buf))
+            return NULL;
+        cr->tbname = malloc(tmp);
+        if (!cr->tbname)
+            return NULL;
         p_buf = buf_get(cr->tbname, tmp, p_buf, p_buf_end);
+        if (!p_buf || cr->tbname[tmp - 1] != '\0')
+            return NULL;
 
         p_buf =
             buf_get(&(cr->islocked), sizeof(cr->islocked), p_buf, p_buf_end);
+        if (!p_buf)
+            return NULL;
 
         if (!cr->islocked) {
             p_buf =
                 buf_get(&(cr->idxnum), sizeof(cr->idxnum), p_buf, p_buf_end);
             p_buf = buf_get(&(cr->lflag), sizeof(cr->lflag), p_buf, p_buf_end);
+            if (!p_buf)
+                return NULL;
             if (!cr->lflag) {
                 p_buf = buf_get(&(cr->lkeylen), sizeof(cr->lkeylen), p_buf,
                                 p_buf_end);
+                if (!p_buf || cr->lkeylen < 0 ||
+                    cr->lkeylen > (p_buf_end - p_buf))
+                    return NULL;
                 cr->lkey = malloc(cr->lkeylen);
+                if (!cr->lkey)
+                    return NULL;
                 p_buf = buf_get(cr->lkey, cr->lkeylen, p_buf, p_buf_end);
+                if (!p_buf)
+                    return NULL;
             }
 
             p_buf = buf_get(&(cr->rflag), sizeof(cr->rflag), p_buf, p_buf_end);
+            if (!p_buf)
+                return NULL;
             if (!cr->rflag) {
                 p_buf = buf_get(&(cr->rkeylen), sizeof(cr->rkeylen), p_buf,
                                 p_buf_end);
+                if (!p_buf || cr->rkeylen < 0 ||
+                    cr->rkeylen > (p_buf_end - p_buf))
+                    return NULL;
                 cr->rkey = malloc(cr->rkeylen);
+                if (!cr->rkey)
+                    return NULL;
                 p_buf = buf_get(cr->rkey, cr->rkeylen, p_buf, p_buf_end);
+                if (!p_buf)
+                    return NULL;
             }
         } else {
             cr->lflag = 1;
             cr->rflag = 1;
         }
-
-        currangearr_append(arr, cr);
     }
     return p_buf;
 }
@@ -1383,6 +1409,10 @@ static const uint8_t *snap_uid_get(snap_uid_t *snap_info, const uint8_t *p_buf,
                     p_buf_end);
     p_buf = buf_no_net_get(&(snap_info->key), sizeof(snap_info->key), p_buf,
                            p_buf_end);
+
+    /* keylen 0 is a dummy snap sent to request query effects, not an error */
+    if (snap_info->keylen > sizeof(snap_info->key))
+        return NULL;
 
     return p_buf;
 }
@@ -3712,8 +3742,12 @@ static void net_snap_uid_req(void *hndl, void *uptr, char *fromhost,
 
     snap_uid_t snap_info, *snap_in = dtap;
 
-    snap_uid_get(&snap_info, (uint8_t *)snap_in,
-                 (uint8_t *)snap_in + sizeof(snap_uid_t));
+    if (!snap_uid_get(&snap_info, (uint8_t *)snap_in,
+                      (uint8_t *)snap_in + dtalen)) {
+        logmsg(LOGMSG_ERROR, "%s: malformed snap uid request from %s\n",
+               __func__, fromhost);
+        return;
+    }
 
     snap_uid_t snap_send, *snap_out = NULL;
     uint8_t *p_buf, *p_buf_start, *p_buf_end;
@@ -3754,7 +3788,11 @@ static void net_snap_uid_rpl(void *hndl, void *uptr, char *fromhost,
                              uint8_t is_tcp)
 {
     snap_uid_t snap_info;
-    snap_uid_get(&snap_info, dtap, (uint8_t *)dtap + dtalen);
+    if (!snap_uid_get(&snap_info, dtap, (uint8_t *)dtap + dtalen)) {
+        logmsg(LOGMSG_ERROR, "%s: malformed snap uid reply from %s\n", __func__,
+               fromhost);
+        return;
+    }
     osql_chkboard_sqlsession_rc(OSQL_RQID_USE_UUID, snap_info.uuid, 0, &snap_info, NULL, &snap_info.effects, fromhost);
 }
 
