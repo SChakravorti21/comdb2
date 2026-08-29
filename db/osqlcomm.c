@@ -7944,8 +7944,17 @@ done_delete:
     } break;
     case OSQL_QBLOB: {
         osql_qblob_t dt = {0};
-        const uint8_t *p_buf_end = p_buf + sizeof(osql_qblob_t),
-                      *blob = osqlcomm_qblob_type_get(&dt, p_buf, p_buf_end);
+        const uint8_t *blob = osqlcomm_qblob_type_get(&dt, p_buf, p_buf_end);
+
+        if (!blob)
+            return osql_reject_op(iq, uuid, type, step, err, "short qblob");
+
+        /* Ignore bloblen when negative: OSQL_BLOB_FILLER_LENGTH is the
+         * blob-optimization token, any other negative is a null blob. */
+        if (dt.bloblen > 0 && dt.bloblen > (p_buf_end - blob))
+            return osql_reject_op(iq, uuid, type, step, err,
+                                  "bad qblob length");
+
         int odhready = (dt.id & OSQL_BLOB_ODH_BIT);
 
         dt.id &= ~OSQL_BLOB_ODH_BIT;
