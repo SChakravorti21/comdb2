@@ -3170,11 +3170,23 @@ static const uint8_t *osqlcomm_participant_type_get(char **participant_dbname, c
     if ((OSQLCOMM_PARTICIPANT_NAMES_OFFSET + participant_dbname_len + participant_tier_len) > p_buf_end - p_buf_orig)
         return NULL;
 
+    if (participant_dbname_len < 1 || participant_tier_len < 1)
+        return NULL;
+
     (*participant_dbname) = malloc(participant_dbname_len);
     (*participant_tier) = malloc(participant_tier_len);
+    if (!*participant_dbname || !*participant_tier)
+        return NULL;
 
     p_buf = buf_no_net_get((*participant_dbname), participant_dbname_len, p_buf, p_buf_end);
     p_buf = buf_no_net_get((*participant_tier), participant_tier_len, p_buf, p_buf_end);
+    if (!p_buf)
+        return NULL;
+
+    /* both are strcmp'd by the caller */
+    if ((*participant_dbname)[participant_dbname_len - 1] != '\0' ||
+        (*participant_tier)[participant_tier_len - 1] != '\0')
+        return NULL;
 
     return p_buf;
 }
