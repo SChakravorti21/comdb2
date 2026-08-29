@@ -7351,15 +7351,12 @@ int osql_process_packet(struct ireq *iq, uuid_t uuid, void *trans, char **pmsg,
     }
     case OSQL_DELREC:
     case OSQL_DELETE: {
-        osql_del_t dt;
+        osql_del_t dt = {0};
         int recv_dk = (type == OSQL_DELETE);
-        if (recv_dk)
-            p_buf_end = p_buf + sizeof(osql_del_t);
-        else
-            p_buf_end = p_buf + sizeof(osql_del_t) - sizeof(unsigned long long);
 
-        p_buf =
-            (uint8_t *)osqlcomm_del_type_get(&dt, p_buf, p_buf_end, recv_dk);
+        p_buf = osqlcomm_del_type_get(&dt, p_buf, p_buf_end, recv_dk);
+        if (!p_buf)
+            return osql_reject_op(iq, uuid, type, step, err, "short delete");
 
         if (!recv_dk)
             dt.dk = -1ULL;
