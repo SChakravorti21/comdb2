@@ -1,7 +1,7 @@
 #!/bin/bash
 # Manage the single-node benchmark database on the benchmark host.
 #   ctl.sh create|start|stop|sql <stmt>|mktable <key> <shape>|logbytes|files|filesizes <files-before>
-# key: int_seq|int_rand|seq16|v7|v4    shape: pk|pk_sec
+# key: int_seq|int_rand|seq16|v7|v4|nextseq|nextseq_v7|nextseq_v4    shape: pk|pk_sec
 set -e
 
 BASE=${BASE:-/bb/comdb2a/$USER/uuid-v7}
@@ -9,6 +9,7 @@ BUILD=${BUILD:-$BASE/build}
 DBDIR=$BASE/db
 DB=uuidbench
 CACHE_MB=${CACHE_MB:-64}
+PADLEN=100  # must match PADLEN in bench/uuidbench.c
 PMUX_PORT=15105
 CFG=$DBDIR/comdb2db.cfg
 
@@ -27,6 +28,7 @@ comdb2_config:default_type=local
 EOF
     cat >> "$DBDIR/$DB/$DB.lrl" <<EOF
 cache $CACHE_MB mb
+cachekbmin $((CACHE_MB * 1024))
 portmux_port $PMUX_PORT
 portmux_bind_path $DBDIR/pmux.socket
 EOF
@@ -59,19 +61,22 @@ sql)
     sql "$@"
     ;;
 mktable)
+    # nextseq tables: the server assigns id; nextseq_v7/v4 add a uuid column u
+    # with its own unique index.
     case "$2" in
-    int_seq|int_rand) ktype="longlong k" ;;
-    seq16|v7|v4) ktype="byte k[16]" ;;
+    int_seq|int_rand) cols="longlong k"; keys='"PK" = k' ;;
+    seq16|v7|v4) cols="byte k[16]"; keys='"PK" = k' ;;
+    nextseq) cols="longlong id dbstore=nextsequence"; keys='"PK" = id' ;;
+    nextseq_v7|nextseq_v4) cols="longlong id dbstore=nextsequence byte u[16]"; keys='"PK" = id "U" = u' ;;
     *) echo "bad key $2" >&2; exit 2 ;;
     esac
     case "$3" in
-    pk) keys='"PK" = k' ;;
-    pk_sec) keys='"PK" = k
-        dup "SEC" = v' ;;
+    pk) ;;
+    pk_sec) keys="$keys dup \"SEC\" = v" ;;
     *) echo "bad shape $3" >&2; exit 2 ;;
     esac
     sql "drop table if exists t" > /dev/null
-    sql "create table t { schema { $ktype longlong v byte pad[150] } keys { $keys } }" > /dev/null
+    sql "create table t { schema { $cols longlong v byte pad[$PADLEN] } keys { $keys } }" > /dev/null
     ;;
 logbytes)
     # Total bytes ever written to the transaction log.
@@ -85,7 +90,7 @@ files)
 filesizes)
     # Bytes on disk of table t's files that are not listed in $2 (the output
     # of "files" taken before the table was created), as
-    # "data,pk_index,sec_index". Dropped tables leave their files behind,
+    # "data,pk_index,second_index". Dropped tables leave their files behind,
     # hence the diff. Index files sort in key order (PK first).
     sql "exec procedure sys.cmd.send('flush')" > /dev/null
     cd "$DBDIR/$DB"

@@ -1,113 +1,114 @@
 # Insert benchmark: UUID v7 vs UUID v4 vs integer keys in comdb2
 
-This benchmark measures how the order of primary-key values affects insert
-performance in comdb2. It compares time-ordered UUIDs (v7) against random
-UUIDs (v4), and both against integer keys inserted in order (append) and at
-random. It also tests one specific concern: that v7 keys, which all land at
-the right-most leaf page of the index, make concurrent writers contend on that
+This benchmark measures how the order of primary-key values affects
+single-row insert performance in comdb2. It compares:
+
+- time-ordered UUIDs (v7) against random UUIDs (v4);
+- both against integer keys inserted in order (append) and at random;
+- three tables whose id is assigned by the server with `nextsequence`: the
+  sequence alone, and the sequence plus a uniquely indexed v7 or v4 UUID
+  column.
+
+It also tests one specific concern: that v7 keys, which all land at the
+right-most leaf page of the index, make concurrent writers contend on that
 page.
 
 ## Findings
 
-1. **v7 inserts are 1.4–1.5x faster than v4 once the index is larger than the
-   cache, and 2x faster when the table also has a secondary index.** Most of
-   the gain comes from cache locality: v7 inserts touch only the right edge of
-   the index, so they had zero buffer-pool misses, while v4 misses grew steadily
-   as the table grew. When everything fits in cache, v7 is only 1.1–1.2x faster.
+1. **With one row per transaction, the right-edge contention is real and large.**
+   - From 16 clients up, v4 inserts are 2.3–2.6x faster than v7 (38k vs 17k
+     rows/s at 16 clients; 35k vs 14k at 64).
+   - v7 latency is 2.5x higher at 64 clients: p50 4.4 ms vs 1.7 ms, and p99
+     8.7 ms vs 3.2 ms.
+   - With in-order keys, every insert modifies the same last leaf page, and
+     with page locks it holds that lock until commit. So concurrent inserts
+     queue behind each other, and some deadlock.
+   - v7 had 61–66 deadlocks per 1000 rows and 190–240 µs of lock wait per
+     row. v4 had 0.04 deadlocks per 1000 rows and 1 µs of lock wait, because
+     its inserts are spread across thousands of leaves.
+   - int append behaves the same way as v7: the same lock wait, with half the
+     deadlocks. It is only 1.2–1.3x faster than v7.
 
-2. **Right-edge contention exists, but it is small and does not grow with
-   concurrency.**
-   - At 4 clients, v7 had about twice the lock-wait time per row of the
-     append-only keys (19 µs vs 9 µs) and twice the p99 latency (64 ms vs
-     30 ms).
-   - At 16 and 64 clients the gap shrinks to 14 µs vs 11 µs, and v7 has the
-     *fewest* deadlocks of all key types.
-   - v7's throughput relative to int append is about the same with 1 client
-     (0.86x, where contention is impossible) as with 64 clients (0.84x). So the
-     gap is a single-writer cost, not contention.
+2. **At 1–4 clients there is little difference, and v7 is slightly ahead.**
+   - With 1 client, v7 is 14% faster than v4 (6.6k vs 5.8k rows/s) and has a
+     lower p99 (0.23 ms vs 0.37 ms).
+   - With 4 clients, the two are within 10% of each other.
+   - In-order keys stop scaling at 4 clients. Random keys keep scaling to 16.
 
-3. **Every key type stops scaling at 4 clients, including the random keys that
-   have no hot page.** The ceiling is common to all workloads, so it is not
-   right-edge contention. With page locks, concurrent B-tree inserts deadlock
-   (3.6–6.5 per 1000 rows at 16 or more clients). comdb2 retries each deadlocked
-   transaction after a random sleep and lowers the effective number of write
-   threads (`handle_op_local` in `db/sltdbt.c`). Adding clients just adds
-   deadlocks.
+3. **v4 wins despite missing the cache.** v4 had 55–57 buffer-pool misses per
+   1000 rows; v7 and the append keys had none. Here, a page read from NVMe
+   costs much less than waiting for the lock on the last page. This table is
+   only about 1.5x the cache size, though. With much larger tables, v4's misses
+   would grow and the balance could shift (not tested).
 
-4. **Why v7 is slower than int append, even with 1 client:** v7's PK index is 3x
-   larger per row than the append-only keys' (60 vs 20 bytes per row), and even
-   larger than v4's (49). At ~57k rows/s, about 57 keys share each millisecond
-   and arrive in random order within it. So inserts land *near*, not *at*, the
-   end of the right-most leaf. The likely cause is that such pages split in the
-   middle and the left halves are never filled afterwards. That leaves v7's
-   index pages much emptier than v4's, which random inserts eventually fill.
-   This explanation is inferred from file sizes and was not verified at the page
-   level. A v7 generator with a monotonic counter within each millisecond
-   (RFC 9562 §6.2, methods 1 or 3) would make keys strictly increasing for each
-   client and would probably close most of the gap. That variant was not
-   measured.
+4. **`nextsequence` is the slowest choice beyond 1 client.**
+   - With 1 client it matches int append (6.1k vs 6.5k rows/s).
+   - From 4 clients up it is 1.5–2.1x slower than a client-side counter
+     (9.7k vs 20.5k rows/s at 16 clients), and it peaks at 4 clients.
+   - From 16 clients up, nearly every second insert deadlocks (about 450 per
+     1000 rows).
+   - Each insert also writes about 780 more bytes of log per row than int
+     append.
+   - The cause is in the code: each insert reads, deletes and re-adds the
+     table's sequence counter in llmeta inside the insert's own transaction
+     (`bdb_increment_and_set_sequence`, `bdb/llmeta.c:4044`). So every
+     inserter into the table serializes on that one record, whatever the key
+     type.
 
-5. **An unrelated secondary index hides the right-edge effect completely.** The
-   secondary index here is on a random value, so its inserts are randomly
-   placed and outgrow the cache too. Throughput for every key type drops to
-   27–36k rows/s (64MB cache). v7's extra lock wait at 4 clients disappears
-   (20 µs vs 23 µs for int append), and at 16 and 64 clients v7 and int append
-   have the same lock-wait time.
+5. **For the sequence + UUID tables, the sequence is the bottleneck.**
+   - The v7 index is about 10% faster than the v4 index (8.2–10.8k vs
+     7.5–9.7k rows/s), with a lower p99 (11.8 ms vs 13.8 ms at 64 clients).
+   - The v4 index adds about 58 cache misses per 1000 rows.
+   - The order of the second column hardly matters, because every insert is
+     already waiting on the sequence counter.
+
+**Index size.** With 1 client, v7's PK index is smaller than v4's (44 vs 49
+bytes per row). With 4 or more clients it is larger (52–56). The UUID index on
+the sequence tables shows the same pattern.
 
 ## What was run
 
-**Key types.** All keys are generated by the client and bound as parameters. The
-comdb2 server is unmodified.
+**Workloads.** Every workload inserts one row per transaction (a single-row
+`INSERT` in autocommit) and measures writes only. Every table also has
+`longlong v` (random) and `byte pad[100]` (random bytes).
 
-| name | column | generator |
+| workload | key columns and indexes | who generates the key |
 |---|---|---|
-| `int_seq` (int append) | `longlong` | shared counter; each transaction takes the next 100 values |
-| `int_rand` (int random) | `longlong` | uniform random 64-bit value |
-| `seq16` (16B append) | `byte[16]` | same counter, big-endian in the last 8 bytes; separates the effect of key width from the effect of order |
-| `v7` (uuid v7) | `byte[16]` | RFC 9562 v7: 48-bit Unix milliseconds, then random bits (no counter within a millisecond) |
-| `v4` (uuid v4) | `byte[16]` | RFC 9562 v4: random |
+| `int_seq` (int append PK) | `longlong k`, PK | client: shared counter, one value per insert |
+| `int_rand` (int random PK) | `longlong k`, PK | client: uniform random 64-bit value |
+| `v7` (uuid v7 PK) | `byte k[16]`, PK | client: RFC 9562 v7, 48-bit Unix milliseconds then random bits (no counter within a millisecond) |
+| `v4` (uuid v4 PK) | `byte k[16]`, PK | client: RFC 9562 v4 |
+| `nextseq` (nextsequence PK) | `longlong id dbstore=nextsequence`, PK | server |
+| `nextseq_v7` | `id` as above, PK; `byte u[16]` v7, unique index | server for id, client for u |
+| `nextseq_v4` | `id` as above, PK; `byte u[16]` v4, unique index | server for id, client for u |
 
-**Table shapes.**
-
-```
-schema { <key column> k  longlong v  byte pad[150] }
-pk:      keys { "PK" = k }
-pk_sec:  keys { "PK" = k   dup "SEC" = v }        -- v is a random 64-bit value
-```
-
-The pad column holds random bytes.
-
-**Load.**
-- Each transaction is one 100-row multi-row `INSERT` in autocommit.
+**Load and size.**
 - 1, 4, 16 or 64 concurrent clients.
-- Each run inserts 1.5M rows into a freshly created table.
+- Each run inserts 500k rows into a freshly created table.
+- 3 repetitions of each of the 28 workload/client combinations: 84 runs.
+- Within each repetition, the run order is shuffled so that drift on the host
+  does not line up with one workload.
 
-**Two cache configurations, each starting from a newly created database:**
+**Cache.** comdb2's cache is set to 16MB, so the v4 PK index (about 25MB at
+500k rows) outgrows it. comdb2 raises any cache below `cachekbmin` up to it
+(64MB by default), so the lrl lowers `cachekbmin` to match. comdb2 uses direct
+I/O by default (`directio ON`), so a cache miss is a real NVMe read; the host's
+1.1 TiB of RAM does not act as a hidden page cache.
 
-| config | comdb2 cache | rows per run | repetitions | runs |
-|---|---|---|---|---|
-| `main` | 64MB (the comdb2 default) | 1.5M | 3 | 120 |
-| `incache` | 4GB | 1.5M | 1 | 40 |
-
-With the 64MB cache, the v4 PK index outgrows the cache about a quarter of the
-way through a run. comdb2 uses direct I/O by default (`directio ON`), so a cache
-miss is a real NVMe read; the host's 1.1 TiB of RAM does not act as a hidden
-page cache.
-
-**Run order.** Within each repetition, the order of client counts, shapes and
-key types is shuffled, so drift on the host does not line up with one workload.
-Before each run, the table is dropped and recreated, and the cache is flushed
+**Between runs.** The table is dropped and recreated, and the cache is flushed
 (`sys.cmd.send('flush')`).
 
 **What each run records.**
-- `results/<config>/runs.csv`, one row per run:
+- `results/main/runs.csv`, one row per run:
   - throughput and commit-latency percentiles
   - deltas of server counters from `comdb2_metrics`: lock waits, lock-wait
-    time, deadlocks, retries, cache hits and misses
+    time, aborted lock requests, deadlocks, cache hits and misses
   - bytes written to the transaction log (`bdb logstat`)
   - on-disk size of the data and index files after a flush
-- `results/<config>/ts/<run>.ts.csv`: the same client and server counters
-  sampled every second.
+- `results/main/ts/<run>.ts.csv`: the same client and server counters sampled
+  every second.
+- `results/main/ts/<run>.hist.csv`: the full commit-latency histogram for the
+  run.
 
 ## Setup
 
@@ -115,7 +116,7 @@ From `results/main/env.txt`:
 
 | | |
 |---|---|
-| host | c2btda-pw-928, the least loaded C2BTDA host when the run started (5% CPU over 15 minutes) |
+| host | c2btda-pw-928, the least loaded C2BTDA host when this work started |
 | CPU | 2x Xeon Gold 6240, 72 logical CPUs, 2 NUMA nodes |
 | RAM | 1.1 TiB |
 | disk | XFS on LVM over Intel P4510 NVMe (SSDPE2KX080T8) |
@@ -125,7 +126,7 @@ From `results/main/env.txt`:
 | locking | page locks (`init_with_rowlocks 0`) |
 | writer threads | `maxwt 8` (default): at most 8 transactions are applied on the master at once |
 | other settings | defaults: `maxretries 500`, `penaltyincpercent 20`, `checkpointtime 60`, `logfilesize 40MB` |
-| run time | 2026-10-14 12:51–14:52 EDT; 92 + 21 minutes of measured insert time |
+| run time | 2026-10-14 16:28–17:39 EDT; 68 minutes of measured insert time |
 
 The database registers with a private pmux on port 15105. The host's shared
 pmux handed out a port that another process was already using for UDP.
@@ -133,111 +134,119 @@ pmux handed out a port that another process was already using for UDP.
 ## Results
 
 Each point is the median of 3 repetitions. Whiskers show min..max. The median
-spread between repetitions is 7% of the median (worst case 20%). Full tables for
-every metric are in [`results/summary.md`](results/summary.md).
+spread between repetitions is 8% of the median; the worst case is 25% (v7 at 64
+clients). Full tables for every metric are in
+[`results/summary.md`](results/summary.md).
 
 ### Throughput
 
-![throughput, 64MB](results/plots/main_throughput.png)
-![throughput, 4GB](results/plots/incache_throughput.png)
+![throughput](results/plots/throughput.png)
 
-Rows per second with the 64MB cache:
+| workload | 1 client | 4 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 6,596 | 19,598 | 16,768 | 13,564 |
+| uuid v4 PK | 5,808 | 17,848 | 38,209 | 34,962 |
+| int append PK | 6,512 | 19,568 | 20,545 | 17,192 |
+| int random PK | 5,780 | 19,082 | 40,947 | 35,059 |
+| nextsequence PK | 6,056 | 12,725 | 9,711 | 9,152 |
+| nextsequence PK + v7 index | 5,722 | 10,844 | 8,239 | 8,366 |
+| nextsequence PK + v4 index | 5,156 | 9,657 | 7,465 | 7,508 |
 
-| shape | key | 1 client | 4 clients | 16 clients | 64 clients |
-|---|---|---:|---:|---:|---:|
-| PK only | uuid v7 | 56,911 | 72,928 | 67,224 | 66,513 |
-| PK only | uuid v4 | 39,361 | 49,647 | 47,332 | 45,668 |
-| PK only | int append | 66,249 | 95,672 | 81,120 | 79,364 |
-| PK only | int random | 46,141 | 58,824 | 51,141 | 53,016 |
-| PK only | 16B append | 66,770 | 95,988 | 81,270 | 80,268 |
-| PK + secondary | uuid v7 | 29,103 | 30,044 | 28,559 | 26,776 |
-| PK + secondary | uuid v4 | 12,282 | 15,362 | 14,289 | 14,752 |
-| PK + secondary | int append | 32,230 | 35,994 | 32,541 | 32,733 |
-| PK + secondary | int random | 15,493 | 18,592 | 17,549 | 17,191 |
-| PK + secondary | 16B append | 32,414 | 34,036 | 32,484 | 30,763 |
+### Latency
 
-The 16-byte append key performs the same as the 8-byte int append key. Key
-*width* costs nothing measurable here; key *order* is what matters.
+![latency](results/plots/latency.png)
+![latency distribution](results/plots/latency_cdf.png)
 
-### Throughput as the table grows
+The second chart shows, for every insert in all three repetitions, the
+fraction that took longer than a given latency. The dotted lines mark p50, p99
+and p99.9.
 
-![timeline, 64MB](results/plots/main_timeline_throughput.png)
-![cache misses over time, 64MB](results/plots/main_timeline_cache_misses.png)
+- **1 client:** all workloads are close, and the in-order keys have slightly
+  shorter tails.
+- **16 and 64 clients:** v4 and int random sit far to the left at every
+  percentile.
+- **The tail below p99.9:** the in-order and sequence workloads have a long
+  tail of slow inserts that reaches hundreds of milliseconds. These are inserts
+  that deadlocked and were retried after comdb2's backoff sleep.
 
-With the PK only:
-- v4 throughput falls from about 50k to about 28k rows/s as its index outgrows
-  the cache, while v7 and the append keys stay flat.
-- The cache-miss chart shows why: v7 and the append keys have no misses at all.
+p99 latency, ms:
 
-With the random secondary index, every key type declines once that index
-outgrows the cache. v4 and int random decline much further, because both of
-their indexes are random. Runs were only 1.5M rows long, and the v4 curve was
-still falling at the end, so a longer run would widen the v4 gap.
+| workload | 1 client | 4 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 0.23 | 0.34 | 3.20 | 8.70 |
+| uuid v4 PK | 0.37 | 0.54 | 0.80 | 3.20 |
+| int append PK | 0.22 | 0.30 | 2.69 | 7.42 |
+| int random PK | 0.34 | 0.43 | 0.74 | 3.20 |
+| nextsequence PK | 0.23 | 1.73 | 3.97 | 10.75 |
+| nextsequence PK + v7 index | 0.27 | 2.18 | 4.86 | 11.78 |
+| nextsequence PK + v4 index | 0.40 | 2.69 | 5.38 | 13.82 |
+
+![p99 over time](results/plots/timeline_p99.png)
 
 ### Contention
 
-![lock wait, 64MB](results/plots/main_lockwait.png)
-![deadlocks, 64MB](results/plots/main_deadlocks.png)
-![p99 latency, 64MB](results/plots/main_p99.png)
+![lock wait](results/plots/lockwait.png)
+![aborted locks](results/plots/locks_aborted.png)
 
-Lock-wait µs per row, PK only, 64MB cache:
+The two kinds of contention look different:
 
-| key | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 | 18.9 | 13.8 | 13.8 |
-| uuid v4 | 10.3 | 15.4 | 15.8 |
-| int append | 9.0 | 10.8 | 11.1 |
-| 16B append | 9.0 | 10.7 | 11.0 |
+- **In-order keys (v7, int append)** mostly *wait*: 190–240 µs of lock wait per
+  row from 16 clients up.
+- **The `nextsequence` tables** wait less (70–95 µs per row) but abort far more
+  often: about 900 aborted lock requests and 450 deadlocks per 1000 rows. Each
+  deadlock sends the transaction into comdb2's retry path, which sleeps for a
+  random interval and lowers the effective number of write threads
+  (`handle_op_local`, `db/sltdbt.c`).
 
-The 4-client v7 bump appears in both cache configurations (18.9 µs in each) and
-in every repetition. It is the one place where a right-edge hot spot is clearly
-visible. At higher concurrency the global deadlock ceiling dominates, and the
-key types bunch together.
+### Throughput and cache misses as the table grows
+
+![throughput over time](results/plots/timeline_throughput.png)
+![cache misses over time](results/plots/timeline_cache_misses.png)
+
+v4 misses the cache from the first second of every run, and the misses grow as
+the table grows. Its throughput at 16 clients drifts down from about 44k to
+32–35k rows/s, but it stays far ahead of v7 for the whole run.
 
 ### Space
 
-![sizes, 64MB](results/plots/main_sizes.png)
+![sizes](results/plots/sizes.png)
 
-PK index bytes per row are the same in both cache configurations. As client
-count rises:
-- v7 drops from 60 to 56 bytes per row.
-- The append keys rise from 20 to 29 bytes per row, because concurrent
-  transactions interleave and fewer splits happen at the very end of the index.
-- v4 stays at 49 bytes per row.
-
-With 4 or more clients, v4 and int random write about 15% more transaction log
-per row than the ordered keys (1,000–1,050 vs 840–900 bytes per row, PK only). They
-also have more deadlocks, and every retried attempt writes log again.
+The `nextsequence` tables write about 1,830 bytes of log per row (2,170 with
+the UUID index), against about 1,050–1,130 for the client-generated keys. The
+difference is the delete and add of the llmeta sequence record in every insert.
 
 ## Caveats
 
-- **The int append and 16B append keys are optimistic about contention.** Each
-  transaction takes a block of 100 consecutive values, so concurrent
-  transactions write separate key ranges. A server-side sequence, or a counter
-  per row, would interleave writers the way v7 does.
-- The secondary index is on a random value, which is the most expensive kind of
-  unrelated index. An index on a low-cardinality or time-correlated column would
-  cost less.
-- Single node only, so there is no replication.
-- Default page locks; rowlocks were deliberately not tested.
-- 1.5M rows per run; much larger tables were not tested.
-- Clients and server share a host. The `loadavg_before` column in `runs.csv`
-  includes the benchmark's own threads from the previous run.
-- The database is created fresh for each cache configuration, not for each run.
-  Within a configuration, each run gets a freshly created table, but the
-  transaction log and the files of dropped tables carry over from earlier runs.
+- **Table size.** Tables reach 500k rows, which is only about 1.5x the 16MB
+  cache. At sizes many times the cache, v4 would miss on most inserts; whether
+  that erases its lead was not tested.
+- **Batched transactions.** Inserts with many rows per transaction behave
+  differently, because each transaction then touches many random pages and
+  contends whatever the key order. An earlier version of this benchmark with
+  100-row transactions found v7 ahead of v4 at every client count; see the git
+  history of this directory.
+- **Configuration.**
+  - Single node only, so there is no replication.
+  - Default page locks; rowlocks were deliberately not tested.
+  - `maxwt 8`, so the master applies at most 8 transactions at once.
+- **Shared host.** Clients and server share the host. The load average before
+  each run ranged from 2.3 to 14.8 (median 7.1); it includes the benchmark's own
+  threads from the previous run.
+- **Fresh table, not fresh database.** The database is created once for the
+  whole matrix. Each run gets a freshly created table, but the transaction log
+  and the files of dropped tables carry over.
+- **Not measured.** Reading back the generated id after an insert.
 
 ## Reproducing
 
-On a host with comdb2's build dependencies, with the source at
-`$BASE/src` and a CMake build at `$BASE/build` (default
-`BASE=/bb/comdb2a/$USER/uuid-v7`):
+On a host with comdb2's build dependencies, with the source at `$BASE/src` and
+a CMake build at `$BASE/build` (default `BASE=/bb/comdb2a/$USER/uuid-v7`):
 
 ```sh
 cmake -S $BASE/src -B $BASE/build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo && ninja -C $BASE/build
 cp -r uuid-v7 $BASE/bench-src
 make -C $BASE/bench-src/bench SRC=$BASE/src BUILD=$BASE/build
-$BASE/bench-src/scripts/run_all.sh $BASE/results          # about 2 hours
+$BASE/bench-src/scripts/run_all.sh $BASE/results          # about 75 minutes
 python plot.py $BASE/results                              # needs matplotlib
 ```
 
@@ -245,10 +254,10 @@ python plot.py $BASE/results                              # needs matplotlib
 
 | path | what |
 |---|---|
-| `bench/uuidbench.c`, `bench/Makefile` | the client: key generators, insert threads, 1-second sampler |
+| `bench/uuidbench.c`, `bench/Makefile` | the client: key generators, insert threads, 1-second sampler, latency histogram |
 | `scripts/ctl.sh` | create, start and stop the database; recreate the table; read log bytes and file sizes |
-| `scripts/run_matrix.sh` | one cache configuration: shuffled runs, one row per run in `runs.csv` |
-| `scripts/run_all.sh` | the two configurations reported above |
+| `scripts/run_matrix.sh` | one configuration: shuffled runs, one row per run in `runs.csv` |
+| `scripts/run_all.sh` | the configuration reported above |
 | `scripts/env.sh` | records the host and database setup (`env.txt`) |
 | `plot.py` | generates `results/plots/*.png` and `results/summary.md` |
-| `results/{main,incache}/` | `runs.csv`, `env.txt`, per-run time series in `ts/` |
+| `results/main/` | `runs.csv`, `env.txt`, and per-run time series and histograms in `ts/` |

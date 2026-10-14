@@ -1,2 +1,0 @@
-label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
-013_v7_pk_sec_T4_r1,v7,4,100,1500000,41.531,36118.0,4352,59392,77824,0,28736,24596720,7070,142565,27729692,7070,28289842,2,10829752,2,5,430364,5315,15000

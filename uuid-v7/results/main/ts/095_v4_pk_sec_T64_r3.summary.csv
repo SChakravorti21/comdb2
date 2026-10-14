@@ -1,2 +1,0 @@
-label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
-095_v4_pk_sec_T64_r3,v4,64,100,1500000,101.678,14752.4,311296,950272,1114112,0,32562,60804888,9763,710583,30180501,9763,31686568,464357,12898825,464312,464369,1715781,26739,15000

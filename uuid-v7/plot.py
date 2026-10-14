@@ -1,8 +1,9 @@
-"""Turn results/<config>/runs.csv and ts/*.ts.csv into PNG charts and summary tables.
+"""Turn results/main/runs.csv and ts/*.csv into PNG charts and summary tables.
 
 usage: python plot.py [results_dir]   (needs matplotlib)
 """
 import csv
+import glob
 import os
 import statistics
 import sys
@@ -15,17 +16,19 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 RESULTS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "results")
+RUNDIR = os.path.join(RESULTS, "main")
 PLOTS = os.path.join(RESULTS, "plots")
+DESC = "single-row inserts, 16MB cache"
 
-# Colour is identity; dashes mark the keys whose inserts land at random places in the index.
-KEYS = ["v7", "v4", "int_seq", "int_rand", "seq16"]
-COLOR = dict(zip(KEYS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]))
-DASH = {"v7": "-", "v4": "--", "int_seq": "-", "int_rand": "--", "seq16": "-"}
-KEYLABEL = {"v7": "uuid v7", "v4": "uuid v4", "int_seq": "int append", "int_rand": "int random", "seq16": "16B append"}
-SHAPES = ["pk", "pk_sec"]
-SHAPELABEL = {"pk": "PK only", "pk_sec": "PK + secondary index"}
+# Colour is identity; dashes mark the workloads whose index inserts land at random places.
+KEYS = ["v7", "v4", "int_seq", "int_rand", "nextseq", "nextseq_v7", "nextseq_v4"]
+COLOR = dict(zip(KEYS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7"]))
+RANDOM = {"v4", "int_rand", "nextseq_v4"}
+DASH = {k: "--" if k in RANDOM else "-" for k in KEYS}
+KEYLABEL = {"v7": "uuid v7 PK", "v4": "uuid v4 PK", "int_seq": "int append PK", "int_rand": "int random PK",
+            "nextseq": "nextsequence PK", "nextseq_v7": "nextsequence PK + v7 index",
+            "nextseq_v4": "nextsequence PK + v4 index"}
 THREADS = [1, 4, 16, 64]
-CONFIGS = {"main": "64MB cache (index outgrows cache)", "incache": "4GB cache (everything in cache)"}
 
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 plt.rcParams.update({
@@ -35,35 +38,35 @@ plt.rcParams.update({
     "axes.spines.top": False, "axes.spines.right": False, "font.size": 10,
     "axes.titlesize": 11, "axes.titleweight": "bold", "lines.linewidth": 2,
 })
+THOUSANDS = matplotlib.ticker.StrMethodFormatter("{x:,.0f}")
+PLAIN = matplotlib.ticker.StrMethodFormatter("{x:g}")
 
 
-def load_runs(config):
-    path = os.path.join(RESULTS, config, "runs.csv")
-    if not os.path.exists(path):
-        return []
-    with open(path) as f:
+def load_runs():
+    with open(os.path.join(RUNDIR, "runs.csv")) as f:
         runs = list(csv.DictReader(f))
     for r in runs:
         rows = float(r["rows"])
         r["threads"] = int(r["threads"])
         r["rows_per_s"] = float(r["rows_per_s"])
+        r["lat_p50_ms"] = float(r["lat_p50_us"]) / 1000
+        r["lat_p99_ms"] = float(r["lat_p99_us"]) / 1000
+        r["lat_p999_ms"] = float(r["lat_p999_us"]) / 1000
+        r["locks_aborted_per_krow"] = 1000 * float(r["locks_aborted"]) / rows
         r["deadlocks_per_krow"] = 1000 * float(r["deadlocks"]) / rows
         r["lockwait_us_per_row"] = float(r["lockwait_time"]) / rows
         r["cache_misses_per_krow"] = 1000 * float(r["cache_misses"]) / rows
         r["log_bytes_per_row"] = float(r["log_bytes"]) / rows
-        r["data_bytes_per_row"] = float(r["data_bytes"]) / rows
         r["pk_index_bytes_per_row"] = float(r["pk_index_bytes"]) / rows
-        r["sec_index_bytes_per_row"] = float(r["sec_index_bytes"] or 0) / rows
-        r["lat_p99_ms"] = float(r["lat_p99_us"]) / 1000
-        r["lat_p50_ms"] = float(r["lat_p50_us"]) / 1000
+        r["second_index_bytes_per_row"] = float(r["second_index_bytes"] or 0) / rows
     return runs
 
 
 def group(runs, metric):
-    """(shape, key, threads) -> list of metric values over repetitions."""
+    """(key, threads) -> list of metric values over repetitions."""
     g = defaultdict(list)
     for r in runs:
-        g[(r["shape"], r["key"], r["threads"])].append(r[metric])
+        g[(r["key"], r["threads"])].append(r[metric])
     return g
 
 
@@ -74,7 +77,7 @@ def label_line_ends(ax, ends):
     fig = ax.figure
     fig.canvas.draw()
     to_px = ax.transData.transform
-    pts = sorted(((to_px((x, y))[1], x, y, key) for x, y, key in ends))
+    pts = sorted((to_px((x, y))[1], x, y, key) for x, y, key in ends)
     gap = 11  # px between label baselines
     placed = []
     for py, x, y, key in pts:
@@ -86,51 +89,108 @@ def label_line_ends(ax, ends):
                     va="center", fontsize=8.5, color=INK)
 
 
-def by_threads(runs, metric, ylabel, title, fname, logy=False):
-    """One panel per table shape: median over reps vs client count, whiskers = min..max."""
-    g = group(runs, metric)
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharey=True)
-    ends_by_ax = []
-    for ax, shape in zip(axes, SHAPES):
-        ends = []
-        ends_by_ax.append((ax, ends))
-        for key in KEYS:
-            xs, med, lo, hi = [], [], [], []
-            for t in THREADS:
-                vals = g.get((shape, key, t))
-                if vals:
-                    xs.append(t)
-                    med.append(statistics.median(vals))
-                    lo.append(min(vals))
-                    hi.append(max(vals))
-            if not xs:
-                continue
-            ax.plot(xs, med, DASH[key], color=COLOR[key], marker="o", markersize=5, label=KEYLABEL[key])
-            ax.vlines(xs, lo, hi, color=COLOR[key], linewidth=1, alpha=0.6)
-            ends.append((xs[-1], med[-1], key))
-        ax.set_xscale("log", base=2)
-        ax.set_xticks(THREADS, [str(t) for t in THREADS])
-        ax.set_xlim(0.8, 160)
-        if logy:
-            ax.set_yscale("log")
-        ax.set_title(SHAPELABEL[shape], loc="left")
-        ax.set_xlabel("concurrent clients (100-row transactions)")
-    axes[0].set_ylabel(ylabel)
-    if not logy:
-        axes[0].set_ylim(bottom=0)
-        axes[0].yaxis.set_major_formatter(matplotlib.ticker.StrMethodFormatter("{x:,.0f}"))
-    axes[1].legend(loc="upper left", bbox_to_anchor=(1.12, 1), frameon=False)
+def finish(fig, axes_ends, title, fname, legend_ax):
+    legend_ax.legend(loc="upper left", bbox_to_anchor=(1.35, 1), frameon=False)
     fig.suptitle(title, x=0.01, ha="left", fontweight="bold")
     fig.tight_layout()
-    for ax, ends in ends_by_ax:
+    for ax, ends in axes_ends:
         label_line_ends(ax, ends)
     fig.savefig(os.path.join(PLOTS, fname), dpi=130)
     plt.close(fig)
 
 
-def load_ts(config, label):
-    path = os.path.join(RESULTS, config, "ts", label + ".ts.csv")
-    with open(path) as f:
+def threads_axis(ax):
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(THREADS, [str(t) for t in THREADS])
+    ax.set_xlim(0.8, 110)
+    ax.set_xlabel("concurrent clients (one row per transaction)")
+
+
+def plot_vs_threads(ax, runs, metric):
+    """Median over repetitions vs client count; whiskers = min..max."""
+    g = group(runs, metric)
+    ends = []
+    for key in KEYS:
+        pts = [(t, g[(key, t)]) for t in THREADS if g.get((key, t))]
+        if not pts:
+            continue
+        xs = [t for t, _ in pts]
+        med = [statistics.median(v) for _, v in pts]
+        ax.plot(xs, med, DASH[key], color=COLOR[key], marker="o", markersize=5, label=KEYLABEL[key])
+        ax.vlines(xs, [min(v) for _, v in pts], [max(v) for _, v in pts], color=COLOR[key], linewidth=1, alpha=0.6)
+        ends.append((xs[-1], med[-1], key))
+    threads_axis(ax)
+    return ends
+
+
+def by_threads(runs, metric, ylabel, title, fname):
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ends = plot_vs_threads(ax, runs, metric)
+    ax.set_ylabel(ylabel)
+    ax.set_ylim(bottom=0)
+    ax.yaxis.set_major_formatter(THOUSANDS)
+    finish(fig, [(ax, ends)], title, fname, ax)
+
+
+def latency_vs_threads(runs):
+    """p50 and p99 commit latency side by side on a shared log scale."""
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5), sharey=True)
+    axes_ends = []
+    for ax, (metric, name) in zip(axes, [("lat_p50_ms", "p50"), ("lat_p99_ms", "p99")]):
+        ends = plot_vs_threads(ax, runs, metric)
+        # Labels on the left panel would run into the right one; the legend covers it.
+        if ax is axes[-1]:
+            axes_ends.append((ax, ends))
+        ax.set_title(f"{name} commit latency", loc="left")
+        ax.set_yscale("log")
+        ax.yaxis.set_major_formatter(PLAIN)
+    axes[0].set_ylabel("latency of one insert (ms, log scale)")
+    finish(fig, axes_ends, f"Insert latency vs clients — {DESC}", "latency.png", axes[1])
+
+
+def latency_cdf(runs):
+    """Fraction of inserts slower than x, for every insert in all repetitions, one panel per client count.
+    A log y axis keeps the tail (p99, p99.9) readable."""
+    fig, axes = plt.subplots(2, 2, figsize=(13, 8.5), sharey=True)
+    for ax, t in zip(axes.flat, THREADS):
+        for key in KEYS:
+            hist = defaultdict(int)
+            for r in runs:
+                if r["key"] == key and r["threads"] == t:
+                    with open(os.path.join(RUNDIR, "ts", r["label"] + ".hist.csv")) as f:
+                        for row in csv.DictReader(f):
+                            hist[float(row["latency_us"])] += int(row["count"])
+            if not hist:
+                continue
+            xs = sorted(hist)
+            total = sum(hist.values())
+            above, ys = total, []
+            for x in xs:
+                above -= hist[x]
+                ys.append(max(above, 0.5) / total)
+            ax.plot([x / 1000 for x in xs], ys, DASH[key], color=COLOR[key], label=KEYLABEL[key],
+                    drawstyle="steps-post")
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.xaxis.set_major_formatter(PLAIN)
+        ax.set_ylim(1e-5, 1.0)
+        for q, name in [(0.5, "p50"), (0.01, "p99"), (0.001, "p99.9")]:
+            ax.axhline(q, color=MUTED, linewidth=0.8, linestyle=":")
+            ax.annotate(name, (1, q), xycoords=("axes fraction", "data"), xytext=(-4, 2),
+                        textcoords="offset points", ha="right", fontsize=8, color=MUTED)
+        ax.set_title(f"{t} client{'s' if t > 1 else ''}", loc="left")
+        ax.set_xlabel("commit latency (ms, log scale)")
+    for ax in axes[:, 0]:
+        ax.set_ylabel("fraction of inserts slower than x (log scale)")
+    axes[0][1].legend(loc="upper left", bbox_to_anchor=(1.04, 1), frameon=False)
+    fig.suptitle(f"Latency distribution of every insert — {DESC}", x=0.01, ha="left", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(os.path.join(PLOTS, "latency_cdf.png"), dpi=130)
+    plt.close(fig)
+
+
+def load_ts(label):
+    with open(os.path.join(RUNDIR, "ts", label + ".ts.csv")) as f:
         ts = list(csv.DictReader(f))
     prev_rows, prev_t, out = 0, 0.0, []
     for p in ts:
@@ -142,9 +202,8 @@ def load_ts(config, label):
     return out
 
 
-def median_run(runs, shape, key, t):
-    cands = sorted((r for r in runs if r["shape"] == shape and r["key"] == key and r["threads"] == t),
-                   key=lambda r: r["rows_per_s"])
+def median_run(runs, key, t):
+    cands = sorted((r for r in runs if r["key"] == key and r["threads"] == t), key=lambda r: r["rows_per_s"])
     return cands[len(cands) // 2] if cands else None
 
 
@@ -152,39 +211,38 @@ def smooth(vals, w=3):
     return [statistics.fmean(vals[max(0, i - w + 1):i + 1]) for i in range(len(vals))]
 
 
-def timeline(config, runs, per_interval, ylabel, title, fname, threads=(1, 64)):
-    """Small multiples (shape x clients): a per-interval quantity against rows inserted so far,
-    for the median-throughput repetition of each workload."""
-    fig, axes = plt.subplots(len(threads), 2, figsize=(12, 3.6 * len(threads)), sharex=True, squeeze=False)
-    ends_by_ax = []
-    for i, t in enumerate(threads):
-        for j, shape in enumerate(SHAPES):
-            ax = axes[i][j]
-            ends = []
-            ends_by_ax.append((ax, ends))
-            for key in KEYS:
-                r = median_run(runs, shape, key, t)
-                if not r:
-                    continue
-                ts = load_ts(config, r["label"])
-                xs = [int(p["rows"]) / 1e6 for p in ts]
-                ys = smooth([per_interval(p) for p in ts])
-                ax.plot(xs, ys, DASH[key], color=COLOR[key], label=KEYLABEL[key])
-                ends.append((xs[-1], ys[-1], key))
-            ax.set_title(f"{SHAPELABEL[shape]}, {t} client{'s' if t > 1 else ''}", loc="left")
+def timeline(runs, per_interval, ylabel, title, fname, logy=False):
+    """A per-interval quantity against rows inserted so far, for the median-throughput repetition,
+    one panel per client count."""
+    fig, axes = plt.subplots(2, 2, figsize=(13, 8.5), sharex=True)
+    axes_ends = []
+    for ax, t in zip(axes.flat, THREADS):
+        ends = []
+        for key in KEYS:
+            r = median_run(runs, key, t)
+            if not r:
+                continue
+            ts = load_ts(r["label"])
+            xs = [int(p["rows"]) / 1e3 for p in ts]
+            ys = smooth([per_interval(p) for p in ts])
+            ax.plot(xs, ys, DASH[key], color=COLOR[key], label=KEYLABEL[key])
+            ends.append((xs[-1], ys[-1], key))
+        ax.set_title(f"{t} client{'s' if t > 1 else ''}", loc="left")
+        if logy:
+            ax.set_yscale("log")
+            ax.yaxis.set_major_formatter(PLAIN)
+        else:
             ax.set_ylim(bottom=0)
-            ax.set_xlim(0, None)
-            if i == len(threads) - 1:
-                ax.set_xlabel("rows inserted so far (millions)")
-            if j == 0:
-                ax.set_ylabel(ylabel)
-    axes[0][1].legend(loc="upper left", bbox_to_anchor=(1.12, 1), frameon=False)
-    fig.suptitle(title, x=0.01, ha="left", fontweight="bold")
-    fig.tight_layout()
-    for ax, ends in ends_by_ax:
-        label_line_ends(ax, ends)
-    fig.savefig(os.path.join(PLOTS, fname), dpi=130)
-    plt.close(fig)
+            ax.yaxis.set_major_formatter(THOUSANDS)
+        ax.set_xlim(0, None)
+        # Labels on the left column would run into the right one; the legend covers it.
+        if ax in axes[:, 1]:
+            axes_ends.append((ax, ends))
+    for ax in axes[1]:
+        ax.set_xlabel("rows inserted so far (thousands)")
+    for ax in axes[:, 0]:
+        ax.set_ylabel(ylabel)
+    finish(fig, axes_ends, title, fname, axes[0][1])
 
 
 def per_row(field, scale=1.0):
@@ -193,78 +251,80 @@ def per_row(field, scale=1.0):
     return f
 
 
-def sizes(runs, title, fname):
-    """Bytes per row of each on-disk structure and of log, at 1 client (no concurrency effects)."""
-    metrics = [("pk_index_bytes_per_row", "PK index"), ("sec_index_bytes_per_row", "secondary index"),
+def sizes(runs):
+    """Bytes per row of each index and of log, at 1 client."""
+    metrics = [("pk_index_bytes_per_row", "PK index"),
+               ("second_index_bytes_per_row", "uuid index (nextsequence tables)"),
                ("log_bytes_per_row", "transaction log")]
-    fig, axes = plt.subplots(1, 3, figsize=(13, 4.2))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.8))
     for ax, (metric, name) in zip(axes, metrics):
-        shape = "pk_sec" if metric == "sec_index_bytes_per_row" else "pk"
         g = group(runs, metric)
-        vals = [statistics.median(g[(shape, k, 1)]) if g.get((shape, k, 1)) else 0 for k in KEYS]
-        bars = ax.bar(range(len(KEYS)), vals, color=[COLOR[k] for k in KEYS], width=0.7,
+        keys = [k for k in KEYS
+                if g.get((k, 1)) and (metric != "second_index_bytes_per_row" or k.startswith("nextseq_"))]
+        vals = [statistics.median(g[(k, 1)]) for k in keys]
+        bars = ax.bar(range(len(keys)), vals, color=[COLOR[k] for k in keys], width=0.7,
                       edgecolor="#fcfcfb", linewidth=2)
         for b, v in zip(bars, vals):
             ax.annotate(f"{v:.0f}", (b.get_x() + b.get_width() / 2, v), xytext=(0, 3),
                         textcoords="offset points", ha="center", fontsize=8.5, color=INK)
-        ax.set_xticks(range(len(KEYS)), [KEYLABEL[k] for k in KEYS], rotation=20)
-        ax.set_title(f"{name} ({SHAPELABEL[shape]})", loc="left")
+        ax.set_xticks(range(len(keys)), [KEYLABEL[k] for k in keys], rotation=30, ha="right")
+        ax.set_title(name, loc="left")
         ax.grid(axis="x", visible=False)
     axes[0].set_ylabel("bytes per row, 1 client")
-    fig.suptitle(title, x=0.01, ha="left", fontweight="bold")
+    fig.suptitle(f"Space per row — {DESC}", x=0.01, ha="left", fontweight="bold")
     fig.tight_layout()
-    fig.savefig(os.path.join(PLOTS, fname), dpi=130)
+    fig.savefig(os.path.join(PLOTS, "sizes.png"), dpi=130)
     plt.close(fig)
 
 
-def table(runs, metrics, fmt):
-    """Markdown table: one row per (shape, key), one column per (metric, clients)."""
-    out = []
-    for metric, name in metrics:
-        g = group(runs, metric)
-        out.append(f"\n**{name}** (median of repetitions)\n")
-        out.append("| shape | key | " + " | ".join(f"{t} clients" for t in THREADS) + " |")
-        out.append("|---|---|" + "---:|" * len(THREADS))
-        for shape in SHAPES:
-            for key in KEYS:
-                cells = [fmt(statistics.median(g[(shape, key, t)])) if g.get((shape, key, t)) else ""
-                         for t in THREADS]
-                out.append(f"| {SHAPELABEL[shape]} | {KEYLABEL[key]} | " + " | ".join(cells) + " |")
+def table(runs, metric, name, fmt):
+    g = group(runs, metric)
+    out = [f"\n**{name}** (median of repetitions)\n",
+           "| workload | " + " | ".join(f"{t} client{'s' if t > 1 else ''}" for t in THREADS) + " |",
+           "|---|" + "---:|" * len(THREADS)]
+    for key in KEYS:
+        cells = [fmt(statistics.median(g[(key, t)])) if g.get((key, t)) else "" for t in THREADS]
+        out.append(f"| {KEYLABEL[key]} | " + " | ".join(cells) + " |")
     return "\n".join(out)
 
 
 def main():
     os.makedirs(PLOTS, exist_ok=True)
-    summary = []
-    for config, desc in CONFIGS.items():
-        runs = load_runs(config)
-        if not runs:
-            continue
-        by_threads(runs, "rows_per_s", "rows inserted per second",
-                   f"Insert throughput vs clients — {desc}", f"{config}_throughput.png")
-        by_threads(runs, "deadlocks_per_krow", "deadlocks per 1000 rows",
-                   f"Deadlocks vs clients — {desc}", f"{config}_deadlocks.png")
-        by_threads(runs, "lockwait_us_per_row", "lock-wait time per row (µs)",
-                   f"Lock-wait time vs clients — {desc}", f"{config}_lockwait.png")
-        by_threads(runs, "lat_p99_ms", "p99 commit latency (ms)",
-                   f"p99 latency of a 100-row transaction — {desc}", f"{config}_p99.png")
-        timeline(config, runs, lambda p: float(p["rows_per_s"]) / 1000, "thousand rows / s",
-                 f"Throughput as the table grows — {desc}", f"{config}_timeline_throughput.png")
-        timeline(config, runs, per_row("cache_misses", 1000), "cache misses per 1000 rows",
-                 f"Buffer-pool misses as the table grows — {desc}", f"{config}_timeline_cache_misses.png")
-        timeline(config, runs, per_row("lockwait_time"), "lock-wait µs per row",
-                 f"Lock waits as the table grows — {desc}", f"{config}_timeline_lockwait.png")
-        sizes(runs, f"Space per row — {desc}", f"{config}_sizes.png")
-        summary.append(f"\n## {config}: {desc}\n")
-        summary.append(table(runs, [("rows_per_s", "rows/s")], lambda v: f"{v:,.0f}"))
-        summary.append(table(runs, [("lat_p99_ms", "p99 latency, ms")], lambda v: f"{v:.1f}"))
-        summary.append(table(runs, [("deadlocks_per_krow", "deadlocks per 1000 rows")], lambda v: f"{v:.2f}"))
-        summary.append(table(runs, [("lockwait_us_per_row", "lock-wait µs per row")], lambda v: f"{v:.1f}"))
-        summary.append(table(runs, [("cache_misses_per_krow", "cache misses per 1000 rows")], lambda v: f"{v:.1f}"))
-        summary.append(table(runs, [("pk_index_bytes_per_row", "PK index bytes per row")], lambda v: f"{v:.1f}"))
-        summary.append(table(runs, [("log_bytes_per_row", "log bytes per row")], lambda v: f"{v:.0f}"))
+    for old in glob.glob(os.path.join(PLOTS, "*.png")):
+        os.remove(old)
+    runs = load_runs()
+    by_threads(runs, "rows_per_s", "rows inserted per second", f"Insert throughput vs clients — {DESC}",
+               "throughput.png")
+    latency_vs_threads(runs)
+    latency_cdf(runs)
+    by_threads(runs, "locks_aborted_per_krow", "aborted lock requests per 1000 rows",
+               f"Aborted lock requests vs clients — {DESC}", "locks_aborted.png")
+    by_threads(runs, "lockwait_us_per_row", "lock-wait time per row (µs)",
+               f"Lock-wait time vs clients — {DESC}", "lockwait.png")
+    timeline(runs, lambda p: float(p["rows_per_s"]), "rows / s",
+             f"Throughput as the table grows — {DESC}", "timeline_throughput.png")
+    timeline(runs, lambda p: float(p["lat_p99_us"]) / 1000, "p99 latency per second (ms, log scale)",
+             f"p99 latency as the table grows — {DESC}", "timeline_p99.png", logy=True)
+    timeline(runs, per_row("cache_misses", 1000), "cache misses per 1000 rows",
+             f"Buffer-pool misses as the table grows — {DESC}", "timeline_cache_misses.png")
+    sizes(runs)
+    tables = [
+        ("rows_per_s", "rows/s", lambda v: f"{v:,.0f}"),
+        ("lat_p50_ms", "p50 latency, ms", lambda v: f"{v:.2f}"),
+        ("lat_p99_ms", "p99 latency, ms", lambda v: f"{v:.2f}"),
+        ("lat_p999_ms", "p99.9 latency, ms", lambda v: f"{v:.1f}"),
+        ("locks_aborted_per_krow", "aborted lock requests per 1000 rows", lambda v: f"{v:.1f}"),
+        ("deadlocks_per_krow", "deadlocks per 1000 rows", lambda v: f"{v:.2f}"),
+        ("lockwait_us_per_row", "lock-wait µs per row", lambda v: f"{v:.1f}"),
+        ("cache_misses_per_krow", "cache misses per 1000 rows", lambda v: f"{v:.1f}"),
+        ("pk_index_bytes_per_row", "PK index bytes per row", lambda v: f"{v:.1f}"),
+        ("second_index_bytes_per_row", "uuid index bytes per row (nextsequence tables)", lambda v: f"{v:.1f}"),
+        ("log_bytes_per_row", "log bytes per row", lambda v: f"{v:.0f}"),
+    ]
     with open(os.path.join(RESULTS, "summary.md"), "w") as f:
-        f.write("# Summary tables (generated by plot.py)\n" + "\n".join(summary) + "\n")
+        f.write(f"# Summary tables (generated by plot.py): {DESC}\n")
+        for metric, name, fmt in tables:
+            f.write(table(runs, metric, name, fmt) + "\n")
 
 
 if __name__ == "__main__":

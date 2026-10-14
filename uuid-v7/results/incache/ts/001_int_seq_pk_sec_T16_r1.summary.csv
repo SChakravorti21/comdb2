@@ -1,2 +1,0 @@
-label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
-001_int_seq_pk_sec_T16_r1,int_seq,16,100,1500000,36.289,41335.0,34816,86016,110592,0,27811,29536746,8029,40515,23197911,8029,23192507,2,9604863,2,42,1132558,19930,15000

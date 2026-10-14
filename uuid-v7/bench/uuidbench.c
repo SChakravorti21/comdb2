@@ -1,12 +1,14 @@
 /*
- * Insert benchmark: N client threads insert rows into table t in batches of
- * B rows per transaction (one multi-row INSERT in autocommit), using one of
- * several key generators. Every key is generated here and bound as a param.
+ * Insert benchmark: N client threads insert rows into table t, B rows per
+ * transaction (one multi-row INSERT in autocommit; B=1 is a plain single-row
+ * insert), using one of several key generators. Client-side keys are bound as
+ * params; the nextseq workloads leave the id to the server's nextsequence.
  *
  * Writes:
  *   <prefix>.ts.csv       one row per sample interval (client throughput,
  *                         commit latency, server metric deltas)
  *   <prefix>.summary.csv  one row for the whole run
+ *   <prefix>.hist.csv     commit-latency histogram for the whole run
  */
 #include <getopt.h>
 #include <inttypes.h>
@@ -20,10 +22,11 @@
 
 #include <cdb2api.h>
 
-enum keytype { INT_SEQ, INT_RAND, SEQ16, UUID_V7, UUID_V4 };
-static const char *keynames[] = {"int_seq", "int_rand", "seq16", "v7", "v4"};
+enum keytype { INT_SEQ, INT_RAND, SEQ16, UUID_V7, UUID_V4, NEXTSEQ, NEXTSEQ_V7, NEXTSEQ_V4 };
+static const char *keynames[] = {"int_seq", "int_rand", "seq16", "v7", "v4", "nextseq", "nextseq_v7", "nextseq_v4"};
+#define NKEYTYPES (int)(sizeof(keynames) / sizeof(keynames[0]))
 
-#define PADLEN 150
+#define PADLEN 100
 #define NBUCKETS 256 /* latency histogram: 8 buckets per power of two of us */
 
 static char *dbname, *cfgfile, *prefix, *label = "";
@@ -136,15 +139,22 @@ static void *writer(void *arg)
     struct row *rows = calloc(batch, sizeof(*rows));
     size_t sqllen = 64 + (size_t)batch * 48;
     char *sql = malloc(sqllen);
-    int off = snprintf(sql, sqllen, "insert into t(k, v, pad) values ");
+    /* nextseq tables: id is filled in by the server; the uuid goes in column u. */
+    const char *cols = keytype == NEXTSEQ ? "v, pad" : keytype >= NEXTSEQ_V7 ? "u, v, pad" : "k, v, pad";
+    int off = snprintf(sql, sqllen, "insert into t(%s) values ", cols);
     /* cdb2_bind_param keeps the name pointer, so names must outlive the run. */
     char (*names)[3][16] = calloc(batch, sizeof(*names));
     for (int i = 0; i < batch; i++) {
-        off += snprintf(sql + off, sqllen - off, "%s(@k%d,@v%d,@p%d)", i ? "," : "", i, i, i);
+        if (keytype == NEXTSEQ)
+            off += snprintf(sql + off, sqllen - off, "%s(@v%d,@p%d)", i ? "," : "", i, i);
+        else
+            off += snprintf(sql + off, sqllen - off, "%s(@k%d,@v%d,@p%d)", i ? "," : "", i, i, i);
         snprintf(names[i][0], 16, "k%d", i);
         snprintf(names[i][1], 16, "v%d", i);
         snprintf(names[i][2], 16, "p%d", i);
-        if (isint)
+        if (keytype == NEXTSEQ)
+            ;
+        else if (isint)
             cdb2_bind_param(h, names[i][0], CDB2_INTEGER, &rows[i].ik, sizeof(int64_t));
         else
             cdb2_bind_param(h, names[i][0], CDB2_BLOB, rows[i].bk, 16);
@@ -165,6 +175,9 @@ static void *writer(void *arg)
             case SEQ16: memset(r->bk, 0, 8); put_be64(r->bk + 8, seq + i); break;
             case UUID_V7: make_uuid(r->bk, 7, &rs); break;
             case UUID_V4: make_uuid(r->bk, 4, &rs); break;
+            case NEXTSEQ: break;
+            case NEXTSEQ_V7: make_uuid(r->bk, 7, &rs); break;
+            case NEXTSEQ_V4: make_uuid(r->bk, 4, &rs); break;
             }
             r->v = (int64_t)splitmix64(&rs);
             fill_random(r->pad, PADLEN, &rs);
@@ -256,7 +269,7 @@ int main(int argc, char **argv)
         case 'd': dbname = optarg; break;
         case 'c': cfgfile = optarg; break;
         case 'k':
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < NKEYTYPES; i++)
                 if (strcmp(optarg, keynames[i]) == 0)
                     keytype = i, havekey = 1;
             break;
@@ -353,6 +366,18 @@ int main(int argc, char **argv)
         fprintf(sm, ",%" PRId64, mcur[i] - m0[i]);
     fprintf(sm, "\n");
     fclose(sm);
+
+    snprintf(path, sizeof(path), "%s.hist.csv", prefix);
+    FILE *hf = fopen(path, "w");
+    if (!hf) {
+        perror(path);
+        return 1;
+    }
+    fprintf(hf, "latency_us,count\n");
+    for (int i = 0; i < NBUCKETS; i++)
+        if (hcur[i])
+            fprintf(hf, "%.0f,%" PRIu64 "\n", bucket_us(i), hcur[i]);
+    fclose(hf);
     cdb2_close(mh);
     printf("%s %s T=%d rows=%" PRId64 " %.1fs %.0f rows/s p50=%.0fus p99=%.0fus errors=%" PRId64 "\n",
            label, keynames[keytype], nthreads, rows_committed, elapsed, rows_committed / elapsed,
