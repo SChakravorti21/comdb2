@@ -6,3 +6,6 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 OUT=${1:?usage: $0 <outdir>}
 KEYS="int_seq int_rand v7 v4 nextseq nextseq_v7 nextseq_v4"
 BATCH=1 "$HERE/run_matrix.sh" "$OUT/main" 16 4000000 3 "4 16 64" "$KEYS" "pk"
+# 8 clients matches maxwt, the number of transactions the master applies at once.
+# It was added in a second pass, which recreates the database.
+BATCH=1 "$HERE/run_matrix.sh" "$OUT/main" 16 4000000 3 "8" "$KEYS" "pk"

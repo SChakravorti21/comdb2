@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+077_int_seq_pk_T8_r2,int_seq,8,1,4000000,205.163,19496.7,368,928,3456,0,3820990,316207974,39261,80548,43444951,39257,35611132,66,17317261,66,3328890,3470910,2477,4000000

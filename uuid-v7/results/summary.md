@@ -2,132 +2,132 @@
 
 **rows/s** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 15,993 | 13,084 | 13,026 |
-| uuid v4 PK | 9,466 | 18,051 | 18,459 |
-| int append PK | 16,809 | 14,715 | 13,233 |
-| int random PK | 9,442 | 18,868 | 19,401 |
-| nextsequence PK | 10,705 | 7,600 | 7,805 |
-| nextsequence PK + v7 index | 9,972 | 7,103 | 6,855 |
-| nextsequence PK + v4 index | 4,499 | 3,981 | 4,050 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 15,993 | 17,560 | 13,084 | 13,026 |
+| uuid v4 PK | 9,466 | 12,694 | 18,051 | 18,459 |
+| int append PK | 16,809 | 19,497 | 14,715 | 13,233 |
+| int random PK | 9,442 | 13,014 | 18,868 | 19,401 |
+| nextsequence PK | 10,705 | 8,142 | 7,600 | 7,805 |
+| nextsequence PK + v7 index | 9,972 | 7,669 | 7,103 | 6,855 |
+| nextsequence PK + v4 index | 4,499 | 4,152 | 3,981 | 4,050 |
 
 **p50 latency, ms** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 0.23 | 0.99 | 4.35 |
-| uuid v4 PK | 0.37 | 0.61 | 2.43 |
-| int append PK | 0.22 | 0.93 | 4.86 |
-| int random PK | 0.37 | 0.61 | 2.43 |
-| nextsequence PK | 0.27 | 1.86 | 7.94 |
-| nextsequence PK + v7 index | 0.27 | 1.98 | 8.70 |
-| nextsequence PK + v4 index | 0.50 | 3.46 | 15.87 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 0.23 | 0.40 | 0.99 | 4.35 |
+| uuid v4 PK | 0.37 | 0.43 | 0.61 | 2.43 |
+| int append PK | 0.22 | 0.37 | 0.93 | 4.86 |
+| int random PK | 0.37 | 0.43 | 0.61 | 2.43 |
+| nextsequence PK | 0.27 | 0.67 | 1.86 | 7.94 |
+| nextsequence PK + v7 index | 0.27 | 0.74 | 1.98 | 8.70 |
+| nextsequence PK + v4 index | 0.50 | 1.34 | 3.46 | 15.87 |
 
 **p99 latency, ms** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 0.43 | 4.35 | 9.73 |
-| uuid v4 PK | 1.86 | 10.75 | 38.91 |
-| int append PK | 0.37 | 3.71 | 8.70 |
-| int random PK | 1.98 | 10.75 | 38.91 |
-| nextsequence PK | 2.18 | 5.38 | 12.80 |
-| nextsequence PK + v7 index | 2.43 | 5.38 | 14.85 |
-| nextsequence PK + v4 index | 6.40 | 9.73 | 23.55 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 0.43 | 1.86 | 4.35 | 9.73 |
+| uuid v4 PK | 1.86 | 6.40 | 10.75 | 38.91 |
+| int append PK | 0.37 | 0.93 | 3.71 | 8.70 |
+| int random PK | 1.98 | 5.89 | 10.75 | 38.91 |
+| nextsequence PK | 2.18 | 3.71 | 5.38 | 12.80 |
+| nextsequence PK + v7 index | 2.43 | 3.97 | 5.38 | 14.85 |
+| nextsequence PK + v4 index | 6.40 | 6.91 | 9.73 | 23.55 |
 
 **p99.9 latency, ms** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 1.3 | 6.9 | 14.8 |
-| uuid v4 PK | 3.7 | 15.9 | 51.2 |
-| int append PK | 1.1 | 6.4 | 11.8 |
-| int random PK | 4.0 | 14.8 | 51.2 |
-| nextsequence PK | 4.4 | 8.7 | 17.4 |
-| nextsequence PK + v7 index | 5.4 | 9.7 | 19.5 |
-| nextsequence PK + v4 index | 9.7 | 13.8 | 31.7 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 1.3 | 4.4 | 6.9 | 14.8 |
+| uuid v4 PK | 3.7 | 11.8 | 15.9 | 51.2 |
+| int append PK | 1.1 | 3.5 | 6.4 | 11.8 |
+| int random PK | 4.0 | 9.7 | 14.8 | 51.2 |
+| nextsequence PK | 4.4 | 6.4 | 8.7 | 17.4 |
+| nextsequence PK + v7 index | 5.4 | 6.9 | 9.7 | 19.5 |
+| nextsequence PK + v4 index | 9.7 | 10.8 | 13.8 | 31.7 |
 
 **aborted lock requests per 1000 rows** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 4.9 | 123.3 | 120.0 |
-| uuid v4 PK | 0.0 | 0.0 | 0.0 |
-| int append PK | 1.9 | 54.1 | 54.4 |
-| int random PK | 0.0 | 0.0 | 0.0 |
-| nextsequence PK | 275.6 | 905.4 | 890.8 |
-| nextsequence PK + v7 index | 301.1 | 911.3 | 886.8 |
-| nextsequence PK + v4 index | 589.6 | 911.1 | 905.8 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 4.9 | 60.1 | 123.3 | 120.0 |
+| uuid v4 PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| int append PK | 1.9 | 20.1 | 54.1 | 54.4 |
+| int random PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| nextsequence PK | 275.6 | 905.9 | 905.4 | 890.8 |
+| nextsequence PK + v7 index | 301.1 | 906.7 | 911.3 | 886.8 |
+| nextsequence PK + v4 index | 589.6 | 909.8 | 911.1 | 905.8 |
 
 **deadlocks per 1000 rows** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 2.37 | 59.55 | 58.01 |
-| uuid v4 PK | 0.00 | 0.01 | 0.01 |
-| int append PK | 0.91 | 26.30 | 26.43 |
-| int random PK | 0.00 | 0.01 | 0.01 |
-| nextsequence PK | 137.82 | 452.70 | 445.42 |
-| nextsequence PK + v7 index | 150.54 | 455.65 | 443.39 |
-| nextsequence PK + v4 index | 294.81 | 455.53 | 452.90 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 2.37 | 28.90 | 59.55 | 58.01 |
+| uuid v4 PK | 0.00 | 0.01 | 0.01 | 0.01 |
+| int append PK | 0.91 | 9.82 | 26.30 | 26.43 |
+| int random PK | 0.00 | 0.00 | 0.01 | 0.01 |
+| nextsequence PK | 137.82 | 452.96 | 452.70 | 445.42 |
+| nextsequence PK + v7 index | 150.54 | 453.33 | 455.65 | 443.39 |
+| nextsequence PK + v4 index | 294.81 | 454.88 | 455.53 | 452.90 |
 
 **lock-wait µs per row** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 10.1 | 229.7 | 232.6 |
-| uuid v4 PK | 0.1 | 0.7 | 0.6 |
-| int append PK | 8.3 | 254.7 | 276.4 |
-| int random PK | 0.1 | 0.6 | 0.6 |
-| nextsequence PK | 28.7 | 78.4 | 74.0 |
-| nextsequence PK + v7 index | 33.3 | 84.3 | 87.6 |
-| nextsequence PK + v4 index | 113.1 | 182.2 | 181.5 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 10.1 | 100.7 | 229.7 | 232.6 |
+| uuid v4 PK | 0.1 | 0.8 | 0.7 | 0.6 |
+| int append PK | 8.3 | 79.1 | 254.7 | 276.4 |
+| int random PK | 0.1 | 0.6 | 0.6 | 0.6 |
+| nextsequence PK | 28.7 | 71.8 | 78.4 | 74.0 |
+| nextsequence PK + v7 index | 33.3 | 76.0 | 84.3 | 87.6 |
+| nextsequence PK + v4 index | 113.1 | 178.1 | 182.2 | 181.5 |
 
 **cache misses per 1000 rows** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 0.0 | 0.0 | 0.0 |
-| uuid v4 PK | 694.9 | 694.7 | 694.1 |
-| int append PK | 0.0 | 0.0 | 0.0 |
-| int random PK | 623.0 | 623.0 | 623.0 |
-| nextsequence PK | 0.0 | 0.0 | 0.0 |
-| nextsequence PK + v7 index | 0.0 | 0.0 | 0.0 |
-| nextsequence PK + v4 index | 697.3 | 697.1 | 697.4 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| uuid v4 PK | 694.9 | 692.5 | 694.7 | 694.1 |
+| int append PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| int random PK | 623.0 | 620.9 | 623.0 | 623.0 |
+| nextsequence PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| nextsequence PK + v7 index | 0.0 | 0.0 | 0.0 | 0.0 |
+| nextsequence PK + v4 index | 697.3 | 695.4 | 697.1 | 697.4 |
 
 **PK index bytes per row** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 54.9 | 54.4 | 52.0 |
-| uuid v4 PK | 48.8 | 48.8 | 48.8 |
-| int append PK | 20.2 | 20.8 | 21.0 |
-| int random PK | 37.1 | 37.1 | 37.1 |
-| nextsequence PK | 20.1 | 20.1 | 20.1 |
-| nextsequence PK + v7 index | 20.1 | 20.1 | 20.1 |
-| nextsequence PK + v4 index | 20.1 | 20.1 | 20.1 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 54.9 | 55.3 | 54.4 | 52.0 |
+| uuid v4 PK | 48.8 | 48.8 | 48.8 | 48.8 |
+| int append PK | 20.2 | 20.6 | 20.8 | 21.0 |
+| int random PK | 37.1 | 37.0 | 37.1 | 37.1 |
+| nextsequence PK | 20.1 | 20.1 | 20.1 | 20.1 |
+| nextsequence PK + v7 index | 20.1 | 20.1 | 20.1 | 20.1 |
+| nextsequence PK + v4 index | 20.1 | 20.1 | 20.1 | 20.1 |
 
 **uuid index bytes per row (nextsequence tables)** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 0.0 | 0.0 | 0.0 |
-| uuid v4 PK | 0.0 | 0.0 | 0.0 |
-| int append PK | 0.0 | 0.0 | 0.0 |
-| int random PK | 0.0 | 0.0 | 0.0 |
-| nextsequence PK | 0.0 | 0.0 | 0.0 |
-| nextsequence PK + v7 index | 52.5 | 57.0 | 56.8 |
-| nextsequence PK + v4 index | 48.8 | 48.8 | 48.8 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| uuid v4 PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| int append PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| int random PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| nextsequence PK | 0.0 | 0.0 | 0.0 | 0.0 |
+| nextsequence PK + v7 index | 52.5 | 57.2 | 57.0 | 56.8 |
+| nextsequence PK + v4 index | 48.8 | 48.9 | 48.8 | 48.8 |
 
 **log bytes per row** (median of repetitions)
 
-| workload | 4 clients | 16 clients | 64 clients |
-|---|---:|---:|---:|
-| uuid v7 PK | 1123 | 1141 | 1138 |
-| uuid v4 PK | 1115 | 1114 | 1114 |
-| int append PK | 1052 | 1063 | 1062 |
-| int random PK | 1071 | 1071 | 1071 |
-| nextsequence PK | 1831 | 1833 | 1831 |
-| nextsequence PK + v7 index | 2179 | 2183 | 2182 |
-| nextsequence PK + v4 index | 2174 | 2174 | 2174 |
+| workload | 4 clients | 8 clients | 16 clients | 64 clients |
+|---|---:|---:|---:|---:|
+| uuid v7 PK | 1123 | 1131 | 1141 | 1138 |
+| uuid v4 PK | 1115 | 1115 | 1114 | 1114 |
+| int append PK | 1052 | 1055 | 1063 | 1062 |
+| int random PK | 1071 | 1070 | 1071 | 1071 |
+| nextsequence PK | 1831 | 1831 | 1833 | 1831 |
+| nextsequence PK + v7 index | 2179 | 2184 | 2183 | 2182 |
+| nextsequence PK + v4 index | 2174 | 2174 | 2174 | 2174 |

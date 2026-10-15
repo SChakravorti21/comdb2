@@ -22,10 +22,13 @@ mkdir -p "$OUT/ts"
 "$CTL" stop
 "$CTL" create
 "$CTL" start
-"$HERE/env.sh" > "$OUT/env.txt" 2>&1
+"$HERE/env.sh" >> "$OUT/env.txt" 2>&1
 
+# A second invocation on the same outdir adds runs to it, so run numbers
+# continue from the runs already recorded.
 RUNS=$OUT/runs.csv
 seq=0
+[ -f "$RUNS" ] && seq=$(($(wc -l < "$RUNS") - 1))
 for rep in $(seq "$REPS"); do
     for T in $(shuf -e $THREADS); do
         for shape in $(shuf -e $SHAPES); do

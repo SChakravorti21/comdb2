@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+068_v7_pk_T8_r1,v7,8,1,4000000,202.713,19732.3,368,1728,3712,0,3871009,309930305,109350,227299,54440271,109345,46631704,49,18000941,49,3354490,3549615,2733,4000000

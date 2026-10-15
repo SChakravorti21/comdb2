@@ -28,7 +28,7 @@ DASH = {k: "--" if k in RANDOM else "-" for k in KEYS}
 KEYLABEL = {"v7": "uuid v7 PK", "v4": "uuid v4 PK", "int_seq": "int append PK", "int_rand": "int random PK",
             "nextseq": "nextsequence PK", "nextseq_v7": "nextsequence PK + v7 index",
             "nextseq_v4": "nextsequence PK + v4 index"}
-THREADS = [4, 16, 64]
+THREADS = [4, 8, 16, 64]
 
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 plt.rcParams.update({
@@ -152,7 +152,7 @@ def latency_vs_threads(runs):
 def latency_cdf(runs):
     """Fraction of inserts slower than x, for every insert in all repetitions, one panel per client count.
     A log y axis keeps the tail (p99, p99.9) readable."""
-    fig, axes = plt.subplots(1, len(THREADS), figsize=(17, 5.2), sharey=True)
+    fig, axes = plt.subplots(1, len(THREADS), figsize=(21, 5.2), sharey=True)
     for ax, t in zip(axes, THREADS):
         for key in KEYS:
             hist = defaultdict(int)
@@ -214,7 +214,7 @@ def smooth(vals, w=3):
 def timeline(runs, per_interval, ylabel, title, fname, logy=False):
     """A per-interval quantity against rows inserted so far, for the median-throughput repetition,
     one panel per client count."""
-    fig, axes = plt.subplots(1, len(THREADS), figsize=(17, 5.2), sharex=True)
+    fig, axes = plt.subplots(1, len(THREADS), figsize=(21, 5.2), sharex=True)
     axes_ends = []
     for ax, t in zip(axes, THREADS):
         ends = []
