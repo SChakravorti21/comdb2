@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 RESULTS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "results")
 RUNDIR = os.path.join(RESULTS, "main")
 PLOTS = os.path.join(RESULTS, "plots")
-DESC = "single-row inserts, 16MB cache"
+DESC = "single-row inserts, 4M rows, 16MB cache"
 
 # Colour is identity; dashes mark the workloads whose index inserts land at random places.
 KEYS = ["v7", "v4", "int_seq", "int_rand", "nextseq", "nextseq_v7", "nextseq_v4"]
@@ -28,7 +28,7 @@ DASH = {k: "--" if k in RANDOM else "-" for k in KEYS}
 KEYLABEL = {"v7": "uuid v7 PK", "v4": "uuid v4 PK", "int_seq": "int append PK", "int_rand": "int random PK",
             "nextseq": "nextsequence PK", "nextseq_v7": "nextsequence PK + v7 index",
             "nextseq_v4": "nextsequence PK + v4 index"}
-THREADS = [1, 4, 16, 64]
+THREADS = [4, 16, 64]
 
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 plt.rcParams.update({
@@ -89,8 +89,9 @@ def label_line_ends(ax, ends):
                     va="center", fontsize=8.5, color=INK)
 
 
-def finish(fig, axes_ends, title, fname, legend_ax):
-    legend_ax.legend(loc="upper left", bbox_to_anchor=(1.35, 1), frameon=False)
+def finish(fig, axes_ends, title, fname, legend_ax, legend_x=1.35):
+    """legend_x is in legend_ax widths and must clear the direct labels, which take more of a narrow panel."""
+    legend_ax.legend(loc="upper left", bbox_to_anchor=(legend_x, 1), frameon=False)
     fig.suptitle(title, x=0.01, ha="left", fontweight="bold")
     fig.tight_layout()
     for ax, ends in axes_ends:
@@ -102,7 +103,7 @@ def finish(fig, axes_ends, title, fname, legend_ax):
 def threads_axis(ax):
     ax.set_xscale("log", base=2)
     ax.set_xticks(THREADS, [str(t) for t in THREADS])
-    ax.set_xlim(0.8, 110)
+    ax.set_xlim(3.2, 110)
     ax.set_xlabel("concurrent clients (one row per transaction)")
 
 
@@ -151,8 +152,8 @@ def latency_vs_threads(runs):
 def latency_cdf(runs):
     """Fraction of inserts slower than x, for every insert in all repetitions, one panel per client count.
     A log y axis keeps the tail (p99, p99.9) readable."""
-    fig, axes = plt.subplots(2, 2, figsize=(13, 8.5), sharey=True)
-    for ax, t in zip(axes.flat, THREADS):
+    fig, axes = plt.subplots(1, len(THREADS), figsize=(17, 5.2), sharey=True)
+    for ax, t in zip(axes, THREADS):
         for key in KEYS:
             hist = defaultdict(int)
             for r in runs:
@@ -180,9 +181,8 @@ def latency_cdf(runs):
                         textcoords="offset points", ha="right", fontsize=8, color=MUTED)
         ax.set_title(f"{t} client{'s' if t > 1 else ''}", loc="left")
         ax.set_xlabel("commit latency (ms, log scale)")
-    for ax in axes[:, 0]:
-        ax.set_ylabel("fraction of inserts slower than x (log scale)")
-    axes[0][1].legend(loc="upper left", bbox_to_anchor=(1.04, 1), frameon=False)
+    axes[0].set_ylabel("fraction of inserts slower than x (log scale)")
+    axes[-1].legend(loc="upper left", bbox_to_anchor=(1.04, 1), frameon=False)
     fig.suptitle(f"Latency distribution of every insert — {DESC}", x=0.01, ha="left", fontweight="bold")
     fig.tight_layout()
     fig.savefig(os.path.join(PLOTS, "latency_cdf.png"), dpi=130)
@@ -214,16 +214,16 @@ def smooth(vals, w=3):
 def timeline(runs, per_interval, ylabel, title, fname, logy=False):
     """A per-interval quantity against rows inserted so far, for the median-throughput repetition,
     one panel per client count."""
-    fig, axes = plt.subplots(2, 2, figsize=(13, 8.5), sharex=True)
+    fig, axes = plt.subplots(1, len(THREADS), figsize=(17, 5.2), sharex=True)
     axes_ends = []
-    for ax, t in zip(axes.flat, THREADS):
+    for ax, t in zip(axes, THREADS):
         ends = []
         for key in KEYS:
             r = median_run(runs, key, t)
             if not r:
                 continue
             ts = load_ts(r["label"])
-            xs = [int(p["rows"]) / 1e3 for p in ts]
+            xs = [int(p["rows"]) / 1e6 for p in ts]
             ys = smooth([per_interval(p) for p in ts])
             ax.plot(xs, ys, DASH[key], color=COLOR[key], label=KEYLABEL[key])
             ends.append((xs[-1], ys[-1], key))
@@ -235,14 +235,12 @@ def timeline(runs, per_interval, ylabel, title, fname, logy=False):
             ax.set_ylim(bottom=0)
             ax.yaxis.set_major_formatter(THOUSANDS)
         ax.set_xlim(0, None)
-        # Labels on the left column would run into the right one; the legend covers it.
-        if ax in axes[:, 1]:
+        ax.set_xlabel("rows inserted so far (millions)")
+        # Labels on the inner panels would run into their neighbours; the legend covers them.
+        if ax is axes[-1]:
             axes_ends.append((ax, ends))
-    for ax in axes[1]:
-        ax.set_xlabel("rows inserted so far (thousands)")
-    for ax in axes[:, 0]:
-        ax.set_ylabel(ylabel)
-    finish(fig, axes_ends, title, fname, axes[0][1])
+    axes[0].set_ylabel(ylabel)
+    finish(fig, axes_ends, title, fname, axes[-1], legend_x=1.55)
 
 
 def per_row(field, scale=1.0):
@@ -252,7 +250,8 @@ def per_row(field, scale=1.0):
 
 
 def sizes(runs):
-    """Bytes per row of each index and of log, at 1 client."""
+    """Bytes per row of each index and of log, at the lowest client count."""
+    t = THREADS[0]
     metrics = [("pk_index_bytes_per_row", "PK index"),
                ("second_index_bytes_per_row", "uuid index (nextsequence tables)"),
                ("log_bytes_per_row", "transaction log")]
@@ -260,8 +259,8 @@ def sizes(runs):
     for ax, (metric, name) in zip(axes, metrics):
         g = group(runs, metric)
         keys = [k for k in KEYS
-                if g.get((k, 1)) and (metric != "second_index_bytes_per_row" or k.startswith("nextseq_"))]
-        vals = [statistics.median(g[(k, 1)]) for k in keys]
+                if g.get((k, t)) and (metric != "second_index_bytes_per_row" or k.startswith("nextseq_"))]
+        vals = [statistics.median(g[(k, t)]) for k in keys]
         bars = ax.bar(range(len(keys)), vals, color=[COLOR[k] for k in keys], width=0.7,
                       edgecolor="#fcfcfb", linewidth=2)
         for b, v in zip(bars, vals):
@@ -270,7 +269,7 @@ def sizes(runs):
         ax.set_xticks(range(len(keys)), [KEYLABEL[k] for k in keys], rotation=30, ha="right")
         ax.set_title(name, loc="left")
         ax.grid(axis="x", visible=False)
-    axes[0].set_ylabel("bytes per row, 1 client")
+    axes[0].set_ylabel(f"bytes per row, {t} clients")
     fig.suptitle(f"Space per row — {DESC}", x=0.01, ha="left", fontweight="bold")
     fig.tight_layout()
     fig.savefig(os.path.join(PLOTS, "sizes.png"), dpi=130)

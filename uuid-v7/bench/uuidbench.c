@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -286,6 +287,9 @@ int main(int argc, char **argv)
         usage(argv[0]);
     if (cfgfile)
         cdb2_set_comdb2db_config(cfgfile);
+    /* cdb2_close hands sockets to the host's sockpool without MSG_NOSIGNAL; if
+     * sockpool restarted during the run, that write would kill the process. */
+    signal(SIGPIPE, SIG_IGN);
     seq_counter = 1;
 
     cdb2_hndl_tp *mh = NULL;
