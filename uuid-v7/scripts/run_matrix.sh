@@ -4,7 +4,9 @@
 # does not line up with one key type.
 #
 #   run_matrix.sh <outdir> <cache_mb> <rows> <reps> "<threads>" "<keys>" "<shapes>"
-# Rows per transaction comes from $BATCH (default 1).
+# Rows per transaction comes from $BATCH (default 1). With CACHESTAT=1, the
+# server's cache and log stats are also sampled every second into
+# ts/<run>.stat.txt.
 set -e
 
 OUT=$1 CACHE_MB=$2 ROWS=$3 REPS=$4 THREADS=$5 KEYS=$6 SHAPES=$7
@@ -14,9 +16,10 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 CTL=$HERE/ctl.sh
 BENCH=$HERE/../bench/uuidbench
 BASE=${BASE:-/bb/comdb2a/$USER/uuid-v7}
-CFG=$BASE/db/comdb2db.cfg
+DBDIR=${DBDIR:-$BASE/db}
+CFG=$DBDIR/comdb2db.cfg
 BATCH=${BATCH:-1}
-export BASE CACHE_MB
+export BASE DBDIR CACHE_MB
 
 mkdir -p "$OUT/ts"
 "$CTL" stop
@@ -43,8 +46,20 @@ for rep in $(seq "$REPS"); do
                 sleep 2
                 load=$(cut -d' ' -f1 /proc/loadavg)
                 log0=$("$CTL" logbytes)
+                if [ "$CACHESTAT" = 1 ]; then
+                    while :; do
+                        echo "== $(date +%s.%N)"
+                        "$CTL" sql "exec procedure sys.cmd.send('bdb cachestat')" || true
+                        "$CTL" sql "exec procedure sys.cmd.send('bdb logstat')" || true
+                        sleep 1
+                    done > "$OUT/ts/$name.stat.txt" 2>&1 &
+                    sampler=$!
+                fi
                 "$BENCH" -d uuidbench -c "$CFG" -k "$key" -n "$ROWS" -T "$T" -b "$BATCH" \
                     -o "$OUT/ts/$name" -L "$name" 2> "$OUT/ts/$name.err"
+                if [ "$CACHESTAT" = 1 ]; then
+                    { kill $sampler; wait $sampler; } 2> /dev/null || true
+                fi
                 log1=$("$CTL" logbytes)
                 sizes=$("$CTL" filesizes "$OUT/.files_before")
                 if [ ! -f "$RUNS" ]; then

@@ -1,12 +1,13 @@
 #!/bin/bash
 # Manage the single-node benchmark database on the benchmark host.
 #   ctl.sh create|start|stop|sql <stmt>|mktable <key> <shape>|logbytes|files|filesizes <files-before>
+# $EXTRA_LRL, if set, is appended to the lrl by create.
 # key: int_seq|int_rand|seq16|v7|v4|nextseq|nextseq_v7|nextseq_v4    shape: pk|pk_sec
 set -e
 
 BASE=${BASE:-/bb/comdb2a/$USER/uuid-v7}
 BUILD=${BUILD:-$BASE/build}
-DBDIR=$BASE/db
+DBDIR=${DBDIR:-$BASE/db}
 DB=uuidbench
 CACHE_MB=${CACHE_MB:-64}
 PADLEN=100  # must match PADLEN in bench/uuidbench.c
@@ -32,6 +33,9 @@ cachekbmin $((CACHE_MB * 1024))
 portmux_port $PMUX_PORT
 portmux_bind_path $DBDIR/pmux.socket
 EOF
+    if [ -n "$EXTRA_LRL" ]; then
+        echo "$EXTRA_LRL" >> "$DBDIR/$DB/$DB.lrl"
+    fi
     ;;
 start)
     if ! pgrep -u "$USER" -f "pmux -n -f -p $PMUX_PORT" > /dev/null; then

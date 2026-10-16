@@ -1,0 +1,3 @@
+001_v4_pk_T16_r1 v4 T=16 rows=4000000 231.0s 17317 rows/s p50=544us p99=11776us errors=0
+001_v4_pk_T16_r1 v4 T=16 rows=4000000 281.1s 14228 rows/s p50=544us p99=11776us errors=0
+001_v4_pk_T16_r1 v4 T=16 rows=4000000 1358.1s 2945 rows/s p50=5888us p99=15872us errors=0
