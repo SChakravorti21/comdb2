@@ -76,8 +76,10 @@ row 4M, once v4 misses the cache on about 906 of every 1000 inserts.
 4. **v4's throughput lead comes with a worse tail.** v4's p99 is higher than
    v7's at every client count: 1.86 vs 0.43 ms at 4 clients, 6.40 vs 1.86 ms
    at 8, 10.75 vs 4.35 ms at 16, and 38.9 vs 9.7 ms at 64. Its p50 is still
-   lower from 16 clients up (2.43 vs 4.35 ms at 64). The slow v4 inserts are
-   the ones that wait for a page read.
+   lower from 16 clients up (2.43 vs 4.35 ms at 64). At 16 clients, the slow
+   v4 inserts are the 3–4% that have to write a dirty page out of the cache
+   before they can read their own; see
+   [Why some v4 inserts take 4–15 ms](#why-some-v4-inserts-take-415-ms).
 
 5. **`nextsequence` is the slowest choice.**
    - It is 1.6–2.4x slower than a client-side counter (10.7k vs 16.8k rows/s
@@ -262,8 +264,10 @@ fraction that took longer than a given latency. The dotted lines mark p50, p99
 and p99.9.
 
 - **4 and 8 clients:** v7 and int append are fastest at every percentile
-  through p99.99. The random keys have a shoulder of slow inserts from about p95, which
-  are the inserts that waited for a page read.
+  through p99.99. The random keys have a shoulder of slow inserts from about
+  p95. What these inserts wait for was not measured at 4 and 8 clients; at 16
+  clients the 4–15 ms shoulder is dirty-page evictions (see
+  [below](#why-some-v4-inserts-take-415-ms)).
 - **16 and 64 clients:** v4 and int random are fastest up to p95, cross over
   between p95 and p98, and are the slowest of all workloads at p99 and p99.9.
 - **The tail beyond p99.9:** at 16 and 64 clients every workload reaches
@@ -319,6 +323,68 @@ The two kinds of contention look different:
   deadlock sends the transaction into comdb2's retry path, which sleeps for a
   random interval and lowers the effective number of write threads
   (`handle_op_local`, `db/sltdbt.c`).
+
+### Why some v4 inserts take 4–15 ms
+
+At 16 clients, 3.0% of v4 inserts take 4 ms or more, although a page read from
+NVMe takes well under 1 ms. These slow inserts are the ones that find no clean
+buffer in the cache and have to write a dirty page out before they can read
+their own.
+
+comdb2's cache flusher (the memp trickle thread) writes dirty pages in the
+background, trying to keep `memptricklepercent` of the cache clean (99 by
+default). Three extra v4 runs at 16 clients to 4M rows, one repetition each on
+c2btda-pw-922 (`results/trickle/`), changed only that setting. The cache
+counters were sampled every second from `bdb cachestat`:
+
+| `memptricklepercent` | rows/s | p50, ms | p99, ms | inserts ≥ 4 ms | inserts that wrote a dirty page | median dirty share of the cache |
+|---|---:|---:|---:|---:|---:|---:|
+| 99 (default) | 17,317 | 0.54 | 11.8 | 3.7% | 3.4% | 65% |
+| 50 | 14,228 | 0.54 | 11.8 | 6.4% | 6.0% | 95% |
+| 1 (flusher idle) | 2,945 | 5.89 | 15.9 | 58% | 57% | 97% |
+
+- The share of inserts at 4 ms or more follows the share that wrote a dirty
+  page (`st_rw_evict`). Per second, p99 correlates with it (+0.59 and +0.62 at
+  99 and 50).
+- Even at the default the flusher does not keep up: about 65% of the cache is
+  dirty.
+- The log flush that write-ahead logging requires before the write is not the
+  cost: log syncs fell from 34.5 to 11.2 per 1000 rows between 99 and 1 while
+  the slow inserts went up.
+
+The cost is in how the buffer allocator looks for a page to evict
+(`__memp_alloc_flags`, `berkdb/mp/mp_alloc.c`):
+
+- It walks the cache's hash buckets in turn. For each candidate bucket it
+  releases the cache's region lock, locks the bucket, looks at the bucket's
+  oldest buffer, and takes the region lock again. Every buffer allocation in
+  the cache, and so every cache miss, goes through that one region lock.
+- It skips dirty buffers until it has visited as many buckets as the hash
+  table holds (2,053 for this 16MB cache). Only then does it write a dirty
+  buffer out.
+- So each dirty eviction comes after a full sweep. That predicts about
+  0.034 × 2,053 ≈ 70 buckets visited per row at the default and
+  0.57 × 2,053 ≈ 1,170 at 1; `st_alloc_buckets` counted 77 and 1,210.
+
+Stack samples of the server during the default run (60 samples 0.25 s apart,
+from row 1.5M, 461 samples of threads applying an insert;
+`results/trickle/profile99/eustack.txt`) show where the time goes:
+
+| where a thread applying an insert was | share of samples |
+|---|---:|
+| allocator: taking or releasing the region lock between buckets | 33% |
+| reading a page from disk | 29% |
+| commit | 8% |
+| allocator: scanning | 3% |
+| allocator: writing the dirty page | 3% |
+
+A CPU profile of the same run (`perf`, 15 s) puts 20% of the server's CPU in
+`pthread_mutex_lock` and `pthread_mutex_unlock`.
+
+The number of hash buckets grows with the cache: about one per 10KB, within
+each cache region of up to `cache_seg_size` (1GB by default). With a production
+cache a sweep would visit about 100,000 buckets rather than 2,053. Whether
+dirty evictions then cost even more was not measured.
 
 ### Throughput and cache misses as the table grows
 
@@ -416,3 +482,5 @@ python plot.py $BASE/results                              # needs matplotlib
 | `plot.py` | generates `results/plots/*.png` and `results/summary.md` |
 | `results/main/` | `runs.csv`, `env.txt`, and per-run time series and histograms in `ts/` |
 | `results/long/` | the same for the 20M-row v4/v7 run |
+| `scripts/run_trickle.sh` | v4 at 16 clients with three `memptricklepercent` settings, sampling `bdb cachestat` every second |
+| `results/trickle/` | one directory per setting; `ts/<run>.stat.txt` holds the per-second `bdb cachestat` and `bdb logstat` output |
