@@ -287,6 +287,51 @@ def table(runs, metric, name, fmt):
     return "\n".join(out)
 
 
+def long_timeline():
+    """Every repetition of the long v4/v7 run: throughput and cache misses against rows inserted."""
+    rundir = os.path.join(RESULTS, "long")
+    if not os.path.exists(os.path.join(rundir, "runs.csv")):
+        return
+    with open(os.path.join(rundir, "runs.csv")) as f:
+        runs = list(csv.DictReader(f))
+    t = runs[0]["threads"]
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.2), sharex=True)
+    for r in runs:
+        key = r["key"]
+        with open(os.path.join(rundir, "ts", r["label"] + ".ts.csv")) as f:
+            ts = list(csv.DictReader(f))
+        prev, pts = 0, []
+        for p in ts:
+            d = int(p["rows"]) - prev
+            prev = int(p["rows"])
+            if d > 0:
+                pts.append((int(p["rows"]) / 1e6, float(p["rows_per_s"]), 1000 * int(p["cache_misses"]) / d))
+        pts = pts[:-1]  # the last sample covers only part of an interval
+        xs = [x for x, _, _ in pts]
+        # One label per key keeps the legend to two entries.
+        label = KEYLABEL[key] if r["rep"] == "1" else None
+        axes[0].plot(xs, smooth([y for _, y, _ in pts], 60), DASH[key], color=COLOR[key], label=label,
+                     linewidth=1.5)
+        axes[1].plot(xs, smooth([m for _, _, m in pts], 60), DASH[key], color=COLOR[key], linewidth=1.5)
+    axes[0].set_ylabel("rows / s (60 s moving average)")
+    axes[0].set_title("throughput", loc="left")
+    axes[1].set_ylabel("cache misses per 1000 rows (60 s moving average)")
+    axes[1].set_title("buffer-pool misses", loc="left")
+    for ax in axes:
+        ax.set_xlabel("rows inserted so far (millions)")
+        ax.set_xlim(0, None)
+        ax.set_ylim(bottom=0)
+        ax.yaxis.set_major_formatter(THOUSANDS)
+    axes[1].legend(*axes[0].get_legend_handles_labels(), loc="upper left", bbox_to_anchor=(1.04, 1),
+                   frameon=False)
+    fig.suptitle(f"v4 vs v7 to {int(runs[0]['rows']) // 1_000_000}M rows, {t} clients, 16MB cache, every repetition",
+                 x=0.01, ha="left",
+                 fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(os.path.join(PLOTS, "long_timeline.png"), dpi=130)
+    plt.close(fig)
+
+
 def main():
     os.makedirs(PLOTS, exist_ok=True)
     for old in glob.glob(os.path.join(PLOTS, "*.png")):
@@ -307,6 +352,7 @@ def main():
     timeline(runs, per_row("cache_misses", 1000), "cache misses per 1000 rows",
              f"Buffer-pool misses as the table grows — {DESC}", "timeline_cache_misses.png")
     sizes(runs)
+    long_timeline()
     tables = [
         ("rows_per_s", "rows/s", lambda v: f"{v:,.0f}"),
         ("lat_p50_ms", "p50 latency, ms", lambda v: f"{v:.2f}"),

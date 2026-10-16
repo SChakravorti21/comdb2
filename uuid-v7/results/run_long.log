@@ -1,0 +1,6 @@
+001_v7_pk_T16_r1 v7 T=16 rows=20000000 1389.0s 14399 rows/s p50=928us p99=3968us errors=0
+002_v4_pk_T16_r1 v4 T=16 rows=20000000 1398.6s 14300 rows/s p50=672us p99=12800us errors=0
+003_v7_pk_T16_r2 v7 T=16 rows=20000000 1653.6s 12095 rows/s p50=1088us p99=4864us errors=0
+004_v4_pk_T16_r2 v4 T=16 rows=20000000 1413.8s 14147 rows/s p50=672us p99=12800us errors=0
+005_v7_pk_T16_r3 v7 T=16 rows=20000000 1601.3s 12490 rows/s p50=1088us p99=4352us errors=0
+006_v4_pk_T16_r3 v4 T=16 rows=20000000 1582.2s 12641 rows/s p50=736us p99=12800us errors=0
