@@ -272,6 +272,24 @@ and p99.9.
   v4 and int random almost never deadlock but still reach 220–240 ms at p99.99
   with 64 clients; that tail was not investigated.
 
+**Why v4 has the lower median but the worse tail.** Each client sends its next
+insert as soon as the last one commits, so mean latency is clients ÷
+throughput. At 16 clients that gives 1.25 ms for v7 and 0.91 ms for v4, which
+match the measured means. v4's higher throughput forces its mean down, and the
+two distributions differ in shape:
+
+- **v7's cost falls on every insert.** From 8 clients up, v7 waits for a lock
+  0.97 times per row, and from 16 clients up each wait averages 235–245 µs:
+  inserts queue for the last leaf page. That shifts the whole distribution, so
+  v7's p50 is close to its mean (0.99 vs 1.25 ms at 16 clients).
+- **v4's cost falls on a few inserts.** It waits for a lock 0.003 times per
+  row, but 3.0% of its inserts at 16 clients take 4 ms or more (4.1% in the
+  20M-row run). Those raise its mean and p99 but not its median: at 16 clients
+  its p50 is 0.61 ms against a mean of 0.91.
+
+At 4 clients, where v7 has only 9 µs of lock wait per row, v7's p50 is the
+lower one (0.23 vs 0.37 ms).
+
 p99 latency, ms:
 
 | workload | 4 clients | 8 clients | 16 clients | 64 clients |
