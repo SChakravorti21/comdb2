@@ -1196,7 +1196,9 @@ static void codeCursorHint(
 #if defined(SQLITE_BUILDING_FOR_COMDB2)
   /* Really need to run this only for remote cursors */
   /* hack, at this point only remcurs have it */
-  if( pWInfo->pTabList->a[iLevel].zDatabase==NULL )
+  if( pWInfo->pTabList->a[iLevel].fg.fixedSchema
+   || pWInfo->pTabList->a[iLevel].fg.isSubquery
+   || pWInfo->pTabList->a[iLevel].u4.zDatabase==NULL )
     return;
 
   /* Need this Mask since the code lower ignores TERM_CODED !!!!*/
@@ -1358,11 +1360,7 @@ static void codeDeferredSeek(
   pWInfo->bDeferredSeek = 1;
   sqlite3VdbeAddOp3(v, OP_DeferredSeek, iIdxCur, 0, iCur);
   if( (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))
-#if defined(SQLITE_BUILDING_FOR_COMDB2)
-   && DbMaskAllZero(sqlite3ParseToplevel(pParse)->writeMask, 0)
-#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
    && DbMaskAllZero(sqlite3ParseToplevel(pParse)->writeMask)
-#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   ){
     int i;
     Table *pTab = pIdx->pTable;

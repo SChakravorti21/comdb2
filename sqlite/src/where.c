@@ -4375,7 +4375,7 @@ static int whereLoopAddVirtualOne(
   pIdxInfo->idxFlags = 0;
   pHidden->mHandleIn = 0;
 #if defined(SQLITE_BUILDING_FOR_COMDB2)
-  pIdxInfo->zTable = pSrc->pTab->zName;
+  pIdxInfo->zTable = pSrc->pSTab->zName;
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 
   /* Invoke the virtual table xBestIndex() method */
@@ -6563,7 +6563,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
     pWInfo->nLevel--;
     assert( pWInfo->nLevel>0 );
 #if defined(SQLITE_BUILDING_FOR_COMDB2)
-    if ( !(IsVirtual(pItem->pSTab) || pItem->pSTab->pSelect) ) {
+    if ( IsOrdinaryTable(pItem->pSTab) ) {
       /* Optimizer decided to drop this table but we want to make sure
       ** all tables referenced in the query are tracked, e.g. for logging
       ** purposes (eventlog). */
@@ -6828,7 +6828,10 @@ WhereInfo *sqlite3WhereBegin(
   Expr *pNewExpr = pWhere;
   if( pTabList->nSrc>0 &&
       comdb2_shard_table_constraints(pParse, pTabList->a[0].zName,
-                                     pTabList->a[0].zDatabase, &pNewExpr) ){
+                                     (!pTabList->a[0].fg.fixedSchema &&
+                                      !pTabList->a[0].fg.isSubquery)
+                                       ? pTabList->a[0].u4.zDatabase : 0,
+                                     &pNewExpr) ){
     pWhere = pNewExpr;
   }
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
