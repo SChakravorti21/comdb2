@@ -75,8 +75,6 @@ int sqlite3BtreeGetAutoVacuum(Btree *);
 #if defined(SQLITE_BUILDING_FOR_COMDB2)
 struct Vdbe;
 int sqlite3BtreeBeginTrans(struct Vdbe*,Btree*,int,int*);
-#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
-int sqlite3BtreeBeginTrans(Btree*,int,int*);
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 int sqlite3BtreeCommitPhaseOne(Btree*, const char*);
 int sqlite3BtreeCommitPhaseTwo(Btree*, int);
@@ -278,11 +276,20 @@ int sqlite3BtreeTableMoveto(
   int bias,
   int *pRes
 );
+#if defined(SQLITE_BUILDING_FOR_COMDB2)
+int sqlite3BtreeIndexMoveto(
+  BtCursor*,
+  UnpackedRecord *pUnKey,
+  int bias,
+  int *pRes
+);
+#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 int sqlite3BtreeIndexMoveto(
   BtCursor*,
   UnpackedRecord *pUnKey,
   int *pRes
 );
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 int sqlite3BtreeCursorHasMoved(BtCursor*);
 int sqlite3BtreeCursorRestore(BtCursor*, int*);
 int sqlite3BtreeDelete(BtCursor*, int);
