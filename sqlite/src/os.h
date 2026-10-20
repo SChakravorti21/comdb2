@@ -80,10 +80,8 @@
 ** In most cases where SQLite needs a temp table/index, it will ask
 ** _us_ to create it rather than going directly to the filesystem.
 ** Sorting _should_ be the only case where SQLite interacts directly with the
-** filesystem to create temp files.
-**
-** `bdb_tmp_size()` ignores files with this prefix when summing the size of all
-** temp files.
+** filesystem to create temp files. `bdb_tmp_size()` also relies on this
+** naming convention when summing the size of all temp files.
 */
 # define SQLITE_TEMP_FILE_PREFIX "sqlsort_"
 #else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
