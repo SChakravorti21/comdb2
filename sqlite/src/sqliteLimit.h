@@ -157,6 +157,16 @@
 ** as a signed 32-bit integer can hold.
 */
 #ifndef SQLITE_MAX_VARIABLE_NUMBER
+#if defined(SQLITE_BUILDING_FOR_COMDB2)
+/*
+** Comdb2 notes:
+** - {26281279}: Increased from 999 to 1024 variables for compatibility
+**   because Oracle has 1000 and DB2 has 1012.
+** - {28269065}: Increased again (1024 -> 2048).
+** - Upgrading to SQLite 3.51.2 brought it up to 32766, so removed the
+**   patch entirely.
+*/
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 # define SQLITE_MAX_VARIABLE_NUMBER 32766
 #endif
 
