@@ -3182,9 +3182,9 @@ struct Expr {
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth
                          ** TK_FUNCTION: NC_SelfRef flag if needs OP_PureFunc */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_BUILDING_FOR_COMDB2) || defined(SQLITE_DEBUG)
   u8 vvaFlags;           /* Verification flags. */
-#endif
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) || defined(SQLITE_DEBUG) */
   u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
@@ -3316,7 +3316,7 @@ struct Expr {
 ** and Accreditation only.  It works like ExprSetProperty() during VVA
 ** processes but is a no-op for delivery.
 */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_BUILDING_FOR_COMDB2) || defined(SQLITE_DEBUG)
 # define ExprSetVVAProperty(E,P)   (E)->vvaFlags|=(P)
 # define ExprHasVVAProperty(E,P)   (((E)->vvaFlags&(P))!=0)
 # define ExprClearVVAProperties(E) (E)->vvaFlags = 0
@@ -3324,7 +3324,7 @@ struct Expr {
 # define ExprSetVVAProperty(E,P)
 # define ExprHasVVAProperty(E,P)   0
 # define ExprClearVVAProperties(E)
-#endif
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) || defined(SQLITE_DEBUG) */
 
 /*
 ** Macros to determine the number of bytes required by a normal Expr
@@ -3988,25 +3988,15 @@ struct TriggerPrg {
 # define DbMaskTest(M,I)    (((M)[(I)/8]&(1<<((I)&7)))!=0)
 # define DbMaskZero(M)      memset((M),0,sizeof(M))
 # define DbMaskSet(M,I)     (M)[(I)/8]|=(1<<((I)&7))
-#if defined(SQLITE_BUILDING_FOR_COMDB2)
-# define DbMaskAllZero(M,S) sqlite3DbMaskAllZero(M, S)
-# define DbMaskNonZero(M,S) (sqlite3DbMaskAllZero(M, S)==0)
-#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 # define DbMaskAllZero(M)   sqlite3DbMaskAllZero(M)
 # define DbMaskNonZero(M)   (sqlite3DbMaskAllZero(M)==0)
-#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 #else
   typedef unsigned int yDbMask;
 # define DbMaskTest(M,I)    (((M)&(((yDbMask)1)<<(I)))!=0)
 # define DbMaskZero(M)      ((M)=0)
 # define DbMaskSet(M,I)     ((M)|=(((yDbMask)1)<<(I)))
-#if defined(SQLITE_BUILDING_FOR_COMDB2)
-# define DbMaskAllZero(M,S) (M)==0
-# define DbMaskNonZero(M,S) (M)!=0
-#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 # define DbMaskAllZero(M)   ((M)==0)
 # define DbMaskNonZero(M)   ((M)!=0)
-#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 #endif
 
 /*
@@ -4076,6 +4066,13 @@ struct Parse {
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
+#if defined(SQLITE_BUILDING_FOR_COMDB2)
+                       /* The prepare flags are of interest to the DDL
+                        * integration code in the "comdb2build.c" and
+                        * "comdb2lua.c" files.  It can also be used to extract
+                        * qualified table names from an arbitrary SELECT query
+                        * (useful for FDB integration). */
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
   u8 bHasExists;       /* Has a correlated "EXISTS (SELECT ....)" expression */
   u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
@@ -4192,13 +4189,6 @@ struct Parse {
   int recording[MAX_CURSOR_IDS/sizeof(int)]; /* which cursors are recording? */
   u8 write;                 /* Write transaction during sqlite3FinishCoding? */
   Cdb2DDL *comdb2_ddl_ctx;  /* Context for DDL commands */
-  int prepFlags;            /* Prepare-only mode flags, skip all schema changes
-                             * that originate from DDL, etc.  This is primarily
-                             * of interest to the DDL integration code in the
-                             * "comdb2build.c" and "comdb2lua.c" files.  It can
-                             * also be used to extract qualified table names
-                             * from an arbitrary SELECT query (useful for FDB
-                             * integration). */
   int nSrcListOnly;         /* When the SQLITE_PREPARE_SRCLIST_ONLY flag is
                              * enabled, this will contain the number of table
                              * names in the azSrcListOnly array. */
@@ -5127,7 +5117,6 @@ char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
   void sqlite3TreeViewWindow(TreeView*, const Window*, u8);
   void sqlite3TreeViewWinFunc(TreeView*, const Window*, u8);
 #endif
-#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) || defined(SQLITE_DEBUG) */
   void sqlite3ShowExpr(const Expr*);
   void sqlite3ShowExprList(const ExprList*);
   void sqlite3ShowIdList(const IdList*);
@@ -5146,7 +5135,7 @@ char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
   void sqlite3ShowWinFunc(const Window*);
 #endif
   void sqlite3ShowBitvec(Bitvec*);
-#endif
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) || defined(SQLITE_DEBUG) */
 
 void sqlite3SetString(char **, sqlite3*, const char*);
 void sqlite3ProgressCheck(Parse*);
@@ -5289,11 +5278,7 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,ExprList*,Select*,int,int);
 #endif
 
 #if SQLITE_MAX_ATTACHED>30
-#if defined(SQLITE_BUILDING_FOR_COMDB2)
-  int sqlite3DbMaskAllZero(yDbMask, int);
-#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   int sqlite3DbMaskAllZero(yDbMask);
-#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
 #endif
 void sqlite3DropTable(Parse*, SrcList*, int, int);
 void sqlite3CodeDropTable(Parse*, Table*, int, int);
