@@ -25,7 +25,6 @@ void comdb2SetWriteFlag(int);
 #include "cdb2_constants.h"
 #include <logmsg.h>
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
-
 /*
 ** Fill the InitData structure with an error message that indicates
 ** that the database is corrupt.
@@ -246,12 +245,12 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   db->init.busy = 1;
 
 #if defined(SQLITE_BUILDING_FOR_COMDB2)
-  zMasterName = SCHEMA_TABLE(iDb);
+  zSchemaTabName = SCHEMA_TABLE(iDb);
 
   /* have we created already sqlite_master for this one?
   ** remote shares the same sqlite_master with "main"
   **/
-  pTab = sqlite3FindTableCheckOnly(db, zMasterName, db->aDb[iDb].zDbSName);
+  pTab = sqlite3FindTableCheckOnly(db, zSchemaTabName, db->aDb[iDb].zDbSName);
   if( pTab==NULL ){
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   /* Construct the in-memory representation schema tables (sqlite_schema or
@@ -357,6 +356,9 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   */
   if( meta[BTREE_TEXT_ENCODING-1] ){  /* text encoding */
     if( iDb==0 && (db->mDbFlags & DBFLAG_EncodingFixed)==0 ){
+#if defined(SQLITE_BUILDING_FOR_COMDB2)
+      SCHEMA_ENC(db) = SQLITE_UTF8;
+#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
       u8 encoding;
 #ifndef SQLITE_OMIT_UTF16
       /* If opening the main database, set ENC(db). */
@@ -365,9 +367,6 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 #else
       encoding = SQLITE_UTF8;
 #endif
-#if defined(SQLITE_BUILDING_FOR_COMDB2)
-      SCHEMA_ENC(db) = SQLITE_UTF8;
-#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
       sqlite3SetTextEncoding(db, encoding);
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
     }else{
@@ -614,7 +613,6 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg)
    return sqlite3InitTable(db, pzErrMsg, NULL);
 }
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
-
 /*
 ** This routine is a no-op if the database schema is already initialized.
 ** Otherwise, the schema is loaded. An error code is returned.
@@ -984,11 +982,13 @@ static int sqlite3Prepare(
     sParse.rc = SQLITE_NOMEM_BKPT;
     sParse.checkSchema = 0;
   }
-  if( sParse.rc!=SQLITE_OK && sParse.rc!=SQLITE_DONE
 #if defined(SQLITE_BUILDING_FOR_COMDB2)
-    && sParse.rc!=SQLITE_SCHEMA_PUSH_REMOTE_WRITE
+  /* A push write keeps its VDBE and returns its code to the caller, so it
+  ** must take the success path below. */
+  int isPushWrite = sParse.rc==SQLITE_SCHEMA_PUSH_REMOTE_WRITE;
+  if( isPushWrite ) sParse.rc = SQLITE_OK;
 #endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
-  ){
+  if( sParse.rc!=SQLITE_OK && sParse.rc!=SQLITE_DONE ){
     if( sParse.checkSchema && db->init.busy==0 ){
       schemaIsValid(&sParse);
     }
@@ -1008,6 +1008,12 @@ static int sqlite3Prepare(
     *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
     rc = SQLITE_OK;
     sqlite3ErrorClear(db);
+#if defined(SQLITE_BUILDING_FOR_COMDB2)
+    if( isPushWrite ){
+      rc = SQLITE_SCHEMA_PUSH_REMOTE_WRITE;
+      sqlite3Error(db, rc);
+    }
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   }
 
 
@@ -1067,7 +1073,11 @@ static int sqlite3LockAndPrepare(
   assert( (rc&db->errMask)==rc );
   db->busyHandler.nBusy = 0;
   sqlite3_mutex_leave(db->mutex);
+#if defined(SQLITE_BUILDING_FOR_COMDB2)
+  assert( rc==SQLITE_OK || rc==SQLITE_SCHEMA_PUSH_REMOTE_WRITE || (*ppStmt)==0 );
+#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   assert( rc==SQLITE_OK || (*ppStmt)==0 );
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   return rc;
 }
 
@@ -1175,7 +1185,11 @@ int sqlite3_prepare_v3(
   rc = sqlite3LockAndPrepare(db,zSql,nBytes,
                  SQLITE_PREPARE_SAVESQL|(prepFlags&SQLITE_PREPARE_MASK),
                  0,ppStmt,pzTail);
+#if defined(SQLITE_BUILDING_FOR_COMDB2)
   assert( rc==SQLITE_OK || rc==SQLITE_SCHEMA_PUSH_REMOTE_WRITE || ppStmt==0 || *ppStmt==0 );
+#else /* defined(SQLITE_BUILDING_FOR_COMDB2) */
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );
+#endif /* defined(SQLITE_BUILDING_FOR_COMDB2) */
   return rc;
 }
 
