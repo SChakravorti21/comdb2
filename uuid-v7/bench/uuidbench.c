@@ -4,6 +4,11 @@
  * insert), using one of several key generators. Client-side keys are bound as
  * params; the nextseq workloads leave the id to the server's nextsequence.
  *
+ * With -w update or -w read, each client instead updates or selects one row
+ * at a time by a random key from those that hv4 inserts numbered 1..K (-K).
+ * hv4 keys are v4-shaped but derived from a counter, so they can be found
+ * again; top keys sort above every hv4 key, so inserting them appends.
+ *
  * Writes:
  *   <prefix>.ts.csv       one row per sample interval (client throughput,
  *                         commit latency, server metric deltas)
@@ -23,8 +28,11 @@
 
 #include <cdb2api.h>
 
-enum keytype { INT_SEQ, INT_RAND, SEQ16, UUID_V7, UUID_V4, NEXTSEQ, NEXTSEQ_V7, NEXTSEQ_V4 };
-static const char *keynames[] = {"int_seq", "int_rand", "seq16", "v7", "v4", "nextseq", "nextseq_v7", "nextseq_v4"};
+enum keytype { INT_SEQ, INT_RAND, SEQ16, UUID_V7, UUID_V4, NEXTSEQ, NEXTSEQ_V7, NEXTSEQ_V4, HASHED_V4, TOP };
+static const char *keynames[] = {"int_seq", "int_rand", "seq16", "v7",         "v4",
+                                 "nextseq", "nextseq_v7", "nextseq_v4", "hv4", "top"};
+enum op { OP_INSERT, OP_UPDATE, OP_READ };
+static const char *opnames[] = {"insert", "update", "read"};
 #define NKEYTYPES (int)(sizeof(keynames) / sizeof(keynames[0]))
 
 #define PADLEN 100
@@ -33,13 +41,16 @@ static const char *keynames[] = {"int_seq", "int_rand", "seq16", "v7", "v4", "ne
 static char *dbname, *cfgfile, *prefix, *label = "";
 static enum keytype keytype;
 static int nthreads = 1, batch = 100, interval_ms = 1000;
-static int64_t total_rows;
+static enum op op = OP_INSERT;
+static int64_t total_rows, nkeys, seq_start = 1, duration_s;
+static int stopping; /* atomic; set when the -D duration is up */
 
 static int64_t batches_claimed; /* atomic */
 static int64_t rows_committed;  /* atomic */
 static int64_t errors;          /* atomic */
 static uint64_t hist[NBUCKETS]; /* atomic */
-static int64_t seq_counter;     /* atomic; next int_seq/seq16 key */
+static int64_t seq_counter;     /* atomic; next int_seq/seq16/hv4/top key */
+static int64_t not_found;       /* atomic; reads that returned no row */
 
 static uint64_t now_us(void)
 {
@@ -118,6 +129,16 @@ static void make_uuid(unsigned char *u, int version, uint64_t *rs)
     u[8] = (u[8] & 0x3f) | 0x80;
 }
 
+static void make_hashed_v4(unsigned char *u, int64_t n)
+{
+    uint64_t s = (uint64_t)n;
+    uint64_t a = splitmix64(&s), b = splitmix64(&s);
+    memcpy(u, &a, 8);
+    memcpy(u + 8, &b, 8);
+    u[6] = (u[6] & 0x0f) | 0x40;
+    u[8] = (u[8] & 0x3f) | 0x80;
+}
+
 struct row {
     int64_t ik;
     unsigned char bk[16];
@@ -141,11 +162,13 @@ static void *writer(void *arg)
     size_t sqllen = 64 + (size_t)batch * 48;
     char *sql = malloc(sqllen);
     /* nextseq tables: id is filled in by the server; the uuid goes in column u. */
-    const char *cols = keytype == NEXTSEQ ? "v, pad" : keytype >= NEXTSEQ_V7 ? "u, v, pad" : "k, v, pad";
-    int off = snprintf(sql, sqllen, "insert into t(%s) values ", cols);
+    const char *cols = keytype == NEXTSEQ ? "v, pad" : keytype == NEXTSEQ_V7 || keytype == NEXTSEQ_V4 ? "u, v, pad" : "k, v, pad";
+    int off = 0;
+    if (op == OP_INSERT)
+        off = snprintf(sql, sqllen, "insert into t(%s) values ", cols);
     /* cdb2_bind_param keeps the name pointer, so names must outlive the run. */
     char (*names)[3][16] = calloc(batch, sizeof(*names));
-    for (int i = 0; i < batch; i++) {
+    for (int i = 0; op == OP_INSERT && i < batch; i++) {
         if (keytype == NEXTSEQ)
             off += snprintf(sql + off, sqllen - off, "%s(@v%d,@p%d)", i ? "," : "", i, i);
         else
@@ -162,11 +185,20 @@ static void *writer(void *arg)
         cdb2_bind_param(h, names[i][1], CDB2_INTEGER, &rows[i].v, sizeof(int64_t));
         cdb2_bind_param(h, names[i][2], CDB2_BLOB, rows[i].pad, PADLEN);
     }
+    if (op != OP_INSERT) {
+        snprintf(sql, sqllen, op == OP_UPDATE ? "update t set v = @v0 where k = @k0" : "select v, pad from t where k = @k0");
+        snprintf(names[0][0], 16, "k0");
+        snprintf(names[0][1], 16, "v0");
+        cdb2_bind_param(h, names[0][0], CDB2_BLOB, rows[0].bk, 16);
+        if (op == OP_UPDATE)
+            cdb2_bind_param(h, names[0][1], CDB2_INTEGER, &rows[0].v, sizeof(int64_t));
+    }
 
     int64_t nbatches = (total_rows + batch - 1) / batch;
-    while (__atomic_fetch_add(&batches_claimed, 1, __ATOMIC_RELAXED) < nbatches) {
+    while (!__atomic_load_n(&stopping, __ATOMIC_RELAXED) &&
+           __atomic_fetch_add(&batches_claimed, 1, __ATOMIC_RELAXED) < nbatches) {
         int64_t seq = 0;
-        if (keytype == INT_SEQ || keytype == SEQ16)
+        if (keytype == INT_SEQ || keytype == SEQ16 || keytype == HASHED_V4 || keytype == TOP)
             seq = __atomic_fetch_add(&seq_counter, batch, __ATOMIC_RELAXED);
         for (int i = 0; i < batch; i++) {
             struct row *r = &rows[i];
@@ -179,6 +211,10 @@ static void *writer(void *arg)
             case NEXTSEQ: break;
             case NEXTSEQ_V7: make_uuid(r->bk, 7, &rs); break;
             case NEXTSEQ_V4: make_uuid(r->bk, 4, &rs); break;
+            case HASHED_V4:
+                make_hashed_v4(r->bk, op == OP_INSERT ? seq + i : 1 + (int64_t)(splitmix64(&rs) % nkeys));
+                break;
+            case TOP: memset(r->bk, 0xff, 8); put_be64(r->bk + 8, seq + i); break;
             }
             r->v = (int64_t)splitmix64(&rs);
             fill_random(r->pad, PADLEN, &rs);
@@ -191,8 +227,11 @@ static void *writer(void *arg)
             uint64_t t0 = now_us();
             rc = cdb2_run_statement(h, sql);
             if (rc == CDB2_OK) {
+                int nrec = 0;
                 while ((rc = cdb2_next_record(h)) == CDB2_OK)
-                    ;
+                    nrec++;
+                if (op == OP_READ && nrec == 0)
+                    __atomic_fetch_add(&not_found, 1, __ATOMIC_RELAXED);
                 if (rc == CDB2_OK_DONE)
                     rc = 0;
             }
@@ -256,8 +295,9 @@ static void read_metrics(cdb2_hndl_tp *h, int64_t *out)
 static void usage(const char *argv0)
 {
     fprintf(stderr,
-            "usage: %s -d db -c cfg -k {int_seq,int_rand,seq16,v7,v4} -n rows -o prefix\n"
-            "          [-T threads] [-b batch] [-i interval_ms] [-L label]\n",
+            "usage: %s -d db -c cfg -k {int_seq,int_rand,seq16,v7,v4,hv4,top} {-n rows | -D seconds} -o prefix\n"
+            "          [-T threads] [-b batch] [-i interval_ms] [-L label]\n"
+            "          [-w insert|update|read] [-K hv4 keys to update/read] [-s first hv4/top counter]\n",
             argv0);
     exit(2);
 }
@@ -265,7 +305,7 @@ static void usage(const char *argv0)
 int main(int argc, char **argv)
 {
     int c, havekey = 0;
-    while ((c = getopt(argc, argv, "d:c:k:n:o:T:b:i:L:")) != -1) {
+    while ((c = getopt(argc, argv, "d:c:k:n:o:T:b:i:L:w:K:s:D:")) != -1) {
         switch (c) {
         case 'd': dbname = optarg; break;
         case 'c': cfgfile = optarg; break;
@@ -280,17 +320,29 @@ int main(int argc, char **argv)
         case 'b': batch = atoi(optarg); break;
         case 'i': interval_ms = atoi(optarg); break;
         case 'L': label = optarg; break;
+        case 'w':
+            for (int i = 0; i < 3; i++)
+                if (strcmp(optarg, opnames[i]) == 0)
+                    op = i;
+            break;
+        case 'K': nkeys = atoll(optarg); break;
+        case 's': seq_start = atoll(optarg); break;
+        case 'D': duration_s = atoll(optarg); break;
         default: usage(argv[0]);
         }
     }
+    if (duration_s > 0 && total_rows <= 0)
+        total_rows = INT64_MAX / 2;
     if (!dbname || !havekey || total_rows <= 0 || !prefix || nthreads < 1 || batch < 1)
+        usage(argv[0]);
+    if (op != OP_INSERT && (keytype != HASHED_V4 || nkeys < 1 || batch != 1))
         usage(argv[0]);
     if (cfgfile)
         cdb2_set_comdb2db_config(cfgfile);
     /* cdb2_close hands sockets to the host's sockpool without MSG_NOSIGNAL; if
      * sockpool restarted during the run, that write would kill the process. */
     signal(SIGPIPE, SIG_IGN);
-    seq_counter = 1;
+    seq_counter = seq_start;
 
     cdb2_hndl_tp *mh = NULL;
     if (cdb2_open(&mh, dbname, "local", 0)) {
@@ -327,8 +379,9 @@ int main(int argc, char **argv)
         uint64_t next = tprev + interval_ms * 1000ULL;
         while (now_us() < next && __atomic_load_n(&rows_committed, __ATOMIC_RELAXED) < target)
             usleep(10000);
-        int finished = __atomic_load_n(&rows_committed, __ATOMIC_RELAXED) >= target;
         uint64_t t = now_us();
+        int finished = __atomic_load_n(&rows_committed, __ATOMIC_RELAXED) >= target ||
+                       (duration_s > 0 && t - start >= duration_s * 1000000ULL);
         int64_t rows = __atomic_load_n(&rows_committed, __ATOMIC_RELAXED);
         for (int i = 0; i < NBUCKETS; i++) {
             hcur[i] = __atomic_load_n(&hist[i], __ATOMIC_RELAXED);
@@ -349,6 +402,7 @@ int main(int argc, char **argv)
         if (finished)
             break;
     }
+    __atomic_store_n(&stopping, 1, __ATOMIC_RELAXED);
     for (int i = 0; i < nthreads; i++)
         pthread_join(tids[i], NULL);
     double elapsed = (now_us() - start) / 1e6;
@@ -383,8 +437,9 @@ int main(int argc, char **argv)
             fprintf(hf, "%.0f,%" PRIu64 "\n", bucket_us(i), hcur[i]);
     fclose(hf);
     cdb2_close(mh);
-    printf("%s %s T=%d rows=%" PRId64 " %.1fs %.0f rows/s p50=%.0fus p99=%.0fus errors=%" PRId64 "\n",
-           label, keynames[keytype], nthreads, rows_committed, elapsed, rows_committed / elapsed,
-           pctl(hcur, 0.50), pctl(hcur, 0.99), errors);
+    printf("%s %s %s T=%d rows=%" PRId64 " %.1fs %.0f rows/s p50=%.0fus p99=%.0fus errors=%" PRId64
+           " not_found=%" PRId64 "\n",
+           label, opnames[op], keynames[keytype], nthreads, rows_committed, elapsed, rows_committed / elapsed,
+           pctl(hcur, 0.50), pctl(hcur, 0.99), errors, not_found);
     return 0;
 }

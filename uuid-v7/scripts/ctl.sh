@@ -2,7 +2,7 @@
 # Manage the single-node benchmark database on the benchmark host.
 #   ctl.sh create|start|stop|sql <stmt>|mktable <key> <shape>|logbytes|files|filesizes <files-before>
 # $EXTRA_LRL, if set, is appended to the lrl by create.
-# key: int_seq|int_rand|seq16|v7|v4|nextseq|nextseq_v7|nextseq_v4    shape: pk|pk_sec
+# key: int_seq|int_rand|seq16|v7|v4|hv4|top|nextseq|nextseq_v7|nextseq_v4    shape: pk|pk_sec
 set -e
 
 BASE=${BASE:-/bb/comdb2a/$USER/uuid-v7}
@@ -69,7 +69,7 @@ mktable)
     # with its own unique index.
     case "$2" in
     int_seq|int_rand) cols="longlong k"; keys='"PK" = k' ;;
-    seq16|v7|v4) cols="byte k[16]"; keys='"PK" = k' ;;
+    seq16|v7|v4|hv4|top) cols="byte k[16]"; keys='"PK" = k' ;;
     nextseq) cols="longlong id dbstore=nextsequence"; keys='"PK" = id' ;;
     nextseq_v7|nextseq_v4) cols="longlong id dbstore=nextsequence byte u[16]"; keys='"PK" = id "U" = u' ;;
     *) echo "bad key $2" >&2; exit 2 ;;

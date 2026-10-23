@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+read_insert,hv4,16,1,17861183,930.060,19204.3,432,1472,69632,0,3486,6868967,2,6,331835673,2,253762899,45091892,40640863,44029599,60352525,22953529,27026,11692353

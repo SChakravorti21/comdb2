@@ -1,0 +1,8 @@
+preload insert hv4 T=16 rows=200000000 7753.8s 25794 rows/s p50=51200us p99=155648us errors=0 not_found=0
+read_rand read hv4 T=16 rows=21263766 958.7s 22179 rows/s p50=368us p99=7424us errors=0 not_found=0
+update_rand update hv4 T=16 rows=11954361 947.5s 12617 rows/s p50=672us p99=5888us errors=0 not_found=0
+insert_append insert top T=16 rows=16755662 900.6s 18606 rows/s p50=736us p99=2944us errors=0 not_found=0
+insert_rand insert hv4 T=16 rows=16567585 936.0s 17700 rows/s p50=544us p99=3200us errors=0 not_found=0
+read_insert read hv4 T=16 rows=17861183 930.1s 19204 rows/s p50=432us p99=1472us errors=0 not_found=0
+read_insert insert hv4 T=16 rows=11692397 930.1s 12572 rows/s p50=672us p99=4864us errors=0 not_found=0
+insert_rand_b100 insert hv4 T=16 rows=12591900 910.7s 13827 rows/s p50=69632us p99=237568us errors=0 not_found=0
