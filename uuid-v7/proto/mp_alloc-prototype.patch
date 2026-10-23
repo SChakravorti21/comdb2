@@ -1,0 +1,141 @@
+--- a/berkdb/mp/mp_alloc.c	2026-10-23 00:43:13.790893203 +0000
++++ b/berkdb/mp/mp_alloc.c	2026-10-23 00:43:36.524910585 +0000
+@@ -228,6 +228,31 @@
+ 
+ 
+ int gbl_debug_memp_alloc_size = 0;
++
++/*
++ * Prototype switches for the uuid-v7 buffer-pool experiments, read once from
++ * the environment.
++ * MP_ALLOC_DIRTY_CAP=N: once an allocation has visited N buckets, write out a
++ * dirty victim instead of skipping it (0: skip dirty buffers for a full sweep).
++ * MP_ALLOC_UNLOCKED_SCAN=1: search for a victim without the region lock; take
++ * it only to allocate from the region's free memory.
++ */
++static int mp_alloc_dirty_cap;
++static int mp_alloc_unlocked_scan;
++static pthread_once_t mp_alloc_env_once = PTHREAD_ONCE_INIT;
++
++static void
++mp_alloc_read_env(void)
++{
++	const char *v;
++
++	if ((v = getenv("MP_ALLOC_DIRTY_CAP")) != NULL)
++		mp_alloc_dirty_cap = atoi(v);
++	if ((v = getenv("MP_ALLOC_UNLOCKED_SCAN")) != NULL)
++		mp_alloc_unlocked_scan = atoi(v);
++	logmsg(LOGMSG_USER, "mp_alloc prototype: dirty_cap=%d unlocked_scan=%d\n",
++	    mp_alloc_dirty_cap, mp_alloc_unlocked_scan);
++}
+ static pthread_mutex_t dump_once_lk = PTHREAD_MUTEX_INITIALIZER;
+ /*
+  * PUBLIC: int __memp_alloc_flags __P((DB_MPOOL *, REGINFO *,
+@@ -255,6 +280,10 @@
+ 	int aggressive, giveup, ret;
+ 	void *p;
+ 	int sleeptime = 0;
++	int unlocked_scan;
++
++	pthread_once(&mp_alloc_env_once, mp_alloc_read_env);
++	unlocked_scan = mp_alloc_unlocked_scan;
+ 
+ 	if (gbl_debug_memp_alloc_size &&
+ 	    ((len > (100 * 1024)) || (mfp && len > mfp->stat.st_pagesize))) {
+@@ -357,6 +386,8 @@
+ 	freed_space = 0;
+ 	total_buckets += buckets;
+ 	buckets = 0;
++	if (unlocked_scan)
++		R_UNLOCK(dbenv, memreg);
+ 
+ 	/*
+ 	 * Walk the hash buckets and find the next two with potentially useful
+@@ -365,14 +396,22 @@
+ 	 */
+ 	for (;;) {
+ 		/* All pages have been freed, make one last try */
+-		if (c_mp->stat.st_pages == 0)
++		if (c_mp->stat.st_pages == 0) {
++			if (unlocked_scan)
++				R_LOCK(dbenv, memreg);
+ 			goto alloc;
++		}
+ 
+ 		/* Check for wrap around. */
+-		hp = &dbht[c_mp->last_checked++];
+-		if (hp >= hp_end) {
+-			c_mp->last_checked = 0;
++		if (unlocked_scan) {
++			hp = &dbht[__atomic_fetch_add(&c_mp->last_checked, 1,
++			    __ATOMIC_RELAXED) % c_mp->htab_buckets];
++		} else {
+ 			hp = &dbht[c_mp->last_checked++];
++			if (hp >= hp_end) {
++				c_mp->last_checked = 0;
++				hp = &dbht[c_mp->last_checked++];
++			}
+ 		}
+ 
+ 		/*
+@@ -406,9 +445,13 @@
+ 		 * system -- that shouldn't be possible.
+ 		 */
+ 		if (buckets++ == c_mp->htab_buckets) {
+-			if (freed_space > 0)
++			if (freed_space > 0) {
++				if (unlocked_scan)
++					R_LOCK(dbenv, memreg);
+ 				goto alloc;
+-			R_UNLOCK(dbenv, memreg);
++			}
++			if (!unlocked_scan)
++				R_UNLOCK(dbenv, memreg);
+ 
+ 			switch (++aggressive) {
+ 			case 1:
+@@ -477,7 +520,8 @@
+ 		priority = hp->hash_priority;
+ 
+ 		/* Unlock the region and lock the hash bucket. */
+-		R_UNLOCK(dbenv, memreg);
++		if (!unlocked_scan)
++			R_UNLOCK(dbenv, memreg);
+ 		mutexp = &hp->hash_mutex;
+ 		MUTEX_LOCK(dbenv, mutexp);
+ 
+@@ -517,7 +561,9 @@
+ 		 */
+ 		ret = 0;
+ 		if (F_ISSET(bhp, BH_DIRTY)) {
+-			if (aggressive == 0) {
++			if (aggressive == 0 &&
++			    (mp_alloc_dirty_cap == 0 ||
++			    buckets < (u_int32_t)mp_alloc_dirty_cap)) {
+ 				++c_mp->stat.st_rw_evict_skip;
+ 				goto next_hb;
+ 			}
+@@ -577,7 +623,8 @@
+ 		if (0) {
+ next_hb:		MUTEX_UNLOCK(dbenv, mutexp);
+ 		}
+-		R_LOCK(dbenv, memreg);
++		if (!unlocked_scan)
++			R_LOCK(dbenv, memreg);
+ 
+ 		/*
+ 		 * Retry the allocation as soon as we've freed up sufficient
+@@ -585,8 +632,11 @@
+ 		 * satisfy the request, don't try until it's likely (possible?)
+ 		 * we'll succeed.
+ 		 */
+-		if (freed_space >= 3 * len)
++		if (freed_space >= 3 * len) {
++			if (unlocked_scan)
++				R_LOCK(dbenv, memreg);
+ 			goto alloc;
++		}
+ 	}
+ 	/* NOTREACHED */
+ }

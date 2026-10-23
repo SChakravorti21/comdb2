@@ -79,7 +79,12 @@ row 4M, once v4 misses the cache on about 906 of every 1000 inserts.
    lower from 16 clients up (2.43 vs 4.35 ms at 64). At 16 clients, the slow
    v4 inserts are the 3–4% that have to write a dirty page out of the cache
    before they can read their own; see
-   [Why some v4 inserts take 4–15 ms](#why-some-v4-inserts-take-415-ms).
+   [Why some v4 inserts take 4–15 ms](#why-some-v4-inserts-take-415-ms). The
+   cost is the allocator's search for a clean buffer, not the write: capping
+   that search at 32 buckets brings v4's p99 from 9.7–10.8 ms to 4.35 ms. The
+   tail is a small-cache effect: with the index still 12x the cache, v4 has
+   the lower p99 from a 256MB cache up. See
+   [Cache-size sweep and two allocator prototypes](#cache-size-sweep-and-two-allocator-prototypes).
 
 5. **`nextsequence` is the slowest choice.**
    - It is 1.6–2.4x slower than a client-side counter (10.7k vs 16.8k rows/s
@@ -386,6 +391,106 @@ each cache region of up to `cache_seg_size` (1GB by default). With a production
 cache a sweep would visit about 100,000 buckets rather than 2,053. Whether
 dirty evictions then cost even more was not measured.
 
+### Cache-size sweep and two allocator prototypes
+
+The explanation above came from one cache size and from correlation. This
+section tests it two ways: by changing the cache size, and by changing the
+allocator.
+
+**Setup.** All runs were on c2btda-pw-922 at 16 clients with single-row
+inserts (`results/sweep/`, `scripts/run_sweep.sh`). For each cache size the
+table holds enough rows for its PK index to be about 12x the cache, as in the
+16MB runs above: 4M rows for 16MB, 16M for 64MB, 64M for 256MB and 256M for
+1GB. Each table was loaded in 100-row transactions and copied at each of those
+sizes. Each run starts a server with the given cache on a fresh copy and
+inserts 10% more rows (at least 1M) one row at a time, sampling `bdb cachestat`
+every second over one connection.
+
+All runs used one server binary, built from the same source plus
+`proto/mp_alloc-prototype.patch`. The patch adds two switches to the buffer
+allocator (`__memp_alloc_flags`), each read from the environment:
+
+- **Cap the clean-only search (`cap32`).** Normally the allocator skips dirty
+  buffers until it has visited as many buckets as the hash table holds. With
+  the cap, once it has visited 32 buckets it writes out the next dirty victim
+  instead.
+- **Search without the region lock (`unlocked`).** Normally the allocator
+  releases and retakes the cache region's lock around every candidate bucket.
+  With this switch it searches without that lock and takes it only to allocate
+  from the region's free memory.
+
+`base` has both switches off, which is the stock code path. `both` has both on.
+There were 3 repetitions at 16MB and 64MB, 2 at 256MB and 1 at 1GB. Latency
+percentiles come from a histogram with 8 buckets per power of two, so 4.35,
+4.86, 5.38 and 5.89 ms are neighbouring buckets.
+
+**16MB: the fresh runs reproduce the gap, and capping the search closes it.**
+Ranges are over the 3 repetitions; counters are per 1000 rows.
+
+| | rows/s | p50, ms | p99, ms | p99.9, ms | inserts ≥ 4 ms | dirty evictions | buckets per allocation | region-lock waits |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| v7 | 15.4–17.1k | 0.74–0.86 | 3.20–3.71 | 6.4–6.9 | 0.33–0.53% | 0 | 1.9 | 0.1 |
+| v4 `base` | 14.3–15.1k | 0.61 | 9.73–10.75 | 15.9 | 5.1–5.8% | 40–46 | 91–108 | 6,900–8,200 |
+| v4 `cap32` | 19.0–19.6k | 0.61–0.67 | 4.35 | 6.4 | 1.48–1.58% | 381–402 | 15–16 | 93–112 |
+| v4 `unlocked` | 14.6–15.1k | 0.61–0.67 | 5.89 | 8.7 | 5.6–6.7% | 80–83 | 184–193 | 41–55 |
+| v4 `both` | 18.4–19.2k | 0.67 | 4.35 | 6.4 | 1.46–1.53% | 365–372 | 15 | 42–46 |
+
+- v4 `base` matches the earlier 16MB runs (p50 0.61 ms, p99 10.75 ms in two of
+  three repetitions), so the preload-then-measure method reproduces the gap.
+- With the cap, v4's p99 falls from 9.7–10.8 ms to 4.35 ms in all three
+  repetitions, close to v7's 3.2–3.7 ms. Its share of inserts at 4 ms or more
+  falls from 5.1–5.8% to about 1.5%, and its throughput rises by about 27%.
+  This is the causal evidence the correlation above lacked: change only how
+  long the allocator searches for a clean buffer, and the tail goes away.
+- With the cap, inserts write dirty pages out about 9 times as often (381–402
+  against 40–46 per 1000 rows) and still get faster. So the cost was never the
+  write. It was the search that came before it.
+- Searching without the region lock removes about 99% of the region-lock waits
+  and lowers p99 to 5.89 ms, but the share of slow inserts and the throughput
+  do not change. So the per-bucket lock round trip is part of what makes a
+  slow insert slow, but not the reason it is slow. The rest is presumably the
+  sweep itself (locking each bucket's mutex in turn); that was not measured
+  separately.
+- With both switches on, the results are the same as with the cap alone.
+
+**Larger caches: the tail and the dirty evictions disappear together.**
+Medians over the repetitions:
+
+| cache | v4 rows/s | v7 rows/s | v4 p50 / p99, ms | v7 p50 / p99, ms | v4 inserts ≥ 4 ms | v4 dirty evictions per 1000 rows | median dirty share of the cache |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 16MB | 15.1k | 16.7k | 0.61 / 10.75 | 0.80 / 3.46 | 5.4% | 44 | 50% |
+| 64MB | 19.8k | 15.6k | 0.54 / 5.38 | 0.80 / 3.46 | 2.4% | 1.4 | 12% |
+| 256MB | 26.5k | 14.7k | 0.54 / 1.09–1.86 | 0.86–0.93 / 3.71–3.97 | 0.11–0.56% | 0 | 3–8% |
+| 1GB | 17.4k | 13.4k | 0.54 / 1.60 | 0.86 / 3.97 | 0.39% | 0 | 2% |
+
+- With the index at the same multiple of the cache, a larger cache keeps each
+  page in memory for longer, so the cache flusher has more time to write it
+  before it is evicted. The dirty share of the cache falls from about 50% at
+  16MB to 12% at 64MB, and dirty evictions all but stop.
+- At 256MB and 1GB, v4 has both the lower median and the lower p99, and it is
+  1.3–1.8x faster than v7. The tail that motivated this section is a small-cache
+  effect. v7's p99 stays at 3.2–4.0 ms at every size, from its queue for the
+  last leaf page.
+- At 64MB, dirty evictions are rare (1.4 per 1000 rows), but each one still
+  sweeps the hash table: the p99.9 of v4 `base` is 14.8–27.6 ms, and the cap
+  brings it to 6.4–6.9 ms. The cap does not change v4's 2.4% share of inserts
+  at 4 ms or more at 64MB, so those inserts are slow for another reason, which
+  was not investigated. v7's share is 0.3–0.5%.
+- At 256MB and above there are no dirty evictions for the switches to affect,
+  and the variants are within the spread between repetitions.
+
+**The 1GB runs also stalled, for an unrelated reason.** Every 1GB run had long
+stretches below 2,000 rows/s: 402 of about 1,470 seconds for v4 `base`, 481
+for `cap32`, 603 for `unlocked` and 99 for v7. This raises their p99.9 (78–94
+ms for v4, 17 ms for v7) but barely moves p99. In the three v4 runs the
+longest single allocation search, 154k–302k buckets, is more than a full lap of
+the 131,071-bucket region (v7's was 120k). That matches a separate problem found at a 2GB cache: when a 32KB
+`sqlite_stat1` page has to be read into a cache full of 4KB pages, the
+allocator frees 4KB buffers one at a time under the region lock, hoping they
+merge (written up outside this repository). Whether the 1GB stalls have the
+same cause was not checked. The stats sampler here used one connection
+throughout, so the stalls are not caused by it opening connections.
+
 ### Throughput and cache misses as the table grows
 
 ![throughput over time](results/plots/timeline_throughput.png)
@@ -484,3 +589,7 @@ python plot.py $BASE/results                              # needs matplotlib
 | `results/long/` | the same for the 20M-row v4/v7 run |
 | `scripts/run_trickle.sh` | v4 at 16 clients with three `memptricklepercent` settings, sampling `bdb cachestat` every second |
 | `results/trickle/` | one directory per setting; `ts/<run>.stat.txt` holds the per-second `bdb cachestat` and `bdb logstat` output |
+| `scripts/run_sweep.sh`, `sweep.py` | the cache-size sweep with the allocator switches, and its summary |
+| `proto/mp_alloc-prototype.patch` | the two allocator switches (`MP_ALLOC_DIRTY_CAP`, `MP_ALLOC_UNLOCKED_SCAN`), applied to `berkdb/mp/mp_alloc.c` |
+| `results/sweep/` | `runs.csv` and per-run time series, histograms and `bdb cachestat` samples for the sweep |
+| `scripts/run_btda.sh`, `btda.py`, `results/btda/` | six workloads on a 200M-row table with a 2GB cache |
