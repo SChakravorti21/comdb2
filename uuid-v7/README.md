@@ -83,7 +83,8 @@ row 4M, once v4 misses the cache on about 906 of every 1000 inserts.
    cost is the allocator's search for a clean buffer, not the write: capping
    that search at 32 buckets brings v4's p99 from 9.7–10.8 ms to 4.35 ms. The
    tail is a small-cache effect: with the index still 12x the cache, v4 has
-   the lower p99 from a 256MB cache up. See
+   the lower p99 from a 256MB cache up, and at 128MB once the cache has warmed
+   up. See
    [Cache-size sweep and two allocator prototypes](#cache-size-sweep-and-two-allocator-prototypes).
 
 5. **`nextsequence` is the slowest choice.**
@@ -400,11 +401,12 @@ allocator.
 **Setup.** All runs were on c2btda-pw-922 at 16 clients with single-row
 inserts (`results/sweep/`, `scripts/run_sweep.sh`). For each cache size the
 table holds enough rows for its PK index to be about 12x the cache, as in the
-16MB runs above: 4M rows for 16MB, 16M for 64MB, 64M for 256MB and 256M for
-1GB. Each table was loaded in 100-row transactions and copied at each of those
-sizes. Each run starts a server with the given cache on a fresh copy and
-inserts 10% more rows (at least 1M) one row at a time, sampling `bdb cachestat`
-every second over one connection.
+16MB runs above: 4M rows for 16MB, 16M for 64MB, 32M for 128MB, 64M for 256MB
+and 256M for 1GB. Each table was loaded in 100-row transactions and copied at
+each of those sizes. The 128MB copies were made later by growing the 64MB
+copies the same way (`run_sweep.sh <outdir> extend`). Each run starts a server
+with the given cache on a fresh copy and inserts 10% more rows (at least 1M)
+one row at a time, sampling `bdb cachestat` every second over one connection.
 
 All runs used one server binary, built from the same source plus
 `proto/mp_alloc-prototype.patch`. The patch adds two switches to the buffer
@@ -420,9 +422,9 @@ allocator (`__memp_alloc_flags`), each read from the environment:
   from the region's free memory.
 
 `base` has both switches off, which is the stock code path. `both` has both on.
-There were 3 repetitions at 16MB and 64MB, 2 at 256MB and 1 at 1GB. Latency
-percentiles come from a histogram with 8 buckets per power of two, so 4.35,
-4.86, 5.38 and 5.89 ms are neighbouring buckets.
+There were 3 repetitions at 16MB, 64MB and 128MB, 2 at 256MB and 1 at 1GB.
+Latency percentiles come from a histogram with 8 buckets per power of two, so
+4.35, 4.86, 5.38 and 5.89 ms are neighbouring buckets.
 
 **16MB: the fresh runs reproduce the gap, and capping the search closes it.**
 Ranges are over the 3 repetitions; counters are per 1000 rows.
@@ -460,6 +462,7 @@ Medians over the repetitions:
 |---|---:|---:|---:|---:|---:|---:|---:|
 | 16MB | 15.1k | 16.7k | 0.61 / 10.75 | 0.80 / 3.46 | 5.4% | 44 | 50% |
 | 64MB | 19.8k | 15.6k | 0.54 / 5.38 | 0.80 / 3.46 | 2.4% | 1.4 | 12% |
+| 128MB | 26.7k | 16.8k | 0.54 / 1.34 | 0.74 / 3.20 | 0.46% | 0.07 | 10% |
 | 256MB | 26.5k | 14.7k | 0.54 / 1.09–1.86 | 0.86–0.93 / 3.71–3.97 | 0.11–0.56% | 0 | 3–8% |
 | 1GB | 17.4k | 13.4k | 0.54 / 1.60 | 0.86 / 3.97 | 0.39% | 0 | 2% |
 
@@ -474,10 +477,41 @@ Medians over the repetitions:
 - At 64MB, dirty evictions are rare (1.4 per 1000 rows), but each one still
   sweeps the hash table: the p99.9 of v4 `base` is 14.8–27.6 ms, and the cap
   brings it to 6.4–6.9 ms. The cap does not change v4's 2.4% share of inserts
-  at 4 ms or more at 64MB, so those inserts are slow for another reason, which
-  was not investigated. v7's share is 0.3–0.5%.
+  at 4 ms or more at 64MB. v7's share is 0.3–0.5%.
+- Those slower v4 inserts at 64MB probably come from the start of each run.
+  Every run starts its server with an empty cache, and every v4 run at 64MB
+  spends its first 21–27 seconds below 15,000 rows/s (7–10% of its rows), with
+  a per-second p50 of 2.2–2.7 ms and about 1.3 page reads per row. After that,
+  the median per-second p99 is 0.99–1.09 ms in every variant. The histogram
+  covers the whole run, so this was not separated exactly; the link between
+  the slow start and the 2.4% is inferred. v7 inserts at the end of the index
+  and has no slow start (at most 1 second).
+- At 128MB the whole-run p99 depends on how long that slow start lasted, not
+  on the switches. In 7 of the 12 v4 runs it lasted 23–28 seconds (3.4–4.0% of
+  the rows), and those runs have a p99 of 4.86–5.38 ms and 1.38–1.72% of
+  inserts at 4 ms or more. In the other 5 it lasted 8 seconds or less (up to
+  1.1% of the rows), and those have a p99 of 1.09–1.73 ms and 0.08–0.55%. Each
+  variant had both kinds: `base` had two short starts and one long, so its
+  medians in the table above are the lowest. Why the slow start varied in
+  length was not checked. After it, the median per-second p99 is 1.09–1.22 ms
+  in every v4 run. v7 has no slow start, and its whole-run p99 is 3.20–3.46
+  ms.
+- Dirty evictions at 128MB are 0–1.7 per 1000 rows for `base`, 0–0.03 for
+  `unlocked`, 0.18–5.0 for `cap32` and 1.4–2.1 for `both`; the cap writes a
+  little more because it stops the clean-only search sooner. The p99.9 is
+  3.2–6.9 ms for `base` and 6.4–7.4 ms for the other variants, against
+  5.9–6.4 ms for v7. So at 128MB the cap no longer improves the tail.
+  Throughput is 21.3–27.5k rows/s across the v4 variants, against
+  16.4–17.5k for v7. It follows the slow start too: 21.3–23.4k in the runs
+  with the long one and 24.2–27.5k in the others.
 - At 256MB and above there are no dirty evictions for the switches to affect,
   and the variants are within the spread between repetitions.
+- During the 128MB runs another user's process used about one core of the
+  host's 72, and for about 7 minutes (15:05–15:12 ET) about 8–9 cores. The two
+  runs that overlapped those 7 minutes (051 and 052) were repeated; they are in
+  `results/sweep/runs_excluded.csv` instead of `runs.csv`. `load_128.txt`
+  holds the load average and busiest processes every 10 seconds for the
+  repeats and rep 3.
 
 **The 1GB runs also stalled, for an unrelated reason.** Every 1GB run had long
 stretches below 2,000 rows/s: 402 of about 1,470 seconds for v4 `base`, 481
@@ -591,5 +625,5 @@ python plot.py $BASE/results                              # needs matplotlib
 | `results/trickle/` | one directory per setting; `ts/<run>.stat.txt` holds the per-second `bdb cachestat` and `bdb logstat` output |
 | `scripts/run_sweep.sh`, `sweep.py` | the cache-size sweep with the allocator switches, and its summary |
 | `proto/mp_alloc-prototype.patch` | the two allocator switches (`MP_ALLOC_DIRTY_CAP`, `MP_ALLOC_UNLOCKED_SCAN`), applied to `berkdb/mp/mp_alloc.c` |
-| `results/sweep/` | `runs.csv` and per-run time series, histograms and `bdb cachestat` samples for the sweep |
+| `results/sweep/` | `runs.csv` and per-run time series, histograms and `bdb cachestat` samples for the sweep; `runs_excluded.csv` lists two 128MB runs repeated because of another user's load |
 | `scripts/run_btda.sh`, `btda.py`, `results/btda/` | six workloads on a 200M-row table with a 2GB cache |

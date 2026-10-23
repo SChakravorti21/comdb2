@@ -4,9 +4,12 @@
 # runs), and v4 again under each buffer-allocator prototype switch.
 #
 #   run_sweep.sh <outdir> [preload|measure|all]
+#   run_sweep.sh <outdir> extend <key> <from_size> <to_size>
+#   run_sweep.sh <outdir> one <key> <variant> <size> <rep>
 #
 # Preload grows one table per key with 100-row transactions and snapshots it at
-# each size. Each measured run starts a server with that cache size on a copy
+# each size. Extend adds a size later by growing an existing snapshot the same
+# way. Each measured run starts a server with that cache size on a copy
 # of the snapshot and inserts 10% more rows (at least 1M) one row at a time,
 # sampling the server's cache and log stats every second over one connection.
 set -e
@@ -67,6 +70,25 @@ preload() {
     "$CTL" stop
 }
 
+extend() {
+    local key=$1 from=$2 to=$3
+    export DBDIR=$BASE/db-sweep-$key CACHE_MB=$PRELOAD_CACHE_MB
+    "$CTL" stop
+    rm -rf "$DBDIR/uuidbench"
+    cp -a "$DBDIR/snap$from" "$DBDIR/uuidbench"
+    set_cache "$PRELOAD_CACHE_MB"
+    "$CTL" start
+    "$HERE/env.sh" >> "$OUT/env.txt" 2>&1
+    "$BENCH" -d uuidbench -c "$DBDIR/comdb2db.cfg" -k "$key" -n $(($(rows_for "$to") - $(rows_for "$from"))) -T $T -b 100 \
+        -o "$OUT/ts/preload_${key}_$to" -L "preload_${key}_$to" 2> "$OUT/ts/preload_${key}_$to.err"
+    "$CTL" sql "exec procedure sys.cmd.send('flush')" > /dev/null
+    "$CTL" stop
+    rm -rf "$DBDIR/snap$to"
+    cp -a "$DBDIR/uuidbench" "$DBDIR/snap$to"
+    (cd "$DBDIR/snap$to" && ls -l t_*) > "$OUT/snap_${key}_$to.txt"
+    rm -rf "$DBDIR/uuidbench"
+}
+
 # One run: key, variant, cache size, repetition.
 measure_one() {
     local key=$1 variant=$2 size=$3 rep=$4 seq name
@@ -102,7 +124,7 @@ measure_one() {
 measure() {
     for size in $SIZES; do
         case $size in
-        16 | 64) reps=3 runs="v4:base v4:cap32 v4:unlocked v4:both v7:base" ;;
+        16 | 64 | 128) reps=3 runs="v4:base v4:cap32 v4:unlocked v4:both v7:base" ;;
         256) reps=2 runs="v4:base v4:cap32 v4:unlocked v7:base" ;;
         *) reps=1 runs="v4:base v7:base v4:cap32 v4:unlocked" ;;
         esac
@@ -120,6 +142,8 @@ measure() {
 case $PHASE in
 preload) preload v4; preload v7 ;;
 measure) measure ;;
+extend) extend "$3" "$4" "$5" ;;
+one) measure_one "$3" "$4" "$5" "$6" ;;
 all) preload v4; preload v7; measure ;;
-*) echo "usage: $0 outdir [preload|measure|all]" >&2; exit 2 ;;
+*) echo "usage: $0 outdir [preload|measure|all] | extend key from_size to_size | one key variant size rep" >&2; exit 2 ;;
 esac

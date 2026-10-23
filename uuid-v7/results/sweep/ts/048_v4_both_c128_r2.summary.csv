@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+048_v4_both_c128_r2,v4,16,1,3200000,144.879,22087.4,608,4864,7424,0,977,84117,0,0,48874851,0,39885530,3248875,10358302,3234890,5572247,5833324,54589,3200000

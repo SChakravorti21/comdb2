@@ -1,0 +1,8 @@
+053_v7_base_c128_r2 insert v7 T=16 rows=3200000 194.7s 16432 rows/s p50=800us p99=3456us errors=0 not_found=0
+054_v4_base_c128_r2 insert v4 T=16 rows=3200000 137.8s 23227 rows/s p50=544us p99=4864us errors=0 not_found=0
+055_v7_base_c128_r3 insert v7 T=16 rows=3200000 190.1s 16833 rows/s p50=736us p99=3200us errors=0 not_found=0
+056_v4_both_c128_r3 insert v4 T=16 rows=3200000 149.4s 21421 rows/s p50=608us p99=4864us errors=0 not_found=0
+057_v4_base_c128_r3 insert v4 T=16 rows=3200000 119.8s 26716 rows/s p50=544us p99=1344us errors=0 not_found=0
+058_v4_unlocked_c128_r3 insert v4 T=16 rows=3200000 137.0s 23351 rows/s p50=544us p99=4864us errors=0 not_found=0
+059_v4_cap32_c128_r3 insert v4 T=16 rows=3200000 147.7s 21663 rows/s p50=608us p99=4864us errors=0 not_found=0
+DONE

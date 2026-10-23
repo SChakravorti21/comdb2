@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+043_v4_base_c128_r1,v4,16,1,3200000,116.418,27487.3,544,1088,3200,0,1088,75277,1,2,48859348,1,39863507,3244937,10361805,3231203,5550586,5789746,36077,3200000

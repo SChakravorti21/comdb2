@@ -1,0 +1,12 @@
+preload_v4_128 insert v4 T=16 rows=16000000 214.5s 74583 rows/s p50=19456us p99=69632us errors=0 not_found=0
+preload_v7_128 insert v7 T=16 rows=16000000 253.0s 63243 rows/s p50=21504us p99=59392us errors=0 not_found=0
+043_v4_base_c128_r1 insert v4 T=16 rows=3200000 116.4s 27487 rows/s p50=544us p99=1088us errors=0 not_found=0
+044_v4_unlocked_c128_r1 insert v4 T=16 rows=3200000 120.8s 26496 rows/s p50=544us p99=1216us errors=0 not_found=0
+045_v4_both_c128_r1 insert v4 T=16 rows=3200000 132.3s 24185 rows/s p50=608us p99=1472us errors=0 not_found=0
+046_v4_cap32_c128_r1 insert v4 T=16 rows=3200000 138.9s 23035 rows/s p50=544us p99=4864us errors=0 not_found=0
+047_v7_base_c128_r1 insert v7 T=16 rows=3200000 182.9s 17499 rows/s p50=736us p99=3200us errors=0 not_found=0
+048_v4_both_c128_r2 insert v4 T=16 rows=3200000 144.9s 22087 rows/s p50=608us p99=4864us errors=0 not_found=0
+049_v4_unlocked_c128_r2 insert v4 T=16 rows=3200000 150.3s 21294 rows/s p50=608us p99=5376us errors=0 not_found=0
+050_v4_cap32_c128_r2 insert v4 T=16 rows=3200000 130.3s 24552 rows/s p50=608us p99=1728us errors=0 not_found=0
+051_v7_base_c128_r2 insert v7 T=16 rows=3200000 215.5s 14848 rows/s p50=864us p99=3968us errors=0 not_found=0
+052_v4_base_c128_r2 insert v4 T=16 rows=3200000 137.3s 23305 rows/s p50=544us p99=4864us errors=0 not_found=0
