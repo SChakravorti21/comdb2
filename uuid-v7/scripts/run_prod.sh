@@ -5,7 +5,10 @@
 # and "big", whose PK index ends up about 12x the cache.
 #
 # Preload grows one table per workload in 100-row transactions and snapshots it
-# at each size. Each measured run starts a server on a copy of the snapshot,
+# at each size. comdb2 keeps every log file that holds a blkseq (duplicate
+# request) record younger than PRIVATE_BLKSEQ_MAXAGE (600 s), and reads them
+# all back at startup, so the preload lowers it to 1 s to keep its log out of
+# the snapshots; the measured runs go back to the default. Each measured run starts a server on a copy of the snapshot,
 # warms the cache with unmeasured single-row inserts (a fresh server starts
 # with an empty cache, and the sweep showed v4 running slowly for up to 28 s
 # after that), then measures single-row inserts while sampling the server's
@@ -34,10 +37,11 @@ mkdir -p "$OUT/ts"
 
 rows_of() { [ "$1" = fit ] && echo "$FIT_ROWS $FIT_WARM $FIT_MEASURED" || echo "$BIG_ROWS $BIG_WARM $BIG_MEASURED"; }
 
-# The cache size is fixed in the lrl at create time; rewrite it per phase.
+# The cache size is fixed in the lrl at create time; rewrite it for the
+# measured runs, and drop the preload's blkseq setting.
 set_cache() {
     local lrl=$DBDIR/uuidbench/uuidbench.lrl
-    sed -i "s/^cache .*/cache $1 mb/; s/^cachekbmin .*/cachekbmin $(($1 * 1024))/" "$lrl"
+    sed -i "s/^cache .*/cache $1 mb/; s/^cachekbmin .*/cachekbmin $(($1 * 1024))/; /^setattr PRIVATE_BLKSEQ_MAXAGE/d" "$lrl"
 }
 
 sample_stats() {
@@ -51,7 +55,7 @@ sample_stats() {
 
 preload() {
     local key=$1 have=0
-    export DBDIR=$BASE/db-prod-$key CACHE_MB=$PRELOAD_CACHE_MB
+    export DBDIR=$BASE/db-prod-$key CACHE_MB=$PRELOAD_CACHE_MB EXTRA_LRL="setattr PRIVATE_BLKSEQ_MAXAGE 1"
     "$CTL" stop
     "$CTL" create
     "$CTL" start
@@ -63,10 +67,12 @@ preload() {
             -o "$OUT/ts/preload_${key}_$size" -L "preload_${key}_$size" 2> "$OUT/ts/preload_${key}_$size.err"
         have=$want
         "$CTL" sql "exec procedure sys.cmd.send('flush')" > /dev/null
+        # Log deletion runs every LOGDELETE_RUN_INTERVAL (30 s).
+        sleep 70
         "$CTL" stop
         rm -rf "$DBDIR/snap_$size"
         cp -a "$DBDIR/uuidbench" "$DBDIR/snap_$size"
-        (cd "$DBDIR/snap_$size" && ls -l t_*) > "$OUT/snap_${key}_$size.txt"
+        (cd "$DBDIR/snap_$size" && ls -l t_* && du -sh logs) > "$OUT/snap_${key}_$size.txt"
         "$CTL" start
     done
     "$CTL" stop

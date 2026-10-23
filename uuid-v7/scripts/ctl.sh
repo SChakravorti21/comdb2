@@ -45,7 +45,8 @@ start)
     fi
     nohup setsid "$BUILD/db/comdb2" --lrl "$DBDIR/$DB/$DB.lrl" "$DB" \
         > "$DBDIR/server.log" 2>&1 < /dev/null &
-    for _ in $(seq 60); do
+    # Startup recovery can take minutes on a database with a long log.
+    for _ in $(seq 300); do
         sql "select 1" > /dev/null 2>&1 && exit 0
         sleep 1
     done
