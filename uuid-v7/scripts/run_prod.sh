@@ -14,7 +14,10 @@
 # after that), then measures single-row inserts while sampling the server's
 # cache and log stats every second.
 #
-#   run_prod.sh <outdir> [preload|measure|all]
+#   run_prod.sh <outdir> [preload|measure|all|fill]
+#
+# fill runs only the combinations that runs.csv does not have yet, for a night
+# that was cut short.
 set -e
 
 OUT=$1
@@ -123,9 +126,24 @@ measure() {
     done
 }
 
+fill() {
+    local have
+    have=$(tail -n +2 "$OUT/runs.csv" | cut -d, -f2,3,4,10)
+    for rep in $(seq "$REPS"); do
+        for size in fit big; do
+            for T in $(shuf -e $THREADS); do
+                for key in $(shuf -e $KEYS); do
+                    grep -qx "$key,$size,$rep,$T" <<< "$have" || measure_one "$key" "$size" "$T" "$rep"
+                done
+            done
+        done
+    done
+}
+
 case $PHASE in
 preload) for key in $KEYS; do preload "$key"; done ;;
 measure) measure ;;
 all) for key in $KEYS; do preload "$key"; done; measure ;;
-*) echo "usage: $0 outdir [preload|measure|all]" >&2; exit 2 ;;
+fill) fill ;;
+*) echo "usage: $0 outdir [preload|measure|all|fill]" >&2; exit 2 ;;
 esac
