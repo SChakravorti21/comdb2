@@ -15,6 +15,59 @@ page.
 
 ## Findings
 
+### With the production default cache (128MB)
+
+The DBAs' production configuration sets `cachekbmin 131072`, so production
+databases run with at least a 128MB cache. This matrix uses exactly that, with
+two table sizes: `fit` (1M rows preloaded; the indexes fit in the cache) and
+`big` (32M rows; the v4 PK index is about 12x the cache). See
+[Production cache (128MB)](#production-cache-128mb).
+
+1. **From 16 clients up, v4 is 1.8–2.6x faster than v7 and has the lower p99,
+   at both table sizes.**
+   - `fit`: 42.2k vs 16.0k rows/s at 16 clients, 34.1k vs 14.1k at 64.
+   - `big`: 29.7k vs 16.7k at 16 clients, 27.7k vs 14.7k at 64.
+   - p99: 0.67 vs 3.46 ms (`fit`, 16 clients), 1.09 vs 3.46 ms (`big`, 16
+     clients), and 3.20 vs 7.94–8.70 ms at 64.
+   - v7's cost is the same as with the 16MB cache: every insert queues for the
+     lock on the last leaf page. From 16 clients up v7 has 182–224 µs of lock
+     wait and 60–65 deadlocks per 1000 rows; v4 has under 1 µs and none.
+
+2. **At 4 and 8 clients, the answer depends on the table size.**
+   - `fit`: v4 and v7 tie at 4 clients (19.5k vs 19.4k rows/s), and v4 is
+     1.33x faster at 8 (30.1k vs 22.7k).
+   - `big`: v7 is 1.52x faster at 4 clients (17.8k vs 11.7k) and 1.10x faster
+     at 8 (21.7k vs 19.8k; the ranges over the repetitions do not overlap).
+     v4 reads a page from disk on 915 of every 1000 inserts, and with few
+     writers each read shows up directly in the throughput.
+   - v7 has the lower p99 only at 4 clients (0.37 vs 0.43 ms with `fit`, 0.37
+     vs 0.61 ms with `big`). At 8 clients v4's p99 is about half of v7's
+     (0.54–0.74 vs 1.47 ms).
+
+3. **v4's slow tail from the 16MB runs does not appear.** No insert in any of
+   the 168 runs had to write a dirty page out to make room (`st_rw_evict` is 0
+   throughout). Up to 16 clients, 0.01–0.07% of v4 inserts take 4 ms or more,
+   against 3.0% at 16 clients with the 16MB cache. This agrees with the
+   [cache-size sweep](#cache-size-sweep-and-two-allocator-prototypes). At
+   `big`, v4 still misses the cache on almost every insert, but every page it
+   evicts is clean.
+
+4. **The pattern belongs to the key order, not to UUIDs.** int random is
+   within 6% of v4 everywhere. int append is 7–30% faster than v7 but
+   behaves the same way: it peaks at 8 clients and has 190–229 µs of lock
+   wait per row from 16 clients up.
+
+5. **`nextsequence` is still the slowest choice:** 1.5–2.5x slower than int
+   append, with 450–466 deadlocks per 1000 rows from 8 clients up. The cause
+   is the same as with the 16MB cache (finding 5 below).
+
+6. **On the `nextsequence` + UUID tables, index the UUID as v7.** The v7 index
+   is 2.0–2.5x faster than the v4 index at `big` (11.0k vs 4.4k rows/s at 4
+   clients, 7.3k vs 3.7k at 64) and 1.10–1.19x faster at `fit`, and has the
+   lower p50 and p99 at every point.
+
+### With a 16MB cache
+
 The tables grow to 4M rows against a 16MB cache, so by the end of a run the
 random-key indexes are 9–12x the cache (v4 PK index about 195MB, int random
 about 148MB). "Last 1M rows" below means throughput measured from row 3M to
@@ -113,45 +166,54 @@ The UUID index on the sequence tables shows the same pattern (53–57 vs 49).
 
 ## Choosing between v4 and v7
 
-Default to v7. v4 is faster only for many concurrent single-row inserts into
-one table, when throughput matters more than tail latency, and only while its
-index is not many times larger than the cache. These are the questions to ask about the workload, in order of how
-much they decide:
+This section uses the 128MB results, since production databases have at least
+that much cache. For single-row inserts into one table, v4 is the faster choice
+once many transactions insert at the same time, and it also has the lower tail
+latency there. v7 is ahead with few concurrent writers on a table larger than
+the cache, and with batched inserts. These are the questions to ask about the
+workload, in order of how much they decide:
 
 1. **How many transactions insert into this table at the same time?** Count
    concurrent writers to the table, not clients of the application, and
    compare with `maxwt` (8 by default).
-   - Up to 8: v7. Once the v4 index is larger than the cache, v7 is 1.4–2.0x
-     faster, and it was within 10% of v4 when the index fit.
-   - 16 or more: v4 has more throughput until its index is many times the
-     cache (see question 3), because every v7 insert waits for the lock on the
-     last leaf page. int append keys lose to random keys the same way, so this
-     is a property of in-order keys, not of UUIDs.
+   - 16 or more: v4. It was 1.8–2.6x faster than v7 with a 2.5–5.2x lower p99,
+     whether or not its index fit in the cache, because every v7 insert waits
+     for the lock on the last leaf page. int append keys lose to random keys
+     the same way, so this is a property of in-order keys, not of UUIDs.
+   - About 8: v4 has about half of v7's p99 at both table sizes. On
+     throughput v4 was 1.33x faster when its index fit in the cache, and v7
+     was 1.10x faster when the index was 12x the cache.
+   - 4 or fewer: v7 once the v4 index is larger than the cache (1.52x faster,
+     and a lower p99). When the index fits, the two tie.
 2. **Are inserts batched?** With 100 rows per transaction, v7 was ahead at
    every client count (see the git history of this directory). A batch
    touches many pages whatever the key order, and v4 pays a cache miss on most
-   of them. The v4 case above applies only to one row per transaction.
+   of them. Everything above applies only to one row per transaction.
 3. **How large will the v4 index get compared with the cache?** Estimate about
    49 bytes per row, at the table's expected size rather than its size today.
-   At 16 or more clients, v4 was 2.3–2.6x faster than v7 with its index at
-   about 1.5x the cache, 1.16–1.18x faster at about 12x, and even with v7 at
-   about 57x. v7 does not miss
-   the cache, because its inserts only touch the right edge of the index.
-4. **Does the application have latency targets?** v7's p99 is 2.5–4.3x lower
-   than v4's at every client count. v4's p50 is lower only from 16 clients up.
+   Once the index is larger than the cache, v4 reads a page from disk for
+   almost every insert. That costs it throughput only with few writers (11.7k
+   vs 19.5k rows/s at 4 clients). With 16MB, far below the production floor,
+   the reads also forced dirty pages out and gave v4 a slow tail; with 128MB
+   they did not. With the index at 57x a 16MB cache, v4's lead at 16 clients
+   was gone. That size was not tested with 128MB.
+4. **Does the application have latency targets?** v4's p99 was lower than
+   v7's from 8 clients up, and v7's only at 4 clients. With a 16MB cache it
+   was the other way round at every client count.
 5. **Is the id assigned with `nextsequence`?** If the table has a
-   `nextsequence` PK and a UUID column, index the UUID as v7: it was 1.7–2.2x
-   faster than v4 at every client count. `nextsequence` itself is the larger
-   cost, 1.6–2.4x slower than a counter generated by the client, so consider
-   avoiding it.
+   `nextsequence` PK and a UUID column, index the UUID as v7: it was
+   1.10–1.19x faster than v4 when the index fit in the cache and 2.0–2.5x
+   faster when it did not. `nextsequence` itself is the larger cost, 1.5–2.5x
+   slower than a counter generated by the client, so consider avoiding it.
 
 | workload | choose |
 |---|---|
+| more than 8 concurrent single-row writers to the table | v4 |
+| about 8 concurrent single-row writers | v4 for p99; throughput depends on table size |
+| up to 4 concurrent single-row writers, table larger than the cache | v7 |
+| up to 4 concurrent single-row writers, table fits in the cache | either |
 | batched inserts, any concurrency | v7 |
-| up to 8 concurrent writers to the table | v7 |
-| latency targets (p99) | v7 |
 | `nextsequence` PK plus a UUID column | v7, and reconsider `nextsequence` |
-| more than 8 concurrent single-row writers, throughput first | v4 while its index is near the cache size (up to 2.5x); 1.2x at 12x the cache, no gain at 57x |
 
 Not covered by this benchmark: reads (v7 keeps recently inserted rows
 together, which helps queries for recent data), updates and deletes,
@@ -173,6 +235,10 @@ row was created, which matters for ids shown outside the application.
 | `nextseq` (nextsequence PK) | `longlong id dbstore=nextsequence`, PK | server |
 | `nextseq_v7` | `id` as above, PK; `byte u[16]` v7, unique index | server for id, client for u |
 | `nextseq_v4` | `id` as above, PK; `byte u[16]` v4, unique index | server for id, client for u |
+
+The workloads are shared by the two matrices. The rest of this section
+describes the 16MB matrix; the 128MB matrix loads its tables differently and
+is described in [Production cache (128MB)](#production-cache-128mb).
 
 **Load and size.**
 - 4, 8, 16 or 64 concurrent clients. 1 client was left out: at this table
@@ -210,7 +276,7 @@ From `results/main/env.txt`:
 
 | | |
 |---|---|
-| host | c2btda-pw-188, one of the least loaded C2BTDA hosts when the run started; the 20M-row run used c2btda-pw-922 |
+| host | c2btda-pw-188, one of the least loaded C2BTDA hosts when the run started; the 20M-row run and the 128MB matrix used c2btda-pw-922 |
 | CPU | 2x Xeon Gold 6240, 72 logical CPUs, 2 NUMA nodes |
 | RAM | 1.1 TiB |
 | disk | XFS on LVM over Intel P4510 NVMe (SSDPE2KX080T8) |
@@ -220,14 +286,16 @@ From `results/main/env.txt`:
 | locking | page locks (`init_with_rowlocks 0`) |
 | writer threads | `maxwt 8` (default): at most 8 transactions are applied on the master at once |
 | other settings | defaults: `maxretries 500`, `penaltyincpercent 20`, `checkpointtime 60`, `logfilesize 40MB` |
-| run time | 4, 16 and 64 clients: 2026-10-14 19:08 to 2026-10-15 02:55 EDT. 8 clients: 2026-10-15 14:40–17:11 EDT. 20M rows: 2026-10-16 01:13–03:43 EDT. 762 minutes of measured insert time in all |
+| run time | 4, 16 and 64 clients: 2026-10-14 19:08 to 2026-10-15 02:55 EDT. 8 clients: 2026-10-15 14:40–17:11 EDT. 20M rows: 2026-10-16 01:13–03:43 EDT. 762 minutes of measured insert time in all. 128MB matrix: `fit` 2026-10-23 22:00 to 2026-10-24 01:32 EDT, `big` 2026-10-26 15:10–18:35 EDT |
 
 The database registers with a private pmux on port 15105. The host's shared
 pmux handed out a port that another process was already using for UDP.
 
 ## Results
 
-Each point is the median of 3 repetitions. Whiskers show min..max. The median
+Each point is the median of 3 repetitions. Whiskers show min..max. Unless a
+section says otherwise, the results up to [Space](#space) are for the 16MB
+matrix. Its median
 spread between repetitions is 8% of the median; the worst case is 21%
 (`nextsequence` at 4 clients). Full tables for every metric are in
 [`results/summary.md`](results/summary.md).
@@ -568,6 +636,94 @@ The `nextsequence` tables write about 1,830 bytes of log per row (2,170–2,180
 with the UUID index), against about 1,050–1,140 for the client-generated keys. The
 difference is the delete and add of the llmeta sequence record in every insert.
 
+### Production cache (128MB)
+
+**Setup.** `scripts/run_prod.sh`, on c2btda-pw-922, with the same workloads,
+client counts and build as the 16MB matrix. The cache is 128MB, the floor that
+the DBAs' production `comdb2_local.lrl` sets with `cachekbmin 131072`. That file
+also sets `maxwt 8`, the value used here.
+
+- **Preload.** For each workload, one table is grown in 100-row transactions
+  with a 16GB cache and copied at two sizes: `fit` at 1M rows, whose indexes
+  fit in the cache (the v4 PK index is about 80MB after its run), and `big` at
+  32M rows, whose v4 PK index is about 1.6GB, 12x the cache.
+- **Each run** starts a server with the 128MB cache on a fresh copy of the
+  table. It then warms the cache with unmeasured single-row inserts at the same
+  client count (100k rows for `fit`, 300k for `big`) and measures the next
+  500k (`fit`) or 1M (`big`) single-row inserts. `bdb cachestat` and
+  `bdb logstat` are sampled every second.
+- 7 workloads × 4 client counts × 2 sizes × 3 repetitions: 168 runs. Within
+  each repetition and size the order is shuffled. Every run finished with no
+  errors.
+
+The warm-up works. In the cache-size sweep, v4 at 128MB ran slowly for up to 28
+seconds after the server started. Here no run has a slow start: in every run
+the first second is already at 70% or more of the run's median per-second
+throughput.
+
+![throughput, 128MB](results/plots/prod_throughput.png)
+![latency, 128MB](results/plots/prod_latency.png)
+
+Rows/s, median of 3 repetitions:
+
+| workload | fit, 4 | fit, 8 | fit, 16 | fit, 64 | big, 4 | big, 8 | big, 16 | big, 64 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| uuid v7 PK | 19,414 | 22,710 | 16,033 | 14,061 | 17,845 | 21,655 | 16,702 | 14,658 |
+| uuid v4 PK | 19,544 | 30,093 | 42,164 | 34,054 | 11,709 | 19,750 | 29,716 | 27,731 |
+| int append PK | 20,826 | 25,066 | 20,791 | 17,228 | 19,898 | 25,256 | 19,225 | 18,092 |
+| int random PK | 19,256 | 28,837 | 42,026 | 34,974 | 11,648 | 19,965 | 30,772 | 29,389 |
+| nextsequence PK | 14,097 | 10,649 | 8,990 | 8,784 | 11,851 | 10,181 | 9,263 | 9,630 |
+| nextsequence PK + v7 index | 12,434 | 9,477 | 8,126 | 8,015 | 10,992 | 9,006 | 8,547 | 7,267 |
+| nextsequence PK + v4 index | 11,044 | 7,985 | 7,400 | 6,778 | 4,444 | 3,964 | 3,867 | 3,719 |
+
+p99 latency, ms:
+
+| workload | fit, 4 | fit, 8 | fit, 16 | fit, 64 | big, 4 | big, 8 | big, 16 | big, 64 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| uuid v7 PK | 0.37 | 1.47 | 3.46 | 8.70 | 0.37 | 1.47 | 3.46 | 7.94 |
+| uuid v4 PK | 0.43 | 0.54 | 0.67 | 3.20 | 0.61 | 0.74 | 1.09 | 3.20 |
+| int append PK | 0.30 | 0.61 | 2.69 | 6.91 | 0.34 | 0.61 | 2.94 | 6.40 |
+| int random PK | 0.43 | 0.54 | 0.67 | 3.20 | 0.61 | 0.67 | 0.99 | 2.94 |
+| nextsequence PK | 1.47 | 2.69 | 4.35 | 11.78 | 1.98 | 2.94 | 4.35 | 10.75 |
+| nextsequence PK + v7 index | 1.98 | 3.20 | 4.86 | 12.80 | 2.18 | 3.20 | 4.86 | 13.82 |
+| nextsequence PK + v4 index | 2.18 | 3.71 | 5.38 | 14.85 | 6.40 | 6.91 | 9.73 | 23.55 |
+
+- **Spread.** The median spread between repetitions is 7.1% of the median. The
+  worst cases are v7 at `big` with 8 clients (17%), `nextsequence` at `fit`
+  with 64 (18%) and `nextsequence` + v7 at `big` with 64 (21%).
+- **Contention.** From 16 clients up, v7 has 182–224 µs of lock wait and
+  60–65 deadlocks per 1000 rows at both sizes, and int append 190–229 µs and
+  27–28 deadlocks. v4 and int random have under 1 µs and none.
+- **Cache.** At `big`, v4 misses the cache on 915 of every 1000 inserts and
+  int random on 881; v7, int append and plain `nextsequence` never miss. No
+  run wrote a dirty page out to make room. The median dirty share of the cache
+  is 1–18%, against about 50% with 16MB.
+- **Slow inserts.** Up to 16 clients, at most 0.07% of v4 inserts take 4 ms or
+  more, against 0.04–0.42% for v7. At 64 clients the in-order keys queue: 50–57%
+  of v7 inserts and 16–20% of int append inserts take 4 ms or more, against
+  0.33–0.34% for v4.
+
+**Runs that were set aside** are in `results/prod/runs_excluded.csv`, with the
+reason in its first column.
+
+- `pagelist`: the first measurement of `big`, 67 runs, and run 152 from a
+  third repetition that was started and then abandoned. comdb2 dumps the list
+  of pages in its cache to `logs/pagelist` and reads them all back about 30
+  seconds after it next starts (`bdb/threads.c`). The snapshots kept the list
+  from the preload's 16GB cache. So every measured server read up to 1.65M
+  pages through its 128MB cache, partway into the run. The list was large for
+  v7 and int append and small for v4 (comdb2 writes a new list only after 20%
+  of the cache has changed), so the reads landed in every v7 and int append
+  run but in no v4 run. They showed up as 1.1–1.6 cache misses per row for
+  the in-order keys. `run_prod.sh` now deletes the list from each copy, and all
+  84 `big` runs were repeated. The per-run files of the set-aside runs are in
+  `results/prod/ts_pagelist/`.
+- `portbench`: the first 18 runs of the repeat, which overlapped another
+  user's comdb2 benchmark on the host (0.7 of a core on average, up to 3.6 of
+  72; `portbench-contention.txt`). Four of them were 6–11% slower than the
+  slowest of their other repetitions. All 18 were repeated after the other
+  benchmark had stopped.
+
 ## Caveats
 
 - **No 1-client point.** It was dropped to fit the run into one night. The
@@ -588,12 +744,21 @@ difference is the delete and add of the llmeta sequence record in every insert.
   - Default page locks; rowlocks were deliberately not tested.
   - `maxwt 8`, so the master applies at most 8 transactions at once.
 - **Shared host.** Clients and server share the host. The load average before
-  each run ranged from 2.7 to 18.6 (median 7.5); it includes the benchmark's own
+  each run ranged from 2.7 to 18.6 (median 7.5) in the 16MB matrix and from
+  2.2 to 13.7 (median 5.3) in the 128MB matrix; it includes the benchmark's own
   threads from the previous run.
-- **Fresh table, not fresh database.** The database is created once per pass:
-  once for 4, 16 and 64 clients and once for 8 clients. Each run gets a freshly
-  created table, but the transaction log and the files of dropped tables carry
-  over within a pass.
+- **The two 128MB table sizes ran on different days.** `fit` ran overnight on
+  2026-10-23 and `big` on the afternoon of 2026-10-26, on the same host and
+  build. Compare v4 with v7 within a size, not one size with the other.
+- **The 128MB tables were preloaded in 100-row transactions.** Only the warm-up
+  and the measured rows were inserted one at a time. How much the preload's
+  page layout differs from that of a table grown one row at a time was not
+  measured.
+- **Fresh table, not fresh database (16MB matrix).** The database is created
+  once per pass: once for 4, 16 and 64 clients and once for 8 clients. Each
+  run gets a freshly created table, but the transaction log and the files of
+  dropped tables carry over within a pass. The 128MB runs each start from a
+  fresh copy of the preloaded database.
 - **Not measured.** Reading back the generated id after an insert.
 
 ## Reproducing
@@ -606,6 +771,8 @@ cmake -S $BASE/src -B $BASE/build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo && 
 cp -r uuid-v7 $BASE/bench-src
 make -C $BASE/bench-src/bench SRC=$BASE/src BUILD=$BASE/build
 $BASE/bench-src/scripts/run_all.sh $BASE/results          # about 13 hours
+$BASE/bench-src/scripts/run_prod.sh $BASE/results-prod all # 128MB matrix: preload about 1.5 hours, runs about 7
+python prod.py $BASE/results-prod                          # 128MB summary per run and per combination
 python plot.py $BASE/results                              # needs matplotlib
 ```
 
@@ -618,7 +785,7 @@ python plot.py $BASE/results                              # needs matplotlib
 | `scripts/run_matrix.sh` | one configuration: shuffled runs, one row per run in `runs.csv` |
 | `scripts/run_all.sh` | the configuration reported above |
 | `scripts/env.sh` | records the host and database setup (`env.txt`) |
-| `plot.py` | generates `results/plots/*.png` and `results/summary.md` |
+| `plot.py` | generates `results/plots/*.png` and `results/summary.md`; the `prod_*` charts come from `results/prod/` |
 | `results/main/` | `runs.csv`, `env.txt`, and per-run time series and histograms in `ts/` |
 | `results/long/` | the same for the 20M-row v4/v7 run |
 | `scripts/run_trickle.sh` | v4 at 16 clients with three `memptricklepercent` settings, sampling `bdb cachestat` every second |
@@ -627,3 +794,5 @@ python plot.py $BASE/results                              # needs matplotlib
 | `proto/mp_alloc-prototype.patch` | the two allocator switches (`MP_ALLOC_DIRTY_CAP`, `MP_ALLOC_UNLOCKED_SCAN`), applied to `berkdb/mp/mp_alloc.c` |
 | `results/sweep/` | `runs.csv` and per-run time series, histograms and `bdb cachestat` samples for the sweep; `runs_excluded.csv` lists two 128MB runs repeated because of another user's load |
 | `scripts/run_btda.sh`, `btda.py`, `results/btda/` | six workloads on a 200M-row table with a 2GB cache |
+| `scripts/run_prod.sh`, `prod.py` | the 128MB matrix (preload, warm-up, measured runs) and its summary |
+| `results/prod/` | `runs.csv` (the 168 runs reported), `runs_excluded.csv` (set-aside runs and why), per-run files in `ts/` and `ts_pagelist/`, `env.txt` (`fit`) and `env_big.txt`, `snap_*.txt` (preloaded file sizes), `portbench-contention.txt` |
