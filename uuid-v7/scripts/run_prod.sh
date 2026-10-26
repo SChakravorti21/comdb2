@@ -30,6 +30,7 @@ export BUILD=${BUILD:-$BASE/build}
 KEYS=${KEYS:-int_seq int_rand v7 v4 nextseq nextseq_v7 nextseq_v4}
 THREADS=${THREADS:-4 8 16 64}
 REPS=${REPS:-3}
+SIZES=${SIZES:-fit big}
 MEASURE_CACHE_MB=128
 PRELOAD_CACHE_MB=16384
 # rows: preloaded, warm-up, measured. fit's v4 PK index is about 80MB after
@@ -90,6 +91,11 @@ measure_one() {
     name=$(printf "%03d_%s_%s_T%s_r%s" "$seq" "$key" "$size" "$T" "$rep")
     rm -rf "$DBDIR/uuidbench"
     cp -a "$DBDIR/snap_$size" "$DBDIR/uuidbench"
+    # The snapshot keeps the page list that the preload server dumped from its
+    # 16GB cache, and a server reads every page on it back about 30 s after it
+    # starts: over a million page reads in the middle of a big run, for some
+    # keys and not others.
+    rm -f "$DBDIR/uuidbench/logs/pagelist"
     set_cache $MEASURE_CACHE_MB
     "$CTL" start
     [ "$seq" = 1 ] && "$HERE/env.sh" >> "$OUT/env.txt" 2>&1
@@ -116,7 +122,7 @@ measure_one() {
 # repetitions; the order within one is shuffled.
 measure() {
     for rep in $(seq "$REPS"); do
-        for size in $(shuf -e fit big); do
+        for size in $(shuf -e $SIZES); do
             for T in $(shuf -e $THREADS); do
                 for key in $(shuf -e $KEYS); do
                     measure_one "$key" "$size" "$T" "$rep"
@@ -130,7 +136,7 @@ fill() {
     local have
     have=$(tail -n +2 "$OUT/runs.csv" | cut -d, -f2,3,4,10)
     for rep in $(seq "$REPS"); do
-        for size in fit big; do
+        for size in $SIZES; do
             for T in $(shuf -e $THREADS); do
                 for key in $(shuf -e $KEYS); do
                     grep -qx "$key,$size,$rep,$T" <<< "$have" || measure_one "$key" "$size" "$T" "$rep"
