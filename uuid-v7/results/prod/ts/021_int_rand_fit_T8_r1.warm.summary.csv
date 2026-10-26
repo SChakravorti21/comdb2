@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+021_int_rand_fit_T8_r1.warm,int_rand,8,1,100000,5.394,18540.4,248,3456,5888,0,64,47718,0,0,1225339,0,1021020,12938,405139,12846,12978,72673,3207,100000

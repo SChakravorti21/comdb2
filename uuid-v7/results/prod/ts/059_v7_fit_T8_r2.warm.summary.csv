@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+059_v7_fit_T8_r2.warm,v7,8,1,100000,3.901,25635.4,272,1088,3968,0,91393,4814914,2080,4313,1257715,2080,1062489,10373,443861,10302,10412,5017,134,100000

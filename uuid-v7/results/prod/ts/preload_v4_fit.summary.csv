@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+preload_v4_fit,v4,16,100,1000000,17.929,55774.9,25600,59392,69632,0,19875,11324508,5103,219356,12222839,5103,13056741,1,5721349,1,58,569096,13848,10000

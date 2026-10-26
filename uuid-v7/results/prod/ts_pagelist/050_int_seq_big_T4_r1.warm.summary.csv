@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+050_int_seq_big_T4_r1.warm,int_seq,4,1,300000,13.934,21529.9,168,304,800,0,61850,1087206,233,471,3762655,233,3165339,59448,1253235,59067,60136,15440,1408,300000

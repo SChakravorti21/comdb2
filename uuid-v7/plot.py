@@ -332,6 +332,54 @@ def long_timeline():
     plt.close(fig)
 
 
+PROD_DESC = "single-row inserts, 128MB cache"
+PROD_SIZES = [("fit", "fit: 1M-row table, indexes fit in the cache", "fit (1M rows)"),
+              ("big", "big: 32M-row table, v4 PK index about 12x the cache", "big (32M rows)")]
+
+
+def load_prod_runs():
+    path = os.path.join(RESULTS, "prod", "runs.csv")
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        runs = list(csv.DictReader(f))
+    for r in runs:
+        r["threads"] = int(r["threads"])
+        r["rows_per_s"] = float(r["rows_per_s"])
+        r["lat_p50_ms"] = float(r["lat_p50_us"]) / 1000
+        r["lat_p99_ms"] = float(r["lat_p99_us"]) / 1000
+    return runs
+
+
+def prod_throughput(runs):
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5), sharey=True)
+    axes_ends = []
+    for ax, (size, title, _) in zip(axes, PROD_SIZES):
+        ends = plot_vs_threads(ax, [r for r in runs if r["size"] == size], "rows_per_s")
+        if ax is axes[-1]:
+            axes_ends.append((ax, ends))
+        ax.set_title(title, loc="left")
+        ax.set_ylim(bottom=0)
+        ax.yaxis.set_major_formatter(THOUSANDS)
+    axes[0].set_ylabel("rows inserted per second")
+    finish(fig, axes_ends, f"Insert throughput vs clients — {PROD_DESC}", "prod_throughput.png", axes[1])
+
+
+def prod_latency(runs):
+    fig, axes = plt.subplots(2, 2, figsize=(14, 9), sharey=True)
+    axes_ends = []
+    for row, (size, _, title) in zip(axes, PROD_SIZES):
+        for ax, (metric, name) in zip(row, [("lat_p50_ms", "p50"), ("lat_p99_ms", "p99")]):
+            ends = plot_vs_threads(ax, [r for r in runs if r["size"] == size], metric)
+            if ax is row[-1]:
+                axes_ends.append((ax, ends))
+            ax.set_title(f"{title}: {name}", loc="left")
+            ax.set_yscale("log")
+            ax.yaxis.set_major_formatter(PLAIN)
+        row[0].set_ylabel("latency of one insert (ms, log scale)")
+    finish(fig, axes_ends, f"Insert latency vs clients — {PROD_DESC}", "prod_latency.png", axes[0][1])
+
+
 def main():
     os.makedirs(PLOTS, exist_ok=True)
     for old in glob.glob(os.path.join(PLOTS, "*.png")):
@@ -353,6 +401,10 @@ def main():
              f"Buffer-pool misses as the table grows — {DESC}", "timeline_cache_misses.png")
     sizes(runs)
     long_timeline()
+    prod = load_prod_runs()
+    if prod:
+        prod_throughput(prod)
+        prod_latency(prod)
     tables = [
         ("rows_per_s", "rows/s", lambda v: f"{v:,.0f}"),
         ("lat_p50_ms", "p50 latency, ms", lambda v: f"{v:.2f}"),

@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+083_v4_fit_T16_r2.warm,v4,16,1,100000,4.869,20536.3,368,5376,7424,0,164,102640,0,0,1228314,0,1022048,16102,404504,16008,16142,91936,2005,100000

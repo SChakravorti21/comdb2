@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+019_nextseq_v4_fit_T8_r1,nextseq_v4,8,1,500000,62.616,7985.2,736,3712,6400,0,920005,42155022,237141,474282,15373373,237133,13921049,388,7327231,388,66691,696163,55946,500000

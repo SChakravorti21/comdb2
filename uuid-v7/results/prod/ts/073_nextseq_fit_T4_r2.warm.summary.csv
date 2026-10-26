@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+073_nextseq_fit_T4_r2.warm,nextseq,4,1,100000,6.193,16147.5,200,1216,3200,0,71369,1644679,8315,16630,2267271,8315,2053463,4301,1220608,4271,4332,4427,218,100000

@@ -1,0 +1,2 @@
+label,key,threads,batch,rows,elapsed_s,rows_per_s,lat_p50_us,lat_p99_us,lat_p999_us,errors,lockwaits,lockwait_time,deadlocks,locks_aborted,lockrequests,retries,cache_hits,cache_misses,leaf_cache_hits,leaf_cache_misses,page_reads,page_writes,fsyncs,commits
+119_v4_fit_T8_r3,v4,8,1,500000,16.594,30131.3,248,544,1344,0,492,22712,0,0,6139610,0,5164480,357,2074787,357,55933,453949,12005,500000

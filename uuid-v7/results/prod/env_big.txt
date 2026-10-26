@@ -1,0 +1,57 @@
+== date
+2026-10-26T14:24:09-04:00
+== host
+c2btda-pw-922
+4.18.0-553.144.1.el8_10.x86_64
+Red Hat Enterprise Linux release 8.10 (Ootpa)
+== cpu
+CPU(s):              72
+Thread(s) per core:  2
+Core(s) per socket:  18
+Socket(s):           2
+NUMA node(s):        2
+Model name:          Intel(R) Xeon(R) Gold 6240 CPU @ 2.60GHz
+== memory
+              total        used        free      shared  buff/cache   available
+Mem:           1131          15        1046           1          70        1109
+== disk
+Filesystem                   Size  Used Avail Use% Mounted on
+/dev/mapper/vg01-bb_comdb2a   16T  9.0T  6.7T  58% /bb/comdb2a
+NAME    ROTA MODEL
+nvme0n1    0 INTEL SSDPE2KX080T8                     
+nvme7n1    0 INTEL SSDPE2KX080T8                     
+nvme6n1    0 INTEL SSDPE2KX080T8                     
+nvme4n1    0 INTEL SSDPE2KX080T8                     
+nvme1n1    0 INTEL SSDPE2KX080T8                     
+nvme2n1    0 INTEL SSDPE2KX080T8                     
+nvme3n1    0 INTEL SSDPE2KX080T8                     
+nvme5n1    0 INTEL SSDPE2KX080T8                     
+== loadavg
+6.27 7.51 5.91 2/2960 377094
+== comdb2 sha
+a6948d3ff83533fbcd8dfc05f94271a97a2401c7
+== build
+CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
+CMAKE_C_COMPILER:FILEPATH=/bin/cc
+CMAKE_BUILD_TYPE-STRINGS:INTERNAL=Debug;RelWithDebInfo;Release
+cc (GCC) 8.5.0 20210514 (Red Hat 8.5.0-29)
+== lrl
+name    uuidbench
+dir     /bb/comdb2a/schakravorti-uuid-v7/db-prod-nextseq/uuidbench
+cache 128 mb
+cachekbmin 131072
+portmux_port 15105
+portmux_bind_path /bb/comdb2a/schakravorti-uuid-v7/db-prod-nextseq/pmux.socket
+== tunables
+memptricklepercent	99
+maxwt	8
+init_with_rowlocks_master_only	0
+init_with_rowlocks	0
+disable_writer_penalty_deadlock	OFF
+directio	ON
+logfilesize	41943040
+penaltyincpercent	20
+memptricklemsecs	1000
+checkpointtime	60
+maxretries	500
+cachekb	131072

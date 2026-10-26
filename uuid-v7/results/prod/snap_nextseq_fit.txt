@@ -1,0 +1,10 @@
+-rw-rw---- 1 schakravorti general 18354176 Oct 23 18:47 t_0000000000100000.datas0
+-rw-rw---- 1 schakravorti general 18677760 Oct 23 18:47 t_0000000000100000.datas1
+-rw-rw---- 1 schakravorti general 18370560 Oct 23 18:47 t_0000000000100000.datas2
+-rw-rw---- 1 schakravorti general 18337792 Oct 23 18:47 t_0000000000100000.datas3
+-rw-rw---- 1 schakravorti general 18501632 Oct 23 18:47 t_0000000000100000.datas4
+-rw-rw---- 1 schakravorti general 18558976 Oct 23 18:47 t_0000000000100000.datas5
+-rw-rw---- 1 schakravorti general 18071552 Oct 23 18:47 t_0000000000100000.datas6
+-rw-rw---- 1 schakravorti general 18309120 Oct 23 18:47 t_0000000000100000.datas7
+-rw-rw---- 1 schakravorti general 20140032 Oct 23 18:47 t_0000000000110000.index
+229M	logs
